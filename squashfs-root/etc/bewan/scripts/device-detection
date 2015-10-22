@@ -1,0 +1,13 @@
+#!/bin/sh
+# Script call by lanarpd daemon when a device has appeared in or disappeared from the ARP table
+
+files="$(find /etc/bewan/detect.d -follow -type f 2>/dev/null | sort)"
+[ "$files" = '' ] && return
+
+. /etc/bewan/init.d/setparam
+
+base_enter_critical 'onchange'
+for script in $files; do
+  . $script
+done
+base_exit_critical 'onchange'

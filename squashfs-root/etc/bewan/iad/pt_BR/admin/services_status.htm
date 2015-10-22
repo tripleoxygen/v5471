@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+<link rel="stylesheet" type="text/css" href="../../css/gateway.css"/>
+
+<script type="text/javascript" src="../js/morpheus.min.js"></script>
+<script type="text/javascript" src="../js/lite.javascript"></script>
+<script type="text/javascript" src="../js/app.javascript"></script>
+<script type="text/javascript" src="../js/menu.js"></script>
+<script type="text/javascript" src="../js/dns.js"></script>
+<script type="text/javascript" src="../js/configAccess.javascript"></script>
+<script type="text/javascript" src="../js/services_status.javascript"></script>
+
+<!--#isAuth level=no_realm -->
+	<script type="text/javascript">
+		$.event.ready(function() {
+			var util = $.util,
+			pageData = {
+				Switch: util.parseJson('<!--#echo jsonvar="cli=Switch"-->'),
+				WANDSLInterfaceConfig : {Enable: util.parseJson('<!--#echo jsonvar="cli=WANDSLInterfaceConfig_Enable"-->')},
+				WANDSLLinkStatus: util.parseJson('<!--#echo jsonvar="cli=WANDSLLinkStatus"-->'),
+				WANEthernetInterface: util.parseJson('<!--#echo jsonvar="cli=WANEthernetInterface"-->'),
+				activeWanConnectionDevice: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_{Layer3Forwarding_ActiveConnectionService}:shadow"-->'),
+				defaultWanConnectionDevice: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_{Layer3Forwarding_DefaultConnectionService}:shadow"-->'),
+				vodWanConnectionDevice: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_*[Description=VoD]:shadow"-->'),
+				voipWanConnectionDevice: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_*[Description=VoIP]:shadow"-->'),
+				devVersion: util.parseJson('<!--#echo jsonvar="cli=Device_FirmwareVersion"-->'),
+				activeWLANInterface: util.parseJson('<!--#echo jsonvar="cli=WLANInterface"-->'),
+				WLANConfig: util.parseJson('<!--#echo jsonvar="cli=WLANConfig"-->'),
+				lanDevices: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_Hosts"-->'),
+				lanConfig: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_HostConfig"-->'),
+				switches: util.parseJson('<!--#echo jsonvar="cli=Switch_2_Port"-->'),
+				localIP:util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_IPStatus_CurrentIPAddress"-->'),
+				ledTvState:util.parseJson('<!--#echo jsonvar="cli=Device_LedButtons_LedButton_*[Name=tv]_State"-->'),
+				hpna:util.parseJson('<!--#echo jsonvar="cli=HPNA_Enable"-->'),
+				voiceProfile:util.parseJson('<!--#echo jsonvar="cli=VoiceProfile"-->'),
+			};
+
+			if(!pageData.activeWanConnectionDevice.List) {
+				pageData.activeWanConnectionDevice = pageData.defaultWanConnectionDevice;
+			}
+			Page.init(pageData);
+		});
+	</script>
+<!--#endAuth var=ok-->
+
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+	<div class="wrap text-right">
+		
+		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+		<img src="../../img/power-box.png" alt="Power Box GVT">
+		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+		
+	</div>
+	
+	<div class="clear"></div>
+	
+</div><!--header-gateway-->
+
+<div id="content">
+
+	<div class="wrap">
+
+		<div id="conteudo-gateway">
+			
+			<div class="col-192 left">
+				<script type="text/javascript">ImportMenu('menu_status');</script>
+			</div><!--col-192-->
+<!--#isNotAuth level=no_realm -->
+<div id="level_auth" style="display:none;">no_realm</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=no_realm -->
+			<div class="col-722 left">
+				<table id="status">
+					<tr>
+						<th>
+							<img src="../../img/icon-internet.png" alt="Internet" />
+							<span>Internet</span>
+						</th>
+						<td>
+							<div id="ethDetails" class="status-detail off">
+								<strong>Link ETH</strong> <span class="state">Desconectado</span>
+							</div>
+							<div id="dslDetails" class="status-detail off">
+								<strong>xDSL</strong> <span class="state">Não Sincronizado</span>
+							</div>
+							<div id="pppDetails" class="status-detail off">
+								<strong>PPP:</strong> <span class="state">Desconectado</span>
+							</div>
+						</td>
+						<td class="status-link">
+							&gt; <a  id="internet-link"  class="pointer">Mais detalhes</a>
+						</td>
+					</tr>
+					<tr class="none" id="internet-link-more">
+						<td class="statusCell">
+							<table class="sectionLeft">
+								<tr><td><strong>Taxa de Recebimento [Kbps]:</strong></td><tr>
+								<tr><td id="WANDSLLinkStatus_DownBitrates_Actual" class="italic"></td><tr>
+								<tr><td><strong>Taxa de Envio [Kbps]:</strong></td><tr>
+								<tr><td id="WANDSLLinkStatus_UpBitrates_Actual" class="italic"></td><tr>
+								<tr><td><strong>Sincronismo </strong></td><tr>
+								<tr><td id="synchro" class="italic"></td><tr>
+								<tr><td><strong>Sessão PPP:</strong></td><tr>
+								<tr><td id="session" class="italic"></td><tr>
+							</table>
+						</td>
+						<td colspan="2" class="statusCell">
+							<table class="sectionRight">
+								<tr><td colspan="2"><strong>Detalhes da Conexão</strong></td><tr>
+								<tr><td style="width:130px">Modulação:</td><td id="modulation"></td><tr>
+								<tr><td>Endereço de IP Local:</td><td id="localIP"></td><tr>
+								<tr><td>Endereço de IP Público:</td><td id="publicIP"></td><tr>
+								<tr><td>Gateway Padrão:</td><td id="remoteIP"></td><tr>
+								<tr><td>DNS primário:</td><td id="primaryDNS"></td><tr>
+								<tr><td>DNS secundário:</td><td id="secondaryDNS"></td><tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th>
+							<img src="../../img/icon-wi-fi.png" alt="REDE WI-FI" />
+							<span>Rede Wi-Fi</span>
+						</th>
+						<td>
+							<div id="wirelessDetails" class="status-detail off">
+								<span id="wirelessSSID"><strong >SSID</strong>: <span id="ssid">Indisponível</span></span>
+								<br><span id="wirelessVisibility">Oculta</span>
+							</div>
+						</td>
+						<td class="status-link">
+							&gt; <a  id="wireless-link" class="pointer">Mais detalhes</a>
+						</td>
+					</tr>
+					<tr  class="none" id="wireless-link-more">
+						<td class="statusCell">
+							<table class="sectionLeft">
+								<tr><td><strong>Modo de Segurança:</strong></td><tr>
+								<tr><td id="beaconType" class="italic"></td><tr>
+								<tr><td><strong>WPS:</strong></td><tr>
+								<tr><td id="WPSEnable" class="italic"></td><tr>
+								<tr><td><strong>Anunciar SSID:</strong></td><tr>
+								<tr><td id="HideSSID"  class="italic"></td><tr>
+								<tr><td><strong>Canal:</strong></td><tr>
+								<tr><td id="Channel" class="italic"></td><tr>
+							</table>
+						</td>
+						<td colspan="2" class="bg-cinza" style="vertical-align:top">
+							<textarea rows="10" cols="68" class="text-left" id="wifiStation">Não há dispositivos conextados</textarea>
+						</td>
+					</tr>
+<!--#check WLANInterface_2_Enable=1&file= -->
+					<tr>
+						<th>
+							<img src="../../img/wifi-locked2.png" alt="REDE HOTSPOT" />
+							<span>Hotspot</span>
+						</th>
+						<td>
+							<div id="HSDetails" class="status-detail off">
+								<span id="HSSSID"><strong >SSID</strong>: <span id="HSssid">Indisponível</span></span>
+								<br><span id="HSstate">Desabilitado</span>
+							</div>
+						</td>
+						<td class="status-link">
+							&nbsp;
+						</td>
+					</tr>
+<!--#endCheck var=none -->
+					<tr>
+						<th>
+							<img src="../../img/icon-local.png" alt="REDE LOCAL" />
+							<span>Rede Local</span>
+						</th>
+						<td>
+							<div class="status-line-2 red" id="LAN1Status" >
+								<strong>LAN 1</strong>
+								<br><span id="LAN1Hostname" >Não Conectado</span>
+							</div>
+							<div class="status-line-2 red" id="LAN2Status" >
+								<strong>LAN 2:</strong>
+								<br><span id="LAN2Hostname" >Não Conectado</span>
+							</div>
+							<div class="status-line-2 red" id="LAN3Status" >
+								<strong>LAN 3:</strong>
+								<br><span id="LAN3Hostname" >Não Conectado</span>
+							</div>
+							<div class="status-line-2 red" id="LAN4Status" >
+								<strong>LAN 4:</strong>
+								<br><span id="LAN4Hostname" >Não Conectado</span>
+							</div>
+						</td>
+						<td class="status-link">
+							&gt; <a  id="lans-link" class="pointer">Mais detalhes</a>
+						</td>
+					</tr>
+					<tr id="lans-link-more" class="none">
+						<td class="bg-cinza">&nbsp;</td>
+						<td colspan="2" class="bg-cinza" style="vertical-align:top">
+							<textarea rows="10" cols="68" class="text-left" id="lanStation">Não há conexão com a Internet.</textarea>
+						</td>
+					</tr>
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+					<tr>
+						<th>
+							<img src="../../img/icon-set-top.png" alt='TV' />
+							<span>TV</span>
+						</th>
+						<td>
+							<div id="STBDetails" class="status-detail off red">
+								<span class="state"><strong>Indisponível</strong></span>
+							</div>
+						</td>
+						<td class="status-link">
+							&gt; <a  id="stb-link" class="pointer">Mais detalhes</a>
+						</td>
+					</tr>
+					<tr id="stb-link-more" class="none">
+						<td class="statusCell">
+							<table class="sectionLeft">
+								<tr><td><strong>Endereço de IP:</strong></td><tr>
+								<tr><td id="VODIP" class="italic"></td><tr>
+								<tr><td><strong>Set-Top Boxes:</strong></td><tr>
+								<tr><td id="stbCount" class="italic"></td><tr>
+								<tr><td><strong>HPNA:</strong></td><tr>
+								<tr><td id="hpna"  class="italic"></td><tr>
+							</table>
+						</td>
+						<td colspan="2" class="bg-cinza" style="vertical-align:top">
+							<textarea rows="10" cols="68" class="text-left" id="stbStation">A rede HPNA está habilitada e possui outros nós conectados.</textarea>
+						</td>
+					</tr>
+<!--#endCheck var=none -->
+					<tr>
+						<th>
+							<img src="../../img/icon-phone.png" alt="REDE TELEPHONE" />
+							<span>Telefone</span>
+						</th>
+						<td>
+						<div class="status-line-2 red" id="VoiceStatus" >
+								<strong>Rede Local</strong>
+								<br><span id="Voice_Enable" >Indisponível</span>
+							</div>
+						<div class="status-line-2 red" id="Line1Status" style="width:100px;">
+								<strong>Telefone 1</strong>
+								<br><span id="Line1Num" >Não Registrado</span>
+							</div>
+						<div class="status-line-2 red" id="Line2Status" style="width:100px;">
+								<strong>Telefone 2</strong>
+								<br><span id="Line2Num" >Não Registrado</span>
+							</div>
+						</td>
+						<td class="status-link">
+							&nbsp;
+						</td>
+					</tr>
+				</table>
+			</div><!--col-722-->
+<!--#endAuth var=ok-->
+			<div class="clear"></div>
+			
+		</div><!--conteudo-->
+		
+		<div class="clear"></div>
+		
+	</div><!--wrap-->
+	
+</div><!--content-->
+
+</body>

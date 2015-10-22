@@ -1,0 +1,22 @@
+# /etc/usb_modeswitch.conf
+#
+#######################################################
+# Product 0x2002 => ZTE-K3765 , VODAFONE BITE GSM
+# Product 0x0117 => ZTE-MF668, ELISA
+# Product 0x0117 => ZTE-MF181, TNZ
+# Product 0x0117 => ZTE-MF190, TNZ    
+# Product 0x0055 => ZTE-K3520, ELISA 
+
+DefaultVendor= 0x19D2
+DefaultProduct= 0x2000
+
+TargetVendor= 0x19D2
+TargetProductList="0055,2002,0117" 
+
+#MessageEndpoint=0x01
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+MessageContent2="55534243123456782000000080000c85010101180101010101000000000000"
+MessageContent3="5553424308E0CC852400000080000C85000000240000000000000000000000"
+
+
+

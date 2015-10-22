@@ -1,0 +1,154 @@
+#!/bin/sh
+# /etc/bewan/init.d/phy $1 $2 $3
+# $1 or $ARG = start stop restart
+# $2 or $SWITCHID = interface index
+# $3 or $PORTID = port index
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+SWITCHID=${SWITCHID:-}
+if [ "$SWITCHID" = '' ]; then
+  SWITCHID=${2:-all}
+fi
+
+PORTID=${PORTID:-}
+if [ "$PORTID" = '' ]; then
+  PORTID=${3:-all}
+fi
+
+# Sanity check
+check_phy() {
+  if ! which phyctl >/dev/null; then
+    ARG=nothing
+    return
+  fi
+  if [ "$phy" = '' ] || [ "$accesstype" = "" ] || [ ! -d "$SWITCHD/$SWITCHID" ]; then
+    ARG=nothing
+  fi
+
+  local enable="test x$en = x1"
+  local active="test -f $SWITCHD/$SWITCHID/port$port"
+  base_check_arg "$enable" "$active"
+}
+
+stop_phy() {
+  # Put PHY in power down state
+  phyctl $accesstype -p $phy -D
+  rm $SWITCHD/$SWITCHID/port$port
+}
+
+start_phy() {
+  # Touch switch.d
+  touch $SWITCHD/$SWITCHID/port$port
+  # Program PHY according to config parameters
+  local mode dup
+  eval mode=\${$switch'_Port_'$PORTID'_DuplexMode'}
+  case "$mode" in
+    Auto) dup='';;
+    Full) dup='-FD';;
+    Half) dup='-HD';;
+    *)    dup='';;
+  esac
+
+  local rate spd
+  eval rate=\${$switch'_Port_'$PORTID'_MaxBitRate'}
+  case "$rate" in
+    Auto) spd='';;
+    1000) spd='1000baseT';;
+    100)  spd='100baseTx';;
+    10)   spd='10baseT';;
+    *)    spd='';;
+  esac
+
+  local par
+  if [ "$dup" = "" ]; then
+    if [ "$spd" = "" ]; then
+      par='-A 1000baseT,100baseTx,10baseT'
+    else
+      par="-A $spd"
+    fi
+  else
+    if [ "$spd" = "" ]; then
+      par="-A 1000baseT$dup,100baseTx$dup,10baseT$dup"
+    else
+      par="-A $spd$dup"
+    fi
+  fi
+
+  if [ "$par" != '' ]; then
+    # Advertise new way (restarting autoneg implicitly)
+    phyctl $accesstype -p $phy $par 2>&1 | base_log - debug
+  else
+    # Restart autoneg
+    phyctl $accesstype -p $phy -r 2>&1 | base_log - debug
+  fi
+}
+
+process_all_phy() {
+  local count=${Switch_Count:-0}
+  local ports
+
+  if [ "$SWITCHID" = 'all' ] && [ "$PORTID" = 'all' ]; then
+    SWITCHID=0
+    while [ $SWITCHID -lt $count ]; do
+      SWITCHID=$(($SWITCHID + 1))
+      eval ports=\${'Switch_'$SWITCHID'_Port_List'}
+      for PORTID in `strip $ports`; do
+        base_call_initd 'phy'
+      done
+    done
+  elif [ "$PORTID" = 'all' ]; then
+    eval ports=\${'Switch_'$SWITCHID'_Port_List'}
+    for PORTID in `strip $ports`; do
+      base_call_initd 'phy'
+    done
+  else
+    SWITCHID=0
+    while [ $SWITCHID -lt $count ]; do
+      SWITCHID=$(($SWITCHID + 1))
+      base_call_initd 'phy'
+    done
+  fi
+}
+
+main_phy() {
+  eval $PUSH_ARG
+
+  mkdir -p $SWITCHD/$SWITCHID
+
+  local switch='Switch_'$SWITCHID
+  eval accesstype=\${$switch'_AccessType':-}
+  eval en=\${$switch'_Port_'$PORTID'_Enable':-0}
+  eval phy=\${$switch'_Port_'$PORTID'_PhyId':-}
+  eval port=\${$switch'_Port_'$PORTID'_PortId':-}
+
+  check_phy
+  base_log "$INITD/phy $ARG $SWITCHID $PORTID" debug
+
+  case $ARG in
+  stop)
+    stop_phy
+    ;;
+  start)
+    start_phy
+    ;;
+  restart)
+    stop_phy
+    start_phy
+    ;;
+  esac
+}
+
+if [ "$SWITCHID" = 'all' ] || [ "$PORTID" = 'all' ]; then
+  base_log "$INITD/phy $ARG $SWITCHID $PORTID" debug
+  TMPSWITCHID=$SWITCHID
+  TMPPORTID=$PORTID
+  process_all_phy
+  SWITCHID=$TMPSWITCHID
+  PORTID=$TMPPORTID
+  return
+fi
+
+main_phy

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Called during rc when booting from factory
+
+# CLI - use silent mode (sset, smk ...) to modify parameters silently and permanently, 
+# without starting onchange script.
+
+# Randomly initialize tr069 connection request url path
+
+urlpath=$(pzinfo serial | md5sum | cut -c1-8)
+
+# If login is empty in factory router.conf, set it to "recommended" $OUI-$SN
+acslogin=${Services_TR069_ACSLogin}
+[ -z "$acslogin" ] && acslogin=${Device_Product_ManufacturerOUI:-000CC3}-$(pzinfo serial)
+
+# If password is not empty in pagezero, overwrites factory router.conf value
+acspassword=$(pzinfo acspwd)
+[ -z "$acspassword" ] && acspassword=${Services_TR069_ACSPassword}
+
+cli -q <<EOF
+cd _Services_TR069
+sset ACSLogin $acslogin
+sset ACSPassword $acspassword
+sset SrvUrlPath $urlpath
+EOF

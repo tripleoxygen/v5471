@@ -1,0 +1,5 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+
+# Load ingress qos module
+modprobe ingress_qos_hal

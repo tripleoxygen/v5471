@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Called on ip-down event on a LAN interface
+# $LANID= LAN connection index
+restart_voip() {
+	local lanid=${LANID:-0}
+	[ "$lanid" = 0 ] && return 0
+
+	# force first argument to 0 so that to adress all voice profiles
+	# Force lanid to 0 for VOIP app. Hardcoded to test on lan ID 1 for dev purposes for the moment.
+	# Execute in background to avoid blocking. Up to application to remove the pipe when shutting down.  
+	(
+  	[ -e /var/tmp/PHONE.pipe ] && echo "IP_DOWN,0,0" > /var/tmp/PHONE.pipe
+	) &
+}
+
+restart_voip

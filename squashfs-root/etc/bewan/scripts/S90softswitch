@@ -1,0 +1,7 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+
+# For now, disable hardware switching to isolate each port
+if [ -f /bin/ethswctl ]; then
+  ethswctl -c hw-switching -o disable
+fi

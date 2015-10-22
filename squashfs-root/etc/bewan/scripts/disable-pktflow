@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Temporarily disable pktflow processing
+# TODO: incompatibility with dhclient
+# TODO: incompatibility with Bewan pppd
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+fc disable

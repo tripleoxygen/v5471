@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+        <link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+        <script type="text/javascript" src="../js/morpheus.min.js"></script>
+        <script type="text/javascript" src="../js/menu.js"></script>
+        <script type="text/javascript" src="../js/dns.js"></script>
+        <script type="text/javascript" src="../js/lite.javascript"></script>
+        <script type="text/javascript" src="../js/app.javascript"></script>
+        <script type="text/javascript" src="../js/base64.javascript"></script>
+        <script type="text/javascript" src="../js/configAccess.javascript"></script>
+        <script type="text/javascript" src="../js/config_wireless.javascript"></script>
+<!--#isAuth level=admin -->
+<script type="text/javascript">
+    $.event.ready(function() {
+        var util = $.util,
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+        token = util.parseJson('<!--#echo jsonvar="token=WLANInterface,WLANConfig,LANDevice_1_AccessControl,wifi_wps_push,trigger_channel_selection"-->'),
+<!--#endCheck var=ok-->
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+        token = util.parseJson('<!--#echo jsonvar="token=WLANInterface,WLANConfig,wifi_wps_push,trigger_channel_selection"-->'),
+<!--#endCheck var=ok-->      
+        pageData = {
+            token: token,
+            WLANConfig: util.parseJson('<!--#echo jsonvar="cli=WLANConfig"-->'),
+            AccessControl: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_AccessControl"-->'),
+            wirelessNMode: util.parseJson('<!--#echo jsonvar="cli=Hardware_WifiN"-->'),
+            WLANInterface: util.parseJson('<!--#echo jsonvar="cli=WLANInterface:show"-->'),
+        };
+        Page.init(pageData);
+
+        $("#tab-01").slideUp("normal");
+        $("#menu-configWifi li").find("a").addClass("active");
+        $("#menu-configWifi").find("a").bind("click", function(){ 
+            var cur_tab_idx = $("#menu-configWifi li a.active").attr("rel");
+            $("#menu-configWifi li a").removeClass("active");
+            $(this).addClass("active");
+            $("#tab-" + cur_tab_idx).slideDown("normal", function() {
+                var i = $("#menu-configWifi li a.active").attr("rel");
+                $("#tab-" + i).slideUp("normal");
+            });
+            return false;
+        });
+    });
+</script>
+<!--#endAuth var=ok--> 
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+    <div class="wrap text-right">
+        
+        <a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+        <img src="../../img/power-box.png" alt="Power Box GVT">
+        <p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+        
+    </div>
+    
+    <div class="clear"></div>
+    
+</div><!--header-gateway-->
+
+<div id="content">
+
+    <div class="wrap">
+
+        <div id="conteudo-gateway">
+            
+            <div class="col-192 left">
+            <script type="text/javascript">ImportMenu('menu_wireless');</script>
+            </div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->            
+            <div class="col-722 left" id="col-722">
+            
+                <h3 class="text-up">Wireless Network</h3>
+
+                <div  id="menu-configWifi">
+                    <ul>
+                        <li><a href="#" rel="01">Basic</a></li>
+                        <li><a href="#" rel="02">Advanced</a></li>
+                    </ul>
+                </div>
+
+                <div class="clear"></div>
+
+                <div id="tab-01" class="tab">
+                
+                    <form action="#" class="form-configuracoes">
+                        <table class="setupWifiTable">
+                            <thead>
+                                <th colspan="2">Basic Settings</th>
+                            </thead>
+                            <tr>
+                                <td width="250">Private Wi-Fi Network:</td>
+                                <td>
+                                    <!--<input class="radio" type="checkbox" id="WLANConfig_RadioEnable" />-->
+                                    <div class="switchButton" id="WLANConfig_Enable" type="switch"  state="" ></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SSID Broadcast:</td>
+                                <td>
+                                    <!--<input class="radio" type="checkbox" id="WLANInterface_1_Config_HideSSID" />-->
+                                    <div class="switchButton"  type="switch" id="WLANInterface_1_Config_HideSSID" state=""></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SSID:</td>
+                                <td>
+                                    <input type="text" maxlength="32" id="WLANInterface_1_Config_SSID" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Password:</td>
+                                <td>
+                                    <input type="text" id="wirelessPassword" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Security Mode:</td>
+                                <td>
+                                    <select id="WLANInterface_1_Config_BeaconType" >
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>WPS:</td>
+                                <td>
+                                    <div class="switchButton" type="switch" id="WLANInterface_1_WPSEnable"  state=""></div>
+                                </td>
+                            </tr>
+                            <tr id="wpsSettings1" class="none">
+                                <td>Register Mode - WPS:</td>
+                                <td>
+                                    <div id="wpsSettings" >
+                                            <select id="WLANInterface_1_WPSMethod" >
+                                                <option value="PBC"> WPS Button</option>
+                                                <option value="PIN">PIN</option>
+                                            </select>
+                                            <a id="wpsPushButton" class="btn-default-orange-small right none"><span>Push Button</span></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr id="pinNumber" class="none" >
+                                <td>Pin Number:</td>
+                                <td>
+                                    <input class="pin medium" id="WLANInterface_1_Config_WPSPINCode" type="text" />
+                                    <a id="wpsPinConnect" class="btn-default-orange-small right"><span>Connect</span></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-right">
+                                    <a id="cancelBas" class="btn-default-orange-small right"><span>Cancel</span></a>
+                                    <a id="saveBas" class="btn-default-orange-small right"><span>Save</span></a>
+                                </td>
+                            </tr>
+                        </table>
+                    
+                    </div>
+                    <div id="tab-02" class="tab">
+
+                        <table class="setupWifiTable">
+                            <thead>
+                                <th colspan="2">Advanced Settings</th>
+                            </thead>
+                            <tr>
+                                <td width="250">Operation Mode:</td>
+                                <td>
+                                    <select id="WLANConfig_Standard">
+                                        <option value="Auto">Auto</option>
+                                        <option value="11b">802.11b</option>
+                                        <option value="11g">802.11g</option>
+                                        <option value="11bg">802.11b+g</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Channel:</td>
+                                <td>
+                                    <select id="WLANConfig_Channel">
+                                        <option value="0">Auto</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                        <option value="13">13</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Channel Bandwidth:</td>
+                                <td>
+                                    <select id="WLANConfig_Bandwidth">
+                                        <option value="Auto">Auto</option>
+                                        <option value="20">20</option>
+                                        <option value="40">40</option>
+                                    </select>
+                                </td>
+                            <tr>
+                            <tr>
+                                <td>Transmit Power:</td>
+                                <td>
+                                    <select id="WLANConfig_TxPower">
+                                        <option value="100">100%</option>             
+                                        <option value="90">90%</option>
+                                        <option value="80">80%</option>
+                                        <option value="70">70%</option>
+                                        <option value="60">60%</option>
+                                        <option value="50">50%</option>                     
+                                        <option value="40">40%</option>                               
+                                        <option value="30">30%</option>
+                                        <option value="20">20%</option>                                        
+                                        <option value="10">10%</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>WMM:</td>
+                                <td>
+                                    <div class="switchButton" type="switch" id="WLANInterface_1_WMMEnable"  value=""></div>
+                                </td>
+                            </tr>
+                            <tr>
+                            <tr id="WMMPSSettings"  class="none" >
+                                <td>Power Saving - WMM:</td>
+                                <td>
+                                    <div class="switchButton" type="switch" id="WLANInterface_1_WMMPSEnable"  value=""></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>MAC Address:</td>
+                                <td id="WLANInterface_1_MACAddress" ></td>
+                            </tr>
+                            <tr>
+                                <td>Frequency Band:</td>
+                                <td>2.4 Ghz</td>
+                            </tr>
+    <!--#check Services_GvtConfig_AccessClass=4&file= -->
+                            <tr id="MACFiltering">
+                                <td>MAC Filter:</td>
+                                <td>
+                                    <div class="switchButton" type="switch" id="WLANInterface_1_ACLEnable"  value=""></div>
+                                </td>
+                            </tr>
+    <!--#endCheck var=none -->
+                            <tr>
+                                <td colspan="2" class="text-right">
+                                    <a id="cancelAdv" class="btn-default-orange-small right"><span>Cancel</span></a>
+                                    <a id="saveAdv" class="btn-default-orange-small right"><span>Save</span></a>
+                                </td>
+                            </tr>
+                        </table>
+    <!--#check Services_GvtConfig_AccessClass=4&file= -->
+                        <table id="MACFilteringSettings" class="setupWifiTable">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">MAC FILTER</th>
+                                </tr>
+                                <tr>
+                                    <th>Hostname</th>
+                                    <th>MAC Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="text" id="filtering_Hostname" /></td>
+                                    <td  class="center"><input type="text" id="filtering_MACAddress" /></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="cinza">
+                                        <a id="cancelFiltering" class="btn-default-orange-small right"><span>Cancel</span></a>
+                                        <a id="addFiltering" class="btn-default-orange-small right"><span>Allow</span></a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <table id="MACFilteringTable" class="data-table">
+                            <thead>
+                                <tr class="rounded-top">
+                                    <th class="wide">Device Name</th>
+                                    <th>MAC Address</th>
+                                    <th class="actions"  width="80px">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody id="MACFilteringTableBody">
+                                <!-- Existing and new port mappings are added here -->
+                            </tbody>
+                        </table>
+    <!--#endCheck var=none -->
+                    </form>
+                </div>
+            </div><!--col-722-->
+<!--#endAuth var=ok-->        
+            <div class="clear"></div>
+                
+        </div><!--conteudo-->
+        
+        <div class="clear"></div>
+        
+    </div><!--wrap-->
+    
+</div><!--content-->
+
+</body>

@@ -1,0 +1,67 @@
+#!/bin/sh
+# /etc/bewan/init.d/web_nas $1
+# $1 or $ARG = start stop restart
+# 
+
+if [ "${ARG:-}" = '' ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+# sanity check
+check_web_nas() {
+	local enable="test x$Services_NAS_Enable = x1"
+	local active="test -f $http_server"
+	base_check_arg "$enable" "$active"
+}
+
+# stop
+stop_web_nas() {
+
+	# Retrieve the current index of the associated HTTP server
+	HTTP_ID=`cat $http_server`
+	rm -rf $dir
+
+	# Stop the associated HTTP server
+	ARG=stop
+	base_call_initd 'http'
+}
+
+# start
+start_web_nas() {
+
+	# Save the current index of the associated HTTP server
+	mkdir -p $dir
+	HTTP_ID="$Services_NAS_HttpServer"
+	echo $HTTP_ID >$http_server
+
+	# Start the associated HTTP server
+	ARG=start
+	base_call_initd 'http'
+}
+
+# main
+main_web_nas() {
+	eval $PUSH_ARG
+
+	local dir='/var/bewan/webnas.d'
+	local http_server="$dir/http_server"
+
+	check_web_nas
+	base_log "$INITD/web_nas $ARG" debug
+
+	case $ARG in
+	stop)
+		stop_web_nas
+		;;
+	start)
+		start_web_nas
+		;;
+	restart)
+		stop_web_nas
+		start_web_nas
+		;;
+	esac
+}
+
+# work
+main_web_nas

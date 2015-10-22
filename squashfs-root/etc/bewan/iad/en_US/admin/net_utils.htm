@@ -1,0 +1,408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+        <link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+        <script type="text/javascript" src="../js/morpheus.min.js"></script>
+        <script type="text/javascript" src="../js/menu.js"></script>
+        <script type="text/javascript" src="../js/dns.js"></script>
+        <script type="text/javascript" src="../js/lite.javascript"></script>
+        <script type="text/javascript" src="../js/app.javascript"></script>
+        <script type="text/javascript" src="../js/base64.javascript"></script>
+        <script type="text/javascript" src="../js/configAccess.javascript"></script>
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+        <script type="text/javascript" src="../js/hpna_netinf.javascript"></script>
+<!--#endCheck var=ok-->    
+        <script type="text/javascript" src="../js/net_utils.javascript"></script>
+        <script type="text/javascript" src="../js/diag_tests.javascript"></script>
+
+
+<!--#isAuth level=admin -->
+        <script type="text/javascript">
+            $.event.ready(function() {
+                
+                var util = $.util;
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,LANDevice"-->');
+<!--#endCheck var=ok-->
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice"-->');
+<!--#endCheck var=ok-->    
+                pageData = {
+                    token: token,
+                    HPNA : {
+                        CurrentInstance : util.parseJson('<!--#echo jsonvar="cli=HPNA_CurrentInstance" -->'),
+                        StationDiag: util.parseJson('<!--#echo jsonvar="cli=HPNA_StationDiag" -->'),
+                        PerfDiag : util.parseJson('<!--#echo jsonvar="cli=HPNA_PerfDiag" -->'),
+                        NetPerDiag: util.parseJson('<!--#echo jsonvar="cli=HPNA_NetPerDiag" -->')
+                    }
+                };
+                Page.init(pageData);
+                $("#tab-01").slideUp("normal");
+                $("#menu-utilities li").find("a").addClass("active");
+                $("#menu-utilities").find("a").bind("click", function(){ 
+                    var cur_tab_idx = $("#menu-utilities li a.active").attr("rel");
+                    
+                    $("#menu-utilities li a").removeClass("active");
+                    $(this).addClass("active");
+                    $("#tab-" + cur_tab_idx).slideDown("normal", function() {
+                        var i = $("#menu-utilities li a.active").attr("rel");
+                        $("#tab-" + i).slideUp("normal");
+<!--#check Services_GvtConfig_AccessClass=2&file= -->   
+                        PerfDiag.updateUI(i);
+<!--#endCheck var=ok-->
+                    });
+                    if ($(this).attr("rel") != "01") {
+                        $("#confirm-bg").removeClass("none");
+                        $("#confirm-netutils").removeClass("none");
+                    }
+                    return false;
+                });
+            
+            $("#continue, #confirm-bg").bind("click", function () {
+                $("#confirm-bg").addClass("none");
+                $("#confirm-netutils").addClass("none")
+            });
+            $("#cancel").bind("click", function () {
+                $("#confirm-bg").addClass("none");
+                $("#confirm-netutils").addClass("none");
+                document.location = "/";
+            });
+
+            });
+        </script>
+<!--#endAuth var=ok-->
+</head>
+
+<body>
+    <div id="confirm-bg" class="none"></div>
+    <div id="confirm-netutils" class="none">
+        <div class="confirm-window" >
+            <table class="setupWifiTable" style="width:500px">
+                <tr>
+                    <td class="text-left vermelho">
+                        ATTENTION
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        The tests with NetInf or NetPer can temporarily impact your TV service. If you are affected, wait for the connection returns to normal within 5 minutes.
+                        <br/>
+                        <br/>
+                        <span>If you do not have TV service disregard this message.</span>
+                    </td>
+                </tr>
+                
+                <tr><td>
+                    <a class="btn-default-orange-small left" id="continue"><span>OK</span></a>
+                    <a class="btn-default-orange-small left" id="cancel"><span>GO TO STATUS</span></a>
+                </td></tr>
+            </table>
+        </div>
+    </div>
+<div id="header-gateway">
+
+    <div class="wrap text-right">
+        
+        <a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+        <img src="../../img/power-box.png" alt="Power Box GVT">
+        <p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+        
+    </div>
+    
+    <div class="clear"></div>
+    
+</div><!--header-gateway-->
+
+
+<div id="content">
+    <div class="wrap">
+        <div id="conteudo-gateway">
+            <div class="col-192 left">
+                <script type="text/javascript">ImportMenu("menu_utilities");</script>
+            </div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->
+            <div class="col-722 left" id="col-722">
+                <h3 class="text-up">Utilities <img src='/img/busy.gif' class="busy"/></h3>
+                <div id="menu-utilities">
+                    <ul>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+                        <li><a href="#" rel="01" style="width:675px;margin-top:1px;">Internet</a></li>
+<!--#endCheck var=none -->
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+                        <li><a href="#" rel="01">Internet</a></li>
+                        <li><a href="#" rel="02">NetInf</a></li>
+                        <li><a href="#" rel="03" class="no-border">NetPer</a></li>
+<!--#endCheck var=none -->
+                    </ul>
+                </div><!--menu-statistic-->
+                <div class="clear"></div>
+                <div id="tab-01" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="2">CONFIGURATION</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Utility:</td>
+                                <td>    
+                                        <select id="testType">
+                                            <option value="diag_ping">ping</option>
+                                                <option value="diag_traceroute">traceroute</option>
+                                                <option value="diag_nslookup">dnsquery</option>
+                                        </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Destination:</td>
+                                <td><input type="text" id="ipAddress" /></td>
+                            </tr>
+                            <tr>
+                                <td>Number of pings:</td>
+                                <td><input value="30" type="text" id="testDepth" /> </td>
+                            </tr>
+                            <tr style="display:none">
+                                <td>Packet Size: </td>
+                                <td><input value="64" type="text" id="packetSize" /> </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <a class="btn-default-orange-small right"><span>Cancel</span></a>
+                                    <a class="btn-default-orange-small right"  id="startTest" ><span>Test</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <th colspan="2">Results</th>
+                        <thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="2">
+                                    <a class="btn-default-orange-small left" id="clearResults"><span>Clear</span></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <textarea readonly="readonly" id="testResults" rows="20" cols="80"></textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div><!--tab-01-->
+                <div class="clear"></div>
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+                <div id="tab-02" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="2">CONFIGURATION</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Pass Threshold Max Per:</td>
+                                <td><input type="text" id="MaxPer" class="settings"/>&nbsp; 0.00E+000</td>
+                            </tr>
+                            <tr>
+                                <td>Pass Threshold Min Receive Power:</td>
+                                <td><input type="text" id="MinRxPower" class="settings"/>&nbsp; dBm</td>
+                            </tr>
+                            <tr>
+                                <td>Pass Threshold Min Rate:</td>
+                                <td><input value="30" type="text" id="MinRate" class="settings"/>&nbsp; Mbps</td>
+                            </tr>
+                            <tr>
+                                <td>Number of Packets (Standard): </td>
+                                <td><input value="64" type="text" id="NumberOfPacket" class="settings"/>&nbsp; </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <a class="btn-default-orange-small right" rel="settings_cancel"><span>Cancel</span></a>
+                                    <span id="diagTestBusy" class="busy none" ></span>
+                                    <a class="btn-default-orange-small right"  rel="settings_save"><span>Save</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+        
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="3">NETWORK TEST(NETINF)</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td width="175" rowspan="2">
+                                    <ul id="menu-monitor">
+                                        <li>IP</li>
+                                        <li id="IpAddress" class="monitor_status"></li>
+                                        <li>Local Device</li>
+                                        <li id="MacAddress" class="no-border monitor_status"></li>
+                                    </ul>
+                                </td>
+                                <td class="cinza2" width="100"><strong>Test Status:</strong></td>
+                                <td id="hpna_status"><strong>HPNA - Not Ready</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="cinza2"><select id="station_list" name=""></select></td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="cinza">
+                                    <a href="#" class="btn-default-orange-small left" rel="refresh"><span>Refresh</span></a>
+                                </td>
+                                <td>
+                                    <a href="#" class="btn-default-orange-small right" rel="save_results"><span>Save Results</span></a>
+                                    <a href="#" class="btn-default-orange-small right" rel="cmd"><span>Test</span></a>
+                                    <a href="#" class="btn-default-orange-small right" rel="clear"><span>Clear</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                        </table>
+                        <table class="setupWifiTable">
+                            <tr>
+                              <td>
+                                    <table width="100%">
+                                        <thead>
+                                            <th colspan=2>Result</th>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                  </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="setupWifiTable" id="tbl_netinf"  style="visibility:hidden">
+                            <tr> 
+                                <td  colspan=2 > 
+                                    <div id="netinf_results" />
+                                </td>
+                            </tr>
+                            <tr id="netinf_sum_dpy">
+                                <td><table id="netinf_sum_table" class="results_summarize"></table></td>
+                            </tr>
+                                    
+                        </table>
+                        <table class="setupWifiTable" id="netinf_details">
+                            <tbody></tbody>
+                        </table>
+                </div><!--tab-02-->
+                <div class="clear"></div>
+                <div id="tab-03" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="2">CONFIGURATION</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Sampling period:</td>
+                                <td><input type="text" name="Period" id="Period" class="settings"/> &nbsp; seconds</td>
+                            </tr>
+                            <tr>
+                                <td>Test time:</td>
+                                <td><input type="text" name="TestTime" id="TestTime" class="settings"/> &nbsp; minutes</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                <a href="#" class="btn-default-orange-small right" rel="settings_cancel"><span>Cancel</span></a>
+                                <a href="#" class="btn-default-orange-small right" rel="settings_save"><span>Save</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="3">MONITOR (NETPER)</th>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td width="175">
+                                <ul id="menu-monitor">
+                                    <li>IP</li>
+                                    <li id="IpAddress" class="monitor_status"></li>
+                                    <li>Local Device</li>
+                                    <li class="no-border monitor_status" id="MacAddress"></li>
+                                </ul>
+                            </td>
+                            <td class="cinza2" width="100"><strong>Test Status:</strong></td>
+                            <td id="hpna_status"><strong>HPNA - ready</strong></td>
+                        </tr>
+                        <tr>
+                                <td colspan="2" class="cinza">
+                                    <a href="#" class="btn-default-orange-small left" rel="start_monitor"><span>Start Monitor</span></a>
+
+                                </td>
+                                <td>
+                                    <a href="#" class="btn-default-orange-small right" rel="save_results"><span>Save Results</span></a>
+                                    <a href="#" class="btn-default-orange-small right" rel="clear_table"><span>Clear Table</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="setupWifiTable" id="table_results_sum">
+                        <thead>
+                            <th colspan="6" class="no-up">Summary Table</th>
+                            <tr>
+                                <th class="subTitle">Time Delta</th>
+                                    <th class="subTitle"><strong>Total Tx</strong></th>
+                                    <th class="subTitle"><strong>Total Rx</strong></th>
+                                    <th class="subTitle"><strong>Total CRC</strong></th>
+                                    <th class="subTitle"><strong>Total Dropped</strong></th>
+                                    <th class="subTitle"><strong>Total Loss</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="cinza">N/A</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="setupWifiTable" id="table_results">
+                        <thead>
+                            <tr><th colspan="8" class="no-up">Detailed Table</th></tr>
+                            <tr>
+                                <th class="subTitle">Time Delta</th>
+                                <th class="subTitle"><strong>TX</strong></th>
+                                <th class="subTitle"><strong>RX</strong></th>
+                                <th class="subTitle"><strong>CRC</strong></th>
+                                <th class="subTitle"><strong>Dropped</strong></th>
+                                <th class="subTitle"><strong>Loss</strong></th>
+                                <th class="subTitle"><strong>Per</strong></th>
+                                <th class="subTitle"><strong>%Idle Time</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div><!--tab-03-->
+<!--#endCheck var=none -->
+            </div><!--col-722-->
+<!--#endAuth var=ok-->
+            <div class="clear"></div>
+            
+            <p>&nbsp;</p>
+            
+        </div><!--conteudo-->
+        
+        <div class="clear"></div>
+        
+    </div><!--wrap-->
+    
+</div><!--content-->
+
+</body>
+    

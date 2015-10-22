@@ -1,0 +1,200 @@
+#!/bin/sh
+# /etc/bewan/init.d/ports $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+check_ports() {
+  if [ ! -e /usr/bin/iptables-restore ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test -f $WAND/$WANID/ip/enablenat -a -f $WAND/$WANID/fw/nat"
+  local active="test -f $WAND/$WANID/ports"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ports() {
+  rm -f $WAND/$WANID/ports
+}
+
+start_ports() {
+
+  local i
+
+  # additional checks
+  local chk=0
+  if [ -f $SCRIPTD/check_ip_errors ]; then
+    chk=1
+    base_call_scripts "check_ip_errors"
+  fi
+
+  local wandev='WANConnectionDevice_'$WANID
+  echo "-F PORTFW$WANID" >>$WAND/$WANID/ports
+
+  local list; eval list=\${$wandev'_PortMapping_List'}
+  # Scan the table four times one for each priority in range 1-4
+  for prio in 1 2 3 4; do for i in `strip $list`; do
+    local en; eval en=\${$wandev'_PortMapping_'$i'_Enable'}
+    [ "$en" != 1 ] && continue
+    local client; eval client=\${$wandev'_PortMapping_'$i'_InternalClient'}
+    [ "$client" = '' ] && continue
+
+    # Additional check on CLIENT
+    [ "$chk" = 1 ] && {
+      check_validity $WANID $client
+      [ $? != 0 ] && continue
+    }
+
+    local remhost; eval remhost=\${$wandev'_PortMapping_'$i'_RemoteHost'}
+    local extport; eval extport=\${$wandev'_PortMapping_'$i'_ExternalPort'}
+    local intport; eval intport=\${$wandev'_PortMapping_'$i'_InternalPort'}
+    local surject; eval surject=\${$wandev'_PortMapping_'$i'_PortSurjection'}
+    local protos; eval protos=\${$wandev'_PortMapping_'$i'_Protocol'}
+
+    # External port is 0 means all ports
+    if [ "$extport" = 0 ]; then
+      extport=''
+      intport=''
+    fi
+    # Fix misinterpreted parameters
+    if [ "$extport" = '' ] && [ "$intport" != '' ]; then
+      extport=$intport
+      intport=''
+    fi
+    # Sanity check
+    if [ "$extport" != '' ]; then
+      # External Port exists so protocol must be udp or tcp
+      [ "$protos" = '' ] && protos='all'
+    else
+      # No internal port
+      intport=''
+    fi
+    if [ "$remhost" != '' ]; then
+      remhost="-s $remhost"
+    fi
+
+    # Determine priority of port mapping rule
+    local priority
+    if [ "$extport" != '' ] && [ "$protos" != 'all' ]; then
+      priority=1
+    elif [ "$extport" != '' ] && [ "$protos" = 'all' ]; then
+      priority=2
+    elif [ "$extport" = '' ] && [ "$protos" != 'all' ]; then
+      priority=3
+    else
+      priority=4
+    fi
+    # treat only rule with curent priority
+    [ "$prio" != "$priority" ] && continue
+
+    # loop through protocols
+    if [ "$protos" = 'all' ]; then
+      protos='udp,tcp'
+    fi
+    for proto in `strip $protos`; do
+      if [ "$proto" = 'esp' -o "$extport" = '' ]; then
+        cat >>$WAND/$WANID/ports <<-EOF
+					-A PORTFW$WANID $remhost -p $proto -j DNAT --to $client
+				EOF
+
+      # Not proto esp and external port exists
+      elif [ "$extport" != '' ]; then
+        local extrange interval=''
+        # loops through portranges
+        for extrange in `strip $extport`; do
+          local first last valid firstdest lastdest
+          # First and last ports in port range
+          first=`echo $extrange | sed 's/\(.*\):\(.*\)/\1/'`
+          last=`echo $extrange | sed 's/\(.*\):\(.*\)/\2/'`
+          valid=1
+          # Compute port translation if any
+          if [ "$interval" = '' ]; then
+            if [ "$intport" = '' ]; then
+              # No port translation
+              interval=0
+            else
+              # Port translation
+              interval=$(($intport-$first))
+            fi
+          fi
+          # Check validity of port range
+          if [ $first -gt $last ]; then
+            valid=0
+          fi
+          # Compute first destination port and check for validity
+          firstdest=$(($first+$interval))
+          if [ $firstdest -lt 1 -o $firstdest -gt 65535 ]; then
+            valid=0
+          fi
+          # Compute last destination port and check for validity
+          lastdest=$(($last+$interval))
+          if [ $lastdest -lt 1 -o $lastdest -gt 65535 ]; then
+            valid=0
+          fi
+          # Rule is ok
+          if [ $valid = 1 ]; then
+            if [ "$interval" = 0 ]; then
+              cat >>$WAND/$WANID/ports <<-EOF
+								-A PORTFW$WANID $remhost -p $proto --dport $extrange -j DNAT --to $client
+							EOF
+            elif [ "$surject" = 1 ]; then
+                cat >>$WAND/$WANID/ports <<-EOF
+									-A PORTFW$WANID $remhost -p $proto --dport $extrange -j DNAT --to $client:$intport
+								EOF
+            else
+              cat >>$WAND/$WANID/ports <<-EOF
+								-A PORTFW$WANID $remhost -p $proto --dport $extrange -j DNATPT --to $client:$first-$firstdest
+							EOF
+            fi #interval/surject
+          fi #valid
+        done #range
+      fi #esp
+    done #proto
+  done done #prio/list
+}
+
+commit_ports() {
+  echo "*nat" >/var/tmp/ports
+  if [ -f $WAND/$WANID/ports ]; then
+    cat <$WAND/$WANID/ports >>/var/tmp/ports
+  else
+    echo "-F PORTFW$WANID" >>/var/tmp/ports
+  fi
+  echo COMMIT >>/var/tmp/ports
+  iptables-restore -n /var/tmp/ports 2>&1 | base_log - debug
+  rm -f /var/tmp/ports
+}
+
+main_ports() {
+  eval $PUSH_ARG
+
+  check_ports
+  base_log "$INITD/ports $ARG $WANID" debug
+
+  case $ARG in
+  stop)
+    stop_ports
+    [ "$top_arg" = restart ] && commit_ports
+    ;;
+  start)
+    start_ports
+    [ "$top_arg" = restart ] && commit_ports
+    ;;
+  restart)
+    stop_ports
+    start_ports
+    [ "$top_arg" = restart ] && commit_ports
+    ;;
+  esac
+}
+
+main_ports

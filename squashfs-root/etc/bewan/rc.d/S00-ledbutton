@@ -1,0 +1,7 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+
+# Load ledbutton module and initialize ledbutton configuration
+modprobe ledbutton_hal
+modprobe ledbutton
+cat /etc/bewan/config.default/ledbutton.conf >/proc/ledbutton

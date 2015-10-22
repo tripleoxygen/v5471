@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Called on ip-up and ip-down events on a WAN interface
+# $WANID, WAN interface index
+restart_ledwan() {
+	which ledctl >/dev/null || return 0
+
+	local wanid=${WANID:-0}
+	local internet="`cat $WAND/internet 2>/dev/null`"
+	local found=0
+	local idle=0
+	local ip=''
+	local ix
+
+	for ix in `strip $internet`; do
+		[ $ix = $wanid ] && found=1
+		ip=`cat $WAND/$ix/ip/ipaddr 2>/dev/null`
+		[ "$ip" != '' ] && {
+			# clear ppp idle timeout flag
+			rm -f $WAND/$ix/ip/idle
+			break
+		}
+		## ppp is down because of idle timeout
+		[ -f $WAND/$ix/ip/idle ] && idle=1
+	done
+
+	[ $found = 0 ] && return 0
+
+	local ifname=`cat $WAND/$wanid/ifname 2>/dev/null`
+
+	if [ "$ip" = '' ]; then
+		ledctl sflag_ipup 2>/dev/null
+		ledctl Sflag_ipfail 2>/dev/null
+		which ethmux >/dev/null && ethmux led $ifname 2>/dev/null
+	else
+		if [ $idle = 0 ]; then
+			# Keep ip-up led if ppp is idle
+			ledctl Sflag_ipup 2>/dev/null
+		else
+			ledctl sflag_ipup 2>/dev/null
+		fi
+		ledctl sflag_ipfail 2>/dev/null
+		which ethmux >/dev/null && ethmux led $ifname flag_wan_data 2>/dev/null
+	fi
+}
+
+restart_ledwan

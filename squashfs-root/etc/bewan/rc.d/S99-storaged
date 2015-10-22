@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#daemon used to serialize the add/remove, mount/umount of usb storage devices
+
+main_s99storage() {
+	local daemon=storaged
+	local daemon_pid=/var/run/$daemon.pid
+	local cmd="/usr/bin/storaged"
+	base_add_daemon $daemon "$cmd" /dev/console
+}
+
+# work
+main_s99storage

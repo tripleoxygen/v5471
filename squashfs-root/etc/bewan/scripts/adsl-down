@@ -1,0 +1,47 @@
+#!/bin/sh
+# /etc/bewan/scripts/adsl-down
+# called when ADSL leave synchronization
+
+. /etc/bewan/scripts/globals
+. /etc/bewan/lib/base
+. /etc/bewan/lib/libdsl
+
+main_adsl_down() {
+  base_log "$SCRIPTD/adsl-down" debug
+  
+  # Take onchange mutex
+  base_enter_critical 'onchange'
+  
+  # Get config parameters after taking lock, else parameters could be outdated
+  base_call_initd 'setparam'
+
+  # Check the dsl state
+  local xdsl_mode
+  retrieve_xdsl_mode
+  
+  if [ -z "$xdsl_mode" ] && [ -f $DSLD/xdslup ]; then  
+    # Enter adsl-up-down critical section
+    base_log "$SCRIPTD/adsl-down entered" debug
+    
+    NOIPT=1
+    for script in `find /etc/bewan/adsl-down.d -follow -type f 2>/dev/null | sort`; do
+      base_log "$script down" debug
+      . $script down
+    done
+    
+    # Restart netfilter
+    IPPROTO=
+    ARG=restart
+    base_call_initd 'fwrules iptables ip6tables'
+    
+    base_call_initd 'inittab'
+    
+    # Exit adsl-up-down critical section
+    base_log "$SCRIPTD/adsl-down exited" debug
+  fi
+  
+  # Release onchange mutex
+  base_exit_critical 'onchange'
+}
+
+main_adsl_down

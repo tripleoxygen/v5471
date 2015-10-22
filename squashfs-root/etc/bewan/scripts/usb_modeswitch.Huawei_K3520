@@ -1,0 +1,12 @@
+# Huawei E169
+#
+# Contributor: Dale Lane
+
+DefaultVendor=  0x12d1
+DefaultProduct= 0x1001
+
+TargetClass=    0xff
+
+# choose one of these:
+#DetachStorageOnly=1
+HuaweiMode=1

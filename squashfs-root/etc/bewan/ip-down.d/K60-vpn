@@ -1,0 +1,28 @@
+#!/bin/sh
+# Stop daemons for VPN tunnels going through this wan interface
+
+stop_vpn_daemons() {
+  local wanid=${WANID:-0}
+
+  # Search for VPN interfaces
+  for vpnid in `ls $INTFD/vpn*/vpnid`; do
+    local VPNID=`cat $vpnid`
+    local vpndir=${vpnid%%/vpnid}
+    # Search for output network interfaces of VPN
+    local wanids=`cat $vpndir/depends`
+    local wid
+    for wid in `strip $wanids`; do
+      [ "$wid" != "$wanid" ] && continue
+
+      local vpntype=`cat $vpndir/vpntype 2>/dev/null`
+      case "$vpntype" in
+      L2TP)
+        local ARG=stop
+        base_call_initd 'l2tpd'
+      ;;
+      esac
+    done
+  done
+}
+
+stop_vpn_daemons

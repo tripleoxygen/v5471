@@ -1,0 +1,34 @@
+#!/bin/sh
+# /etc/bewan/scripts/printer-update
+
+if [ "${ARG:-}" = '' ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+
+call_printer_up_script() {
+	local action=$1
+	base_log "$script $action" debug
+	. $script
+}
+
+main_printer_up() {
+
+	local action=${1:-}
+
+	if [ "$action" = '' ]; then
+		return
+	fi
+
+	# Include scripts found in /etc/bewan/printer.d directory
+	local scripts script 
+
+	scripts="`find /etc/bewan/printer.d -follow -type f 2>/dev/null| sort`"
+	for script in $scripts; do
+		call_printer_up_script "update"
+	done
+	
+	[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+}
+
+main_printer_up ${1:-}

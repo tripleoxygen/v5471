@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# Called by adsl-down
+# $1 : down
+
+. /etc/bewan/lib/wanautoconf
+
+trigger_autoconf() {
+	if [ ${Services_WANAutoConfig_Enable:-0} -ne 1 ]; then
+		return
+	fi
+
+	base_enter_critical 'wanautoconf'
+
+	base_log "K10-wanautoconf (adsl-down) ${1:-}" debug
+
+	# Get the enabled physical interface
+	local current_mode=''
+	retrieve_current_mode
+
+	# Actions when xDSL synchronisation is lost
+	# If we were in xDSL mode, and WAN Ethernet cable is plugged, switch to WAN Ethernet mode
+	if [ "$current_mode" = "ATMEthernetInterface" ] || [ "$current_mode" = "PTMEthernetInterface" ]; then
+		local phy_state
+		retrieve_phy_state WANEthernetInterface 1
+		if [ "$phy_state" -eq 1 ]; then
+			change_wan_mode WANEthernetInterface
+		fi
+	fi
+
+	base_exit_critical 'wanautoconf'
+}
+
+trigger_autoconf $@

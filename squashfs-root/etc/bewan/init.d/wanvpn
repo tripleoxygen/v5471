@@ -1,0 +1,259 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/init.d/wanvpn
+# $1 or $ARG = start stop restart
+# $2 or $VPNID = VPNInterface object index
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+VPNID=${VPNID:-}
+if [ "$VPNID" = '' ]; then
+  VPNID=${2:-}
+fi
+
+start_wanl2tp() {
+  local l2tpcnf="$vpndir/l2tp.cnf"
+  local l2tpcmd="$vpndir/l2tp.cmd"
+
+  local lnsip; eval lnsip=\${$vpndev'_L2TP_Server'}
+  local hellotimeout; eval hellotimeout=\${$vpndev'_L2TP_HelloTimeout'}
+  local maxretries; eval maxretries=\${$vpndev'_L2TP_MaxRetries'}
+  local retrytimeoutmin; eval retrytimeoutmin=\${$vpndev'_L2TP_RetryTimeoutMin'}
+  local retrytimeoutmax; eval retrytimeoutmax=\${$vpndev'_L2TP_RetryTimeoutMax'}
+  local secret; eval secret=\${$vpndev'_L2TP_Secret'}
+  local port; eval port=\${$vpndev'_L2TP_Port'}
+  local debug; eval debug=\${$vpndev'_L2TP_Debug'}
+
+  local wandev='WANConnectionDevice_'$wanid
+  local login; eval login=\${$wandev'_WANPPPConnection_Username'}
+  local password; eval password=\${$wandev'_WANPPPConnection_Password'}
+  password=$( base_get_password $password )
+  local ifname="ppp${wanid}"
+
+  # Chose a random number between RetryTimeoutMin and RetryTimeoutMax
+  local retrytimeout=`random $retrytimeoutmin $retrytimeoutmax`
+
+  if [ "$secret" != '' ]; then
+    secret="secret=$secret"
+  fi
+  
+  local pattern="[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}"
+  if [ "$(echo $lnsip | grep -E $pattern)" = "" ]; then
+    lnsip="$(nslookup $lnsip | grep -E $pattern | cut -d\  -f 3 | head -n 1)"
+  fi
+
+  # Manual mode
+  local mode; eval mode=\${$vpndev'_L2TP_Startup'}
+  if [ "$mode" = 'Manual' ]; then
+    touch $vpndir/manual
+  fi
+
+  cat > $l2tpcnf <<EOF
+tunnel create tunnel_name=l2tp${VPNID} \\
+  dest_ipaddr=${lnsip} \\
+  peer_udp_port=${port} \\
+  persist=yes \\
+  hello_timeout=${hellotimeout} \\
+  max_retries=${maxretries} \\
+  retry_timeout=${retrytimeout} \\
+  ${secret}
+EOF
+
+  cat >> $l2tpcnf <<EOF
+
+session create tunnel_name=l2tp${VPNID} \\
+  session_name=l2tp${VPNID} \\
+  user_name="${login}" \\
+  user_password="${password}"
+EOF
+
+  mkdir -p /var/bewan/etc/ppp/peers
+  ln -sf /etc/ppp/options.${ifname} /var/bewan/etc/ppp/peers/l2tp.${VPNID}
+  
+  local retval="$(grep -E ^call\ l2tp.$VPNID\$ /var/bewan/etc/ppp/peers/l2tp 2> /dev/null)"
+  if [ "$retval" = "" ]; then
+    echo "call l2tp.${VPNID}" >> /var/bewan/etc/ppp/peers/l2tp
+  fi
+
+  local dbg=''; if [ "$debug" = 1 ]; then
+    dbg="-D -d 0xffffffff"
+  fi
+
+  echo "/sbin/openl2tpd ${dbg} -P /var/run/openl2tpd-${VPNID}.pid -i ${ifname} -f -c ${l2tpcnf} -u ${port}" >$l2tpcmd
+
+  # Start l2tp daemon
+  if [ ! -f $vpndir/manual ]; then
+    local ARG=start
+    base_call_initd 'l2tpd'
+  fi
+}
+
+stop_wanl2tp() {
+  # Stop l2tp daemon
+  local ARG=stop
+  base_call_initd 'l2tpd'
+}
+
+start_wangre() {
+# Layer 2
+# Usage: ip link { add | set | change | replace | del } NAME
+#           type { gre | gretap } [ remote ADDR ] [ local ADDR ]
+#           [ [i|o]seq ] [ [i|o]key KEY ] [ [i|o]csum ]
+#           [ ttl TTL ] [ tos TOS ] [ [no]pmtudisc ] [ dev PHYS_DEV ]
+
+# Layer 3
+# Usage: ip tunnel { add | change | del | show | prl | 6rd } [ NAME ]
+#           [ mode { ipip | gre | sit | isatap } ] [ remote ADDR ] [ local ADDR ]
+#           [ [i|o]seq ] [ [i|o]key KEY ] [ [i|o]csum ]
+#           [ prl-default ADDR ] [ prl-nodefault ADDR ] [ prl-delete ADDR ]
+#           [ 6rd-prefix ADDR ] [ 6rd-relay_prefix ADDR ] [ 6rd-reset ]
+#           [ ttl TTL ] [ tos TOS ] [ [no]pmtudisc ] [ dev PHYS_DEV ]
+
+  local remote; eval remote=\${$vpndev'_GRE_IP4Destination'}
+  [ -z "$remote" ] && return
+  case "$vpntype" in
+  GRE)
+    ip tunnel add vpn$VPNID mode gre remote $remote || return
+    ;;
+  GRETAP)
+    ip link add vpn$VPNID type gretap remote $remote || return
+    ;;
+  *)
+    return
+    ;;
+  esac
+
+  ip link set dev vpn$VPNID up || return
+
+  echo vpn$VPNID > $vpndir/gre
+}
+
+stop_wangre() {
+  local gre=`cat $vpndir/gre 2>/dev/null`
+  [ -z "$gre" ] && return
+
+  case "$vpntype" in
+  GRE)
+    ip tunnel del $gre
+    ;;
+  GRETAP)
+    ip link del $gre
+    ;;
+  *)
+    return
+    ;;
+  esac
+
+  rm -f $vpndir/gre
+}
+
+# Sanity check
+check_wanvpn() {
+
+  local en; eval en=\${$vpndev'_Enable':-0}
+
+  local enable="test x$en = x1"
+  local active="test -d $vpndir/vpntype"
+  base_check_arg "$enable" "$active"
+}
+
+stop_wanvpn() {
+
+  local vpntype=`cat $vpndir/vpntype 2>/dev/null`
+
+  # Stop associated wan
+  if [ "$ARG" = stop ] && [ "$wanid" != '' ]; then
+    local WANID=$wanid
+    base_call_initd 'wan'
+    # Remove configuration files
+    rm -rf $vpndir
+    return
+  fi
+
+  case $vpntype in
+    L2TP) stop_wanl2tp ;;
+    GRE|GRETAP) stop_wangre ;;
+    *) return ;;
+  esac
+
+  # Remove configuration files
+  rm -rf $vpndir
+}
+
+start_wanvpn() {
+  # If no asociation yet done, start associated wan
+  if [ "$wanid" = '' ]; then
+    if [ -f /etc/bewan/lib/wan ]; then
+      . /etc/bewan/lib/wan
+      start_wan_from_physical_interface 'VPNInterface' $VPNID
+    fi
+    return
+  fi
+
+  # wanid not null, recreate vpn <-> ppp cross-link
+  mkdir -p $vpndir/wan
+  touch $vpndir/wan/$wanid
+  echo $VPNID >$vpndir/vpnid
+
+  # Test output network interfaces
+  local depends; eval depends=\${$vpndev'_DependOnWAN'}
+  if [ "$depends" = '' ]; then
+    depends=`cat $WAND/defroute 2>/dev/null`
+  fi
+  echo $depends >$vpndir/depends
+
+  case $vpntype in
+  L2TP) start_wanl2tp ;;
+  GRE|GRETAP) start_wangre ;;
+  *) return ;;
+  esac
+
+  echo $vpntype > $vpndir/vpntype
+
+  local ARG=start
+  local WANID=$wanid
+  base_call_initd 'wan'
+}
+
+main_wanvpn() {
+  eval $PUSH_ARG
+
+  local vpndev='VPNInterface_'$VPNID
+  local vpndir="$INTFD/vpn$VPNID"
+
+  check_wanvpn
+  base_log "$INITD/wanvpn $ARG $VPNID" debug
+
+  # If we are called by wan, then WANID is set
+  local wanid=${WANID:-}
+  local vpntype; eval vpntype=\${$vpndev'_Type'}
+
+  case $ARG in
+  stop)
+    stop_wanvpn
+    ;;
+  start)
+    start_wanvpn
+    ;;
+  restart)
+    stop_wanvpn
+    start_wanvpn
+    ;;
+  esac
+}
+
+if [ "$VPNID" = 'all' ]; then
+  # Start all wans
+  count=${VPNInterface_Count:-0}
+  VPNID=0; while [ $VPNID -lt $count ]; do
+    VPNID=$(($VPNID + 1))
+    base_call_initd 'wanvpn'
+  done
+
+  VPNID='all'
+  return
+fi
+
+main_wanvpn

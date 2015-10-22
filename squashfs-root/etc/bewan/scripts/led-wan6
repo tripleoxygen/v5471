@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Called on ip-up6 and ip-down6 events on a WAN interface
+# $WANID, WAN interface index
+restart_ledwan() {
+	which ledctl >/dev/null || return 0
+
+	local wanid=${WANID:-0}
+	local internet="`cat /var/bewan/wan.d/internet 2>/dev/null`"
+	local found=0
+	local idle=0
+	local ip=''
+	local ix
+
+	for ix in `strip $internet`; do
+		[ $ix = $wanid ] && found=1
+	#	ip=`cat /var/bewan/wan.d/$ix/ip6/ipaddr 2>/dev/null`
+	#	[ "$ip" != '' ] && {
+	#	# TODO
+	#		# clear ppp idle timeout flag
+	#		rm -f /var/bewan/wan.d/$ix/ip6/idle
+	#		break
+	#	}
+	#	## ppp is down because of idle timeout
+	#	[ -f /var/bewan/wan.d/$ix/ip6/idle ] && idle=1
+	done
+
+	[ $found = 0 ] && return 0
+
+	local ifname=`cat /var/bewan/wan.d/$wanid/ifname 2>/dev/null`
+
+	if [ "$ip" = '' ] && [ $idle = 0 ]; then
+		ledctl sflag_ipup6 2>/dev/null
+		ledctl Sflag_ipfail6 2>/dev/null
+		which ethmux >/dev/null && ethmux led $ifname 2>/dev/null
+	else
+		# Keep ip-up6 led if ppp is idle
+		ledctl Sflag_ipup6 2>/dev/null
+		ledctl sflag_ipfail6 2>/dev/null
+		which ethmux >/dev/null && ethmux led $ifname flag_wan_data 2>/dev/null
+	fi
+}
+
+restart_ledwan

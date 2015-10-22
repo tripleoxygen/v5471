@@ -1,0 +1,27 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-down-dhcp
+# called when DHCP client looses its IP address
+# setparam is already included by calling script
+
+# Environnement variables:
+
+#  IFNAME:  interface name
+
+main_ip_down_dhcp() {
+	base_log "$SCRIPTD/ip-down-dhcp $IFNAME" debug
+
+	rm -f "$INTFD/$IFNAME/dhcp-up"
+
+	# Down LAN interface
+	if [ -f "$INTFD/$IFNAME/lanid" ]; then
+	  local LANID=`cat $INTFD/$IFNAME/lanid`
+	  base_call_scripts 'ip-down-lan'
+
+	# Down WAN interface
+	elif [ -f "$INTFD/$IFNAME/wanid" ]; then
+	  local WANID=`cat $INTFD/$IFNAME/wanid`
+	  base_call_scripts 'ip-down'
+	fi
+}
+
+main_ip_down_dhcp

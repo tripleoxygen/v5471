@@ -1,0 +1,16 @@
+#!/bin/sh
+# /etc/bewan/ip-up-lan.d/S90webauth
+# called from /etc/bewan/scripts/ip-up-lan through sh
+# No environment variable
+# $LANID = lan interface index
+
+restart_webauth() {
+	# Refresh last modification time of webauth.conf
+	# to force a rescan the configuration
+	conf='/var/bewan/webauth.conf'
+	if [ -f $conf ]; then
+		touch $conf
+	fi
+}
+
+restart_webauth

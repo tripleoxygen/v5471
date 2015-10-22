@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Called by waneth-up
+# $1 : up
+
+. /etc/bewan/lib/wanautoconf
+
+trigger_autoconf() {
+	if [ ${Services_WANAutoConfig_Enable:-0} -ne 1 ]; then
+		return
+	fi
+
+	base_enter_critical 'wanautoconf'
+
+	base_log "S10-wanautoconf (waneth-up) ${1:-}" debug
+
+	# Get the enabled physical interface
+	local current_mode=''
+	retrieve_current_mode
+
+	# Get the WAN phy state
+	local phy_state
+	retrieve_phy_state WANEthernetInterface 1
+
+	# Actions when WAN Ethernet cable is plugged in
+	# Dont try to switch to WAN Ethernet unless no synchro is detected on xDSL
+	if [ "$phy_state" = "1" ] && [ "$current_mode" != "WANEthernetInterface" ]; then
+		xdslsynchro=`adslinfo | grep "line state" | grep "Connected" | wc -l`  
+		# If no current mode or no xdsl synchro, set WAN Ethernet mode
+		if [ "$current_mode" = "" ] || [ "$xdslsynchro" -eq 0 ]; then
+			change_wan_mode WANEthernetInterface
+		fi
+	fi
+
+	base_exit_critical 'wanautoconf'
+}
+
+trigger_autoconf $@

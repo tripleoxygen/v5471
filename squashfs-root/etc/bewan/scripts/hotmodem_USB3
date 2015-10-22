@@ -1,0 +1,52 @@
+#!/bin/sh
+#/etc/bewan/scripts/hotmodem_USB3
+
+# Include global environment
+if [ "${ARG:-}" = '' ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+HOTMODEM3G=/var/bewan/hotmdm.d/key_3G
+PRODUCT=`ls $HOTMODEM3G | grep prod 2>/dev/null`
+
+if [ "$1" = "tty" ] 
+then 
+	case $PRODUCT in 
+		prod_v19D2p2002)
+			ARG=restart
+			MDMID=1
+			base_call_initd 'modem'
+			[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+		;;
+		prod_v12d1p140C)
+			ARG=restart
+			MDMID=1
+			base_call_initd 'modem'
+			[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+		;;
+		prod_v12d1p14AC)
+			ARG=restart
+			MDMID=1
+			base_call_initd 'modem'
+			[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+		;;
+		prod_v19D2p0055)
+			ARG=restart
+			MDMID=1
+			base_call_initd 'modem'
+			[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+		;;
+		prod_v19D2p0025)
+			ARG=restart
+			MDMID=1
+			base_call_initd 'modem'
+			[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+		;;
+		*)
+			return
+		;;
+	esac
+fi
+
+
+

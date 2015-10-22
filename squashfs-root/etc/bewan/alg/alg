@@ -1,0 +1,77 @@
+#!/bin/sh
+# /etc/bewan/init.d/alg
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+do_alg_enable_disable() {
+
+	base_log "$INITD/alg" debug
+
+	# Check status of each ALG one by one
+	local alg_enable; 
+
+	# Check status of H323 ALG
+	eval alg_enable=\${'Conntrack_ALG_H323Enable':-0}
+
+	if [ "$alg_enable" = 1 ]; then
+		modprobe nf_conntrack_h323;
+		modprobe nf_nat_h323;
+	else
+		rmmod nf_nat_h323;
+		rmmod nf_conntrack_h323;
+	fi
+
+	# Check status of SIP ALG
+	eval alg_enable=\${'Conntrack_ALG_SIPEnable':-0}
+
+	if [ "$alg_enable" = 1 ]; then
+		modprobe nf_conntrack_sip;
+		modprobe nf_nat_sip;
+	else
+		rmmod nf_nat_sip;
+		rmmod nf_conntrack_sip;
+	fi
+
+	# Check status of PPTP ALG
+	eval alg_enable=\${'Conntrack_ALG_PPTPEnable':-0}
+
+	if [ "$alg_enable" = 1 ]; then
+		modprobe nf_conntrack_proto_gre;
+		modprobe nf_nat_proto_gre;
+		modprobe nf_conntrack_pptp;
+		modprobe nf_nat_pptp;
+	else
+		rmmod nf_nat_pptp;
+		rmmod nf_nat_proto_gre;
+		rmmod nf_conntrack_pptp;
+		rmmod nf_conntrack_proto_gre;
+	fi
+
+	# Check status of IRC ALG
+	eval alg_enable=\${'Conntrack_ALG_IRCEnable':-0}
+
+	if [ "$alg_enable" = 1 ]; then
+		modprobe nf_conntrack_irc;
+		modprobe nf_nat_irc;
+	else
+		rmmod nf_nat_irc;
+		rmmod nf_conntrack_irc;
+	fi
+
+	# Check status of FTP ALG
+	eval alg_enable=\${'Conntrack_ALG_FTPEnable':-0}
+
+	if [ "$alg_enable" = 1 ]; then
+		modprobe nf_conntrack_ftp;
+		modprobe nf_nat_ftp;
+	else
+		rmmod nf_nat_ftp;
+		rmmod nf_conntrack_ftp;
+	fi
+}
+
+do_alg_enable_disable
+

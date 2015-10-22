@@ -1,0 +1,35 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-fail6-autoconf
+# called when autoconfd thinks that we can't gain IPv6 connectivity
+
+# Environnement variables:
+
+#  IFNAME:  interface name
+#  IFFLAGS: interface flags
+
+. /etc/bewan/scripts/globals
+. /etc/bewan/lib/base
+
+base_log "$SCRIPTD/ip-fail6-autoconf $IFNAME flags $IFFLAGS" debug
+
+# Take wan-up-down mutex
+base_enter_critical 'wan-up-down'
+
+# Get config parameters after taking lock
+base_call_initd 'setparam'
+
+# LAN network interface is up
+
+if [ -f "$INTFD/$IFNAME/lanid" ]; then
+  LANID=`cat $INTFD/$IFNAME/lanid`
+  base_call_scripts 'ip-fail6-lan'
+
+# autoconf client is up on WAN side
+elif [ -f "$INTFD/$IFNAME/wanid" ]; then
+  WANID=`cat $INTFD/$IFNAME/wanid`
+  IPREMOTE=''
+  base_call_scripts 'ip-fail6'
+fi
+
+# Release wan-up-down mutex
+base_exit_critical 'wan-up-down'

@@ -1,0 +1,34 @@
+#!/bin/sh
+# /etc/bewan/init.d/safe-reboot
+
+. /etc/bewan/lib/base
+. /etc/bewan/lib/config
+
+# File to test is different in configuration system version 2
+if which configd >/dev/null; then
+  FILE=/var/bewan/tmp/save.diff
+else
+  FILE=/var/bewan/tmp/save.conf
+fi
+
+# Ensure that no commit is pending
+while [ 1 ]; do
+  base_enter_critical 'store.lock'
+  base_enter_critical 'save.lock'
+  [ ! -f $FILE ] && break
+  base_exit_critical 'save.lock'
+  base_exit_critical 'store.lock'
+  sleep 1
+done
+
+# Execute scripts found in /etc/bewan/reboot.d
+for script in `find /etc/bewan/reboot.d -follow -type f 2>/dev/null| sort`; do
+  base_log "$script" debug
+  $script
+done
+
+# Umount config partition to flush writes in flash
+config_mtd_umount
+
+# We can now reboot because nobody is writing to the flash
+/sbin/reboot

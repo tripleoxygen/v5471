@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Called on ip-up event on a LAN interface
+# $LANID= LAN connection index
+. /etc/bewan/lib/process
+process_ip_down "ippos.init" $LANID $Services_Ippos_Interface

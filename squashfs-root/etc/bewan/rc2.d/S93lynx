@@ -1,0 +1,6 @@
+#!/bin/sh
+# Called from /etc/bewan/rc2
+# Start device detection lynx
+
+base_call_initd 'lynx.init'
+

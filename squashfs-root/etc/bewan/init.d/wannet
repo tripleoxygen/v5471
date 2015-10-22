@@ -1,0 +1,145 @@
+#!/bin/sh
+# /etc/bewan/init.d/wannet $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+# $IPPROTO = ipv4 or ipv6 or nothing for both
+# $NOFWL = 1, do not start/restart firewall
+# $NOPFW = 1, do not start restart port-forwarding
+# $NOIPT = 1, do not reload iptables
+# $DONT_TOUCH_PPP = 1, do not restart ppp client
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+IPPROTO=${IPPROTO:-}
+
+NOFWL=${NOFWL:-0}
+NOPFW=${NOPFW:-0}
+NOIPT=${NOIPT:-0}
+
+# Include function restart_netfilter
+. /etc/bewan/lib/wan
+
+ [ -d /proc/sys/net/ipv4 ] && [ -f /etc/bewan/lib/ipv4_wan_functions ] && . /etc/bewan/lib/ipv4_wan_functions
+ [ -d /proc/sys/net/ipv6 ] && [ -f /etc/bewan/lib/ipv6_wan_functions ] && . /etc/bewan/lib/ipv6_wan_functions
+
+DONT_TOUCH_PPP=${DONT_TOUCH_PPP:-0}
+# These two flags will ensure that we restart pppd only once (even if ipv4 and ipv6 are concerned)
+wan_ppp_stopped=0
+wan_ppp_started=0
+
+# Sanity check
+check_wannet() {
+  [ "$IPPROTO" = 'ipv4' ] && check_wannet_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && check_wannet_ipv6
+}
+
+stop_wannet() {
+  # Shutdown IP interface
+  ARG=stop
+  base_call_initd 'wanbr'
+
+  local VPNID=`cat $WAND/$WANID/vpnid 2>/dev/null`
+  if [ "$VPNID" != '' ]; then
+    # Stop the vpn daemon
+    base_call_initd 'wanvpn'
+  fi
+
+  [ "$IPPROTO" = 'ipv4' ] && stop_wannet_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && stop_wannet_ipv6
+}
+
+start_wannet() {
+
+  # Check WAN mode (bridged/PPP/IP/VPN)
+  if ! wan_check_mode; then
+    rm -rf $WAND/$WANID
+    return
+  fi
+
+  # Start IP interface
+  ARG=start
+
+  local VPNID=`cat $WAND/$WANID/vpnid 2>/dev/null`
+  if [ "$VPNID" != '' ]; then
+    # Start vpn daemon
+    base_call_initd 'wanvpn'
+  fi
+
+  base_call_initd 'wanbr'
+
+  # Layer 2 Filter
+  if which ethmux >/dev/null; then
+    local l2f; eval l2f=\${'WANConnectionDevice_'$WANID'_L2Filter':-None}
+    case "$l2f" in
+    None) ethmux filter $ifname none 2>/dev/null;;
+    PPPoE) ethmux filter $ifname pppoe 2>/dev/null;;
+    IPARP) ethmux filter $ifname iparp 2>/dev/null;;
+    IPv6) ethmux filter $ifname ipv6 2>/dev/null;;
+    *) ;;
+    esac
+  fi
+
+  [ "$IPPROTO" = 'ipv4' ] && start_wannet_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && start_wannet_ipv6
+}
+
+main_wannet() {
+  eval $PUSH_ARG
+
+  local ifname=`cat $WAND/$WANID/ifname`
+  local IPPROTO=${1:-}
+
+  check_wannet
+  base_log "$INITD/wannet $ARG $WANID $IPPROTO" debug
+
+  case $ARG in
+  stop)
+    stop_wannet
+    ;;
+  start)
+    start_wannet
+    ;;
+  restart)
+    stop_wannet
+    start_wannet
+    ;;
+  esac
+}
+
+main_wannet_all() {
+  eval $PUSH_ARG
+  case "$IPPROTO" in
+    ipv4)
+      [ ${IPV4_WAN_LIB:-0} = 1 ] && main_wannet ipv4
+      [ "$TOP_ARG" = restart ] && restart_netfilter
+    ;;
+    ipv6)
+      [ ${IPV6_WAN_LIB:-0} = 1 ] && main_wannet ipv6
+      [ "$TOP_ARG" = restart ] && restart_netfilter
+    ;;
+    '')
+      [ ${IPV4_WAN_LIB:-0} = 1 ] && main_wannet ipv4
+      [ ${IPV6_WAN_LIB:-0} = 1 ] && main_wannet ipv6
+      [ "$TOP_ARG" = restart ] && restart_netfilter
+    ;;
+  esac
+}
+
+# If interface does not exist, it means that a bad configuration has been
+# entered in the past, so wan script must be called
+ifname=`cat $WAND/$WANID/ifname`
+[ -z "$ifname" ] && {
+  unset IPPROTO
+  unset DONT_TOUCH_PPP
+  base_call_initd 'wan'
+  return
+}
+
+main_wannet_all

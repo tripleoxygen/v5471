@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Called on ip-down event on a WAN interface
+# $WANID, WAN interface index
+restart_miniupnp() {
+	local interface=`cat /var/bewan/miniupnp.d/wan-interface 2>/dev/null`
+	local ifname=`cat $WAND/$WANID/ip/ifname`
+	# Interface is already monitored
+	if [ "$interface" = "$ifname" ]; then
+  		killall -USR1 miniupnpd
+  		return 0
+	fi
+}
+
+restart_miniupnp

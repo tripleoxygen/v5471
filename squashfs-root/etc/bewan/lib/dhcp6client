@@ -1,0 +1,90 @@
+#!/bin/sh
+
+[ ${DHCP6CLIENT_LIB:-0} = 1 ] && return
+
+DHCP6CLIENT_LIB=1
+
+dhcp6client_config_wan() {
+  local cmdline_args; cmdline_args=""
+
+  [ "${ifname:-}" = '' ] && ifname=`cat $WAND/$WANID/ifname`
+  # If interface is a ppp interface, then we will not find a mac address
+  # and create_duid will fail ...
+  # In this case, we can take a look at the 'physical' interface
+  local macifname=$ifname
+  [ ! -f $INTFD/$ifname/macaddr ] && macifname=`cat $WAND/$WANID/ifname`
+
+  cat >$DHCP6CLIENTD/${ifname}.conf <<EOF
+interface $ifname {
+  script "/etc/bewan/scripts/dhcp6-script";
+EOF
+
+  local opts; eval opts=\${$wandev'_WANIP6Connection_DHCPv6_SendOptions'}
+  local opt
+  for opt in `strip $opts`; do
+    local option=$opt
+    local alpha="`echo $opt | tr -d 0-9`"
+    if [ "$alpha" = '' ]; then
+      option="opt-num $opt"
+    fi
+
+    cat >>$DHCP6CLIENTD/${ifname}.conf <<EOF
+  send $option;
+EOF
+  done
+
+  local list; eval list=\${$wandev'_WANIP6Connection_DHCPv6_IA_List'}
+  local i
+  noia=1
+  for i in `strip $list`; do
+    local en; eval en=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Enable':-0}
+    [ $en = 0 ] && continue
+    noia=0
+    local id; eval id=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Index'}
+    local type; eval type=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Type'}
+    cat >>$DHCP6CLIENTD/${ifname}.conf <<EOF
+  send ia-$type $id;
+EOF
+  done
+  [ "$noia" = 1 ] && base_log "$0: no IA has been defined for DHCPv6 client on interface $ifname" debug
+
+  eval opts=\${$wandev'_WANIP6Connection_DHCPv6_RequestOptions'}
+  for opt in `strip $opts`; do
+    local option=$opt
+    local alpha="`echo $opt | tr -d 0-9`"
+    if [ "$alpha" = '' ]; then
+      option="opt-num $opt"
+    fi
+
+    cat >>$DHCP6CLIENTD/${ifname}.conf <<EOF
+  request $option;
+EOF
+  done
+
+  cat >>$DHCP6CLIENTD/${ifname}.conf <<EOF
+};
+EOF
+
+  for i in `strip $list`; do
+    local en; eval en=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Enable':-0}
+    [ $en = 0 ] && continue
+    local id; eval id=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Index'}
+    local type; eval type=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Type'}
+    # TODO: we could do some loop here with a list, but it is the easiest way right now
+    local opts; eval opts=\${$wandev'_WANIP6Connection_DHCPv6_IA_'$i'_Options'}
+    cat >>$DHCP6CLIENTD/${ifname}.conf <<EOF
+
+id-assoc $type $id {
+  $opts
+};
+EOF
+  done
+
+  # TODO: here, we can add something from the configlib if we want
+  # to set duid to something else, create_duid only supports type 3.
+  create_duid $macifname $DHCP6CLIENTD/${ifname}.duid
+}
+
+dhcp6client_config_lan() {
+  echo " " >$DHCP6CLIENTD/${ifname}.conf
+}

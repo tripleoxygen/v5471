@@ -1,0 +1,15 @@
+Found a valid SQUASHFS 4:0 superblock on ../images/98509/fs.
+Creation or last append time Wed Mar  4 14:28:53 2015
+Filesystem size 11475.38 Kbytes (11.21 Mbytes)
+Compression lzma
+Block size 65536
+Filesystem is exportable via NFS
+Inodes are compressed
+Data is compressed
+Fragments are compressed
+Always_use_fragments option is not specified
+Xattrs are compressed
+Duplicates are removed
+Number of fragments 143
+Number of inodes 1634
+Number of ids 1

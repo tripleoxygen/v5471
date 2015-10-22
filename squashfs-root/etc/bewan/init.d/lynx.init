@@ -1,0 +1,73 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/init.d/lynx $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+. /etc/bewan/lib/process
+
+# check
+check_lynx()
+{
+	if [ ! -e /bin/lynx ]; then
+		ARG=nothing
+		return;
+	fi
+	local enable="test x$Services_UpnpTracker_Enable = x1"
+	local active="base_exist_daemon ${daemon}"
+	base_check_arg "${enable}" "${active}"
+}
+
+stop_lynx()
+{
+	process_stop ${daemon} 10 ${daemon_pid}
+}
+
+# start
+start_lynx()
+{
+	local cmd="/bin/lynx -P ${daemon_pid}"
+	base_add_daemon ${daemon} "${cmd}"
+}
+
+#restart
+restart_lynx()
+{
+	process_restart ${daemon_pid}
+}
+
+
+main_lynx()
+{
+	eval ${PUSH_ARG}
+
+	local daemon="lynx"
+	local daemon_pid="/var/run/lynx.pid"
+
+	check_lynx
+	base_log "${INITD}/lynx.init ${ARG}" debug
+
+	case "${ARG}" in
+		stop)
+			stop_lynx
+			;;
+		start)
+			start_lynx
+			;;
+		restart)
+			restart_lynx
+			;;
+		*)
+			echo "Do nothing"
+			;;
+	esac
+}
+
+main_lynx
+
+
+
+

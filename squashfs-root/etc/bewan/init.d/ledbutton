@@ -1,0 +1,62 @@
+#!/bin/sh
+# /etc/bewan/init.d/ledbutton $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+check_ledbutton() {
+  if [ ! -f /usr/bin/ledctl ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test x$en = x1"
+  local active="test -f $file_night"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ledbutton() {
+  rm -f $file_night $file_day
+}
+
+start_ledbutton() {
+  local command='/usr/bin/ledctl'
+  mkdir -p $dir
+  echo "$Device_LedButtons_NightMode_EnterTimeSpec $command N" > $file_night
+  echo "$Device_LedButtons_NightMode_ExitTimeSpec $command n" > $file_day
+}
+
+main_ledbutton() {
+  eval $PUSH_ARG
+
+  local dir='/var/bewan/cron.d'
+  local file_night=$dir'/led_night'
+  local file_day=$dir'/led_day'
+
+  local en="$Device_LedButtons_NightMode_Enable"
+  if [ "$Device_LedButtons_NightMode_EnterTimeSpec" = '' ] || [ "$Device_LedButtons_NightMode_ExitTimeSpec" = '' ]; then
+    en=0
+  fi
+
+  check_ledbutton
+  base_log "$INITD/ledbutton $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_ledbutton
+    /etc/bewan/init.d/cron restart
+    ;;
+  start)
+    start_ledbutton
+    /etc/bewan/init.d/cron restart
+    ;;
+  restart)
+    stop_ledbutton
+    start_ledbutton
+    /etc/bewan/init.d/cron restart
+    ;;
+  esac
+}
+
+main_ledbutton

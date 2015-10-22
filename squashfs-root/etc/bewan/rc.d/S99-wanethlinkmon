@@ -1,0 +1,7 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start WAN Ethernet Link Monitoring
+
+WANETH='all'
+
+base_call_initd 'waneth_linkmon'

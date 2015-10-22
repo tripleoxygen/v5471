@@ -1,0 +1,12 @@
+# /etc/usb_modeswitch.conf
+#
+########################################################
+# HUWAIE E160E
+#
+
+DefaultVendor= 0x12D1
+DefaultProduct= 0x140C
+
+# choose one of these:
+#DetachStorageOnly=1
+HuaweiMode=1

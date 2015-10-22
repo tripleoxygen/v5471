@@ -1,0 +1,97 @@
+#!/bin/sh
+# /etc/bewan/init.d/pppd $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $IFNAME = action for interface name
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+IFNAME=${IFNAME:-}
+if [ "$IFNAME" = '' ]; then
+  IFNAME=${2:-}
+fi
+
+# We need it for l2tp and pptp no matter what pppd must do.
+# If l2tp is disabled, this won't do anything
+init_secrets() {
+  mkdir -p /var/bewan/etc/ppp
+  rm -f /etc/ppp/chap-secrets /etc/ppp/pap-secrets
+  touch /etc/ppp/chap-secrets
+  cat /etc/ppp/secrets.* > /etc/ppp/chap-secrets 2>/dev/null
+  cp /etc/ppp/chap-secrets /etc/ppp/pap-secrets
+  chmod 600 /etc/ppp/chap-secrets
+  chmod 600 /etc/ppp/pap-secrets
+}
+
+check_pppd() {
+  if ! which pppd >/dev/null; then
+    ARG=nothing
+    return;
+  fi
+  local enable="test -f $PPPDD/$ifname"
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_pppd() {
+
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+
+  # Kill pppd now
+  if [ "$pid" != '' ]; then
+    base_call_initd 'inittab'
+    # Release wan-up-down mutex
+    base_exit_critical 'wan-up-down'
+    # Wait pppd exit
+    while kill -0 $pid; do
+      sleep 1
+    done
+    # Take wan-up-down mutex
+    base_enter_critical 'wan-up-down'
+  fi
+
+  # Remove configuration files
+  rm -f $PPPDD/$IFNAME
+  rm -f /etc/ppp/options.$ifname
+  rm -f /etc/ppp/secrets.$ifname
+}
+
+start_pppd() {
+  local tty_name=`cat $PPPDD/$ifname`
+  local conf_file="/etc/ppp/options.$ifname"
+  local cmd="/sbin/pppd file $conf_file $tty_name"
+  base_add_daemon $daemon "$cmd"
+}
+
+main_pppd() {
+  eval $PUSH_ARG
+
+  local ifname="$IFNAME"
+  local daemon="ppp-$ifname"
+  local daemon_pid="/var/run/$daemon.pid"
+
+  check_pppd
+  base_log "$INITD/pppd $ARG $ifname" debug
+
+  case $ARG in
+  nothing)
+    init_secrets
+    ;;
+  stop)
+    stop_pppd
+    ;;
+  start)
+    init_secrets
+    start_pppd
+    ;;
+  restart)
+    stop_pppd
+    init_secrets
+    start_pppd
+    ;;
+  esac
+}
+
+main_pppd

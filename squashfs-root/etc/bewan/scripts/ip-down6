@@ -1,0 +1,57 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-down6
+# common script for DHCP client and PPP client on the WAN side
+# env: $WANID $IFNAME
+# setparam is already included by calling script
+
+WANID=${WANID:-0}
+IFNAME=${IFNAME:-0}
+
+base_log "$INITD/ip-down6 $WANID started" debug
+
+IFDIR=$WAND/$WANID/ip6
+[ ! -d "$IFDIR" ] && return
+if [ "$IFDIR" != "" ]; then
+  rm -f $IFDIR/ipaddr $IFDIR/prefix
+  rm -f $IFDIR/ipremote
+  rm -f $IFDIR/routers $IFDIR/servers $IFDIR/dhcpsrv
+
+  rm -f $IFDIR/ip-up6-env
+  if [ -f $IFDIR/uptime ]; then
+    cp -f $IFDIR/uptime $IFDIR/prevuptime
+    cp -f /proc/uptime $IFDIR/downtime
+    rm -f $IFDIR/uptime
+  fi
+fi
+
+base_call_scripts 'update-routes6 update-dns'
+
+# compute args: $WANID $DEFRTE $INET
+
+# Default route flag
+DEFROUTE=`cat $WAND/defroute6 2>/dev/null`
+DEFRTE=0
+if [ "$DEFROUTE" = "$WANID" ] || [ -d "$ROUTED/wan$WANID/default" ]; then
+  DEFRTE=1
+fi
+
+# Internet connection flag
+INTERNET=`cat $WAND/internet 2>/dev/null`
+INET=0
+for ix in `strip $INTERNET`; do
+  [ "$ix" = "$WANID" ] && INET=1
+done
+
+# call scripts found in /etc/bewan/ip-down.d directory
+# $1: $WANID, index of WAN interface
+# $2: $DEFRTE, true if WAN interface is a default route
+# $3: $INET, true if WAN interface is an Internet connection
+trap base_reboot_on_exit EXIT
+for script in `find /etc/bewan/ip-down6.d -follow -type f | sort`; do
+  base_log "$script $WANID" debug
+  . $script $WANID $DEFRTE $INET
+done
+trap '' EXIT
+[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+
+base_log "$SCRIPTD/ip-down6 $WANID exited" debug

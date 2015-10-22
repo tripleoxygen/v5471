@@ -1,0 +1,25 @@
+#!/bin/sh
+# /etc/bewan/init.d/vlanptm $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = ethernet interface index
+# $3 or $VLANID = vlan interface index
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+IFTYPE='ATMEthernetInterface'
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-}
+fi
+
+VLANID=${VLANID:-}
+if [ "$VLANID" = '' ]; then
+  VLANID=${3:-}
+fi
+
+base_log "$INITD/vlanatm $ARG $ETHID $VLANID" debug
+
+base_call_initd 'vlan_interface'

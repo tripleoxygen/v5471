@@ -1,0 +1,71 @@
+#!/bin/sh
+# /etc/bewan/init.d/gvthotspot $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ID = address number
+
+if [ "${ARG:-}" = '' ]; then
+    . /etc/bewan/init.d/setparam
+fi
+
+ID=${2:-1}
+
+if [ "${CRON_LIB:-0}" = 0 ] && [ -f /etc/bewan/lib/crontab ]; then
+    . /etc/bewan/lib/crontab
+fi
+
+if [ "${CRON_LIB:-0}" = 0 ]; then
+    echo "Cron Library Does not Exists !"
+    return 1
+fi
+
+
+# sanity check
+check_gvthotspot() {
+    local enable="test x$WLANInterface_2_Enable = x1"
+    local active="test -f /var/bewan/wan.d/1/ifname"
+   
+    base_check_arg "$enable" "$active"
+}
+
+# stop
+stop_gvthotspot() {
+    if [ "$ID" = "1" ] || [ "$VPNInterface_1_GRE_IP4Destination" != "$Services_GvtHotspot_Address_1_IP" ];  then 
+      crontab_remove gre_tunnel_mngt
+    fi
+    if [ -f /var/tmp/gre_mngt_state ]; then
+       rm /var/tmp/gre_mngt_state
+    fi
+}
+
+# start
+start_gvthotspot() {
+    if [ "$ID" = "1" ] || [ "$VPNInterface_1_GRE_IP4Destination" != "$Services_GvtHotspot_Address_1_IP" ];  then
+      crontab_add '*' '*' '*' '*' '*' '/etc/bewan/scripts/gre_tunnel_mngt' gre_tunnel_mngt
+      wl -i $WLANInterface_2_Ifname ssid "$WLANInterface_2_Config_SSID"
+      #restart vpn with new IP destination
+      local ip; eval ip=\${'Services_GvtHotspot_Address_'$ID'_IP'}
+      echo "cd _VPNInterface_1_GRE; sset IP4Destination $ip; fcommit" | cli -q 
+      local ARG=restart
+      local VPNID="1"
+      base_call_initd 'wanvpn'
+    fi
+}
+
+# main
+main_gvthotspot() {
+    eval $PUSH_ARG
+
+    check_gvthotspot
+
+    base_log "$INITD/gvthotspot $ARG $ID" debug
+    
+    case $ARG in
+      restart)
+        stop_gvthotspot
+        start_gvthotspot
+      ;;
+    esac
+}
+
+# work
+main_gvthotspot

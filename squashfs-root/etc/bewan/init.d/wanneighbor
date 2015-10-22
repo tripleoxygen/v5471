@@ -1,0 +1,58 @@
+#!/bin/sh
+# /etc/bewan/init.d/wanneighbor $1
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+set_arp_base_reachable_time() {
+	local arp_base_reachable_time; eval arp_base_reachable_time=\${$wandev'_WANIPConnection_Neighbor_ARPBaseReachableTime':-0}
+
+	if [ ${arp_base_reachable_time} -ne 0 ] && [ -f $wanif/base_reachable_time ]; then
+		echo ${arp_base_reachable_time}  > $wanif/base_reachable_time
+	fi
+}
+set_arp_cache_locktime() {
+	local arp_cache_locktime; eval arp_cache_locktime=\${$wandev'_WANIPConnection_Neighbor_ARPCacheLocktime':-0}
+
+	if [ ${arp_cache_locktime} -ne 0 ] && [ -f "$wanif/locktime" ]; then
+		echo ${arp_cache_locktime}  > $wanif/locktime
+	fi
+}
+
+set_arp_cache_timeout() {
+	local arp_cache_timeout; eval arp_cache_timeout=\${$wandev'_WANIPConnection_Neighbor_ARPCacheTimeout':-0}
+
+	if [ ${arp_cache_timeout} -ne 0 ] && [ -f $wanif/gc_stale_time ]; then
+		echo ${arp_cache_timeout}  > $wanif/gc_stale_time
+	fi
+}
+
+main_lanneighbor() {
+	eval $PUSH_ARG
+	local wandev='WANConnectionDevice_'$WANID
+	if [ ! -f   "$WAND/$WANID/ifname" ]; then
+		return
+	fi
+	local ifname=`cat $WAND/$WANID/ifname`
+	local wanif='/proc/sys/net/ipv4/neigh/'$ifname
+
+	base_log "$INITD/wanneighbor $ARG $ifname ($WANID)" debug
+
+	if [ -d $wanif ]; then
+		#This is to change ARP Base reachable time
+		set_arp_base_reachable_time
+		#This is to change ARPCache timeout
+		set_arp_cache_timeout
+		#This is to change ARPCache locktime
+		set_arp_cache_locktime
+	fi
+}
+
+main_lanneighbor

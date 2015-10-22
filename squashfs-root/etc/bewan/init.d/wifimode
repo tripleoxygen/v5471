@@ -1,0 +1,10 @@
+#!/bin/sh
+# /etc/bewan/init.d/wifimode $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+base_call_initd 'wifi'
+base_call_initd 'easyp'

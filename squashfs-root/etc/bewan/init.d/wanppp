@@ -1,0 +1,364 @@
+#!/bin/sh
+# /etc/bewan/init.d/wanppp $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+[ -d /proc/sys/net/ipv4 ] && [ -f /etc/bewan/lib/ipv4_ppp_functions ] && . /etc/bewan/lib/ipv4_ppp_functions
+[ -d /proc/sys/net/ipv6 ] && [ -f /etc/bewan/lib/ipv6_ppp_functions ] && . /etc/bewan/lib/ipv6_ppp_functions
+
+# Sanity check
+check_wanppp() {
+  if [ ! -d "$WAND/$WANID/ip" ]; then
+    [ "$ARG" = start ] && wan_ppp_started=0
+    ARG=nothing
+    return
+  fi
+  if [ -f "$WAND/$WANID/wan_ip6" -a ! -d "$WAND/$WANID/ip6" ]; then
+    [ "$ARG" = start ] && wan_ppp_started=0
+    ARG=nothing
+    return
+  fi
+  local enable="test -f $WAND/$WANID/wan_ppp"
+  local active="test -f $WAND/$WANID/pppname"
+
+  base_check_arg "$enable" "$active"
+}
+
+stop_wanppp() {
+
+  local ARG=stop
+  # Stop daemon for conditional mode
+  base_call_initd 'conditional'
+  # Remove fake ip and dns to clean up resolv.conf in dnsupdate
+  rm -f $WAND/$WANID/ip/fakeip
+  rm -f $WAND/$WANID/ip/fakednsserver
+
+  local IFNAME=`cat $WAND/$WANID/pppname`
+  local VPNID=`cat $WAND/$WANID/vpnid 2>/dev/null`
+  if [ "$VPNID" = '' ]; then
+    # Stop the pppd daemon
+    base_call_initd 'pppd'
+  fi
+
+  # Remove PPP log info to cleanup statuslib
+  local pppifname=`cat $WAND/$WANID/ifname`
+  local pppname=`cat $WAND/$WANID/pppname`
+  rm -f /var/log/pppinfo.$pppifname
+  rm -f /var/log/pppinfo.$pppname
+
+  # Remove ppp directory and files
+  rm -rf $INTFD/$IFNAME
+  rm -f $WAND/$WANID/pppname
+  rm -f $WAND/$WANID/ipcp $WAND/$WANID/ipv6cp
+  rm -f $WAND/$WANID/ip/ifname $WAND/$WANID/ip6/ifname
+  
+}
+
+start_wanppp() {
+  local ifname pppname maxmtu pppoa
+
+  # WAN configuration
+  # $WAND/$WANID may be deleted while stopping vpn daemon
+  if [ ! -d "$WAND/$WANID" ]; then
+    local ARG=start
+    base_log "$INITD/wan $ARG" debug
+    base_call_initd 'wan'
+    # No need to continue: wan script will call wanppp
+    return
+  fi
+
+  pppname="ppp$WANID"
+  echo $pppname >$WAND/$WANID/pppname
+
+  mkdir -p $INTFD/$pppname
+  echo $WANID >$INTFD/$pppname/wanid
+
+  ifname=`cat $WAND/$WANID/ifname`
+  maxmtu=`cat $WAND/$WANID/ip/mtu`
+  pppoa=`cat $WAND/$WANID/pppoa 2>/dev/null`
+
+  # Remove PPP log info to cleanup statuslib
+  rm -f /var/log/pppinfo.$ifname
+  rm -f /var/log/pppinfo.$pppname
+
+  # ppp resolv.conf
+  mkdir -p /var/bewan/etc/ppp
+  touch /etc/ppp/resolv.conf
+
+  # Login / password
+  local wandev='WANConnectionDevice_'$WANID
+  local username=''; eval username=\${$wandev'_WANPPPConnection_Username'}
+  local passwd=''; eval passwd=\${$wandev'_WANPPPConnection_Password'}
+  passwd=$( base_get_password $passwd )
+  local domain_append_status=''; eval domain_append_status=\${$wandev'_WANPPPConnection_LoginAppendStatus':-0}
+  local domain_name=''; eval domain_name=\${$wandev'_WANPPPConnection_LoginDomainName'}
+  local domain_separator=''; eval domain_separator=\${$wandev'_WANPPPConnection_LoginSeparator'}
+  local login="$username"
+  if [ "$domain_append_status" = "1" ]; then
+    local offset=`expr index $login $domain_separator`
+    if [ "$offset" = "0" ]; then
+      login="$username$domain_separator$domain_name"
+    fi
+  fi
+
+  echo "'$login' * '$passwd' *" >/etc/ppp/secrets.$pppname
+  chmod 600 /etc/ppp/secrets.$pppname
+
+  # On demand / disconnect parameters
+  local mode; eval mode=\${$wandev'_ConnectionTrigger'}
+  local idle; eval idle=\${$wandev'_IdleDisconnectTime'}
+  local reco; eval reco=\${$wandev'_AutoReconnectTime'}
+  local disc; eval disc=\${$wandev'_AutoDisconnectTime'}
+
+  local pppmode=''
+  local pppidle=''
+  local pppdisc=''
+  local pppreco=''
+  local pppmodeopt=''
+  local pppdebug=''
+  local ppphold=''; eval ppphold=\${$wandev'_WANPPPConnection_HoldOffTimeouts'}
+
+  local defdns=''
+  local fakeip=''
+
+  # Default values
+  [ "$idle" = '' ] && idle=0
+  [ "$reco" = '' ] && reco=0
+  [ "$disc" = '' ] && disc=0
+
+  # Set up ppp config according to mode
+  case "$mode" in
+  AlwaysOn)
+    pppmode='persist'
+    ;;
+  OnDemand|Manual|Conditional|Automatic)
+    pppmode='demand'
+    if [ "$mode" = "Manual" ]; then
+        # pppd have to wait for a signal to connect (SIGBUS)
+        pppmodeopt='manual'
+    fi
+    if [ "$mode" = "Conditional" ]; then
+      # pppd will hangup with a signal (SIGHUP)
+      idle=0
+    fi
+    pppdisc="maxconnect $disc"
+    pppidle="idle $idle"
+    pppreco="reconnect-time $reco"
+    # Create fake dns in ip/servers only if in OnDemand, otherwise blackhole DNS is not working
+    if [ "$mode" = "OnDemand" ] || [ "$mode" = "Conditional" ] || [ "$mode" = "Automatic" ]; then
+      local num; num=$(($WANID + 64))
+      fakeip="10.64.64.$num"
+      defdns="169.254.254.$WANID"
+      echo $fakeip > $WAND/$WANID/ip/fakeip
+      echo $defdns > $WAND/$WANID/ip/fakednsserver
+    fi
+    ;;
+  esac
+
+  # Default parameters
+  local plugin=''
+  local pppconnect=''
+  local pppoptions=''
+  local pppacname=''
+  local pppsrvname=''
+  local ppppadi=''
+  local encaps=''
+  local pppnocomp='nopcomp'
+
+  # Debug mode
+  local dbg; eval dbg=\${$wandev'_WANPPPConnection_Debug'}
+  [ "$dbg" = 1 ] && pppdebug='debug'
+
+  if [ "$pppoa" != '' ]; then
+    # PPPoA plugin
+    plugin='plugin pppoatm.so'
+    ifname="$(echo $pppoa | cut -d' ' -f1)"
+    encaps="$(echo $pppoa | cut -d' ' -f2)"
+  else
+    # PPPoE service name / AC name
+    plugin='plugin rp-pppoe.so'
+    local acname; eval acname=\${$wandev'_WANPPPConnection_PPPoEACName'}
+    local srvname; eval srvname=\${$wandev'_WANPPPConnection_PPPoEServiceName'}
+    [ "$acname" != '' ] && pppacname="rp_pppoe_ac $acname"
+    [ "$srvname" != '' ] && pppsrvname="rp_pppoe_service $srvname"
+    eval ppppadi=\${$wandev'_WANPPPConnection_PADITimeouts'}
+  fi
+  # LCP echo timers
+  local ppplcpechointerval; eval ppplcpechointerval=\${$wandev'_WANPPPConnection_LcpEchoIntervalTimer'}
+  [ "$ppplcpechointerval" = '' ] &&  ppplcpechointerval='60'
+  local ppplcpechofailure; eval ppplcpechofailure=\${$wandev'_WANPPPConnection_LcpEchoFailureCount'}
+  [ "$ppplcpechofailure" = '' ] &&  ppplcpechofailure='4'
+  # LCP retransmission timers
+  local ppplcprestart; eval ppplcprestart=\${$wandev'_WANPPPConnection_LcpRetranIntervalTimer'}
+  [ "$ppplcprestart" = '' ] &&  ppplcprestart='3'
+  local pppmaxconf; eval pppmaxconf=\${$wandev'_WANPPPConnection_LcpMaxRetranCount'}
+  [ "$pppmaxconf" = '' ] &&  pppmaxconf='10'
+  # Expected WINS from network
+  local wins='' wins1='' wins2='' usewins=''
+  local reqwins; eval reqwins=\${$wandev'_RequestedWins'}
+  if [ "$reqwins" != '' ]; then
+    for wins in `strip $reqwins`; do
+      if [ "$wins1" = '' ]; then
+        wins1="ms-wins $wins"
+      elif [ "$wins2" = '' ]; then
+        wins2="ms-wins $wins"
+      fi
+    done
+    usewins='usepeerwins'
+  fi
+
+  # IPCP versus IPv6CP
+  local ipcp_conf=""
+  [ ${IPV4_PPP_LIB:-0} = 1 ] && {
+    local ipcpen; eval ipcpen=\${$wandev'_WANPPPConnection_IPCPEnable':-0}
+    ipcp_conf="-ip"
+    [ "$ipcpen" = 1 ] && {
+      echo $pppname >$WAND/$WANID/ip/ifname
+      touch $WAND/$WANID/ipcp
+      generate_ipv4_ppp_conf $ipcp_conf
+    }
+  }
+
+  local ipv6cp_conf=""
+  [ ${IPV6_PPP_LIB:-0} = 1 ] && {
+    local ipv6cpen; eval ipv6cpen=\${$wandev'_WANPPPConnection_IPv6CPEnable':-0}
+    ipv6cp_conf="noipv6"
+    [ -f $IP6ENABLE ] && [ "$ipv6cpen" = 1 ] && {
+      echo $pppname >$WAND/$WANID/ip6/ifname
+      touch $WAND/$WANID/ipv6cp
+      generate_ipv6_ppp_conf $ipv6cp_conf
+    }
+  }
+
+  # Serial interface parameters (for external modem)
+  if [ -f "$WAND/$WANID/mdmid" ]; then
+
+    mkdir -p /var/etc/chatscripts
+    mkdir -p /var/lock
+    local mdmid=`cat $WAND/$WANID/mdmid`
+    local chatcmd="$SCRIPTD/modem3g all $mdmid"
+
+    pppoptions='crtscts
+460800
+lock
+modem
+connect-delay 1000
+noauth
+noccp
+nobsdcomp
+novj'
+    pppnocomp=''
+    pppconnect="connect '$chatcmd'"
+    ppplcpechofailure='3'
+    ppplcpechointerval='10'
+  fi
+
+  # Build ppp options file
+  cat >/etc/ppp/options.$pppname <<EOF
+$plugin
+$pppoptions
+$pppacname
+$pppsrvname
+$encaps
+
+#dump
+$pppdebug
+$pppnocomp
+
+maxfail 0
+usepeerdns
+lcp-restart $ppplcprestart
+lcp-max-configure $pppmaxconf
+lcp-echo-failure $ppplcpechofailure
+lcp-echo-interval $ppplcpechointerval
+
+$ipcp_conf
+
+$ipv6cp_conf
+
+$usewins
+$wins1
+$wins2
+
+unit $WANID
+linkname $pppname
+:$defdns
+$pppmode
+$pppmodeopt
+$pppdisc
+$pppidle
+$pppreco
+mtu $maxmtu
+mru $maxmtu
+user '$login'
+password '$passwd'
+$pppconnect
+nodetach
+EOF
+
+  # Load optional plugins
+  [ -f /lib/holdoff.so ] && cat >>/etc/ppp/options.$pppname <<EOF
+plugin holdoff.so
+EOF
+  [ "$ppphold" != '' ] && cat >>/etc/ppp/options.$pppname <<EOF
+holdofftimeouts $ppphold
+EOF
+  [ "$ppppadi" != '' ] && cat >>/etc/ppp/options.$pppname <<EOF
+rp_pppoe_timeouts $ppppadi
+EOF
+
+  # Use stored SessionInfo for <force TermReq feature>
+  local sessinfo; eval sessinfo=\${$wandev'_WANPPPConnection_SessionInfo'}
+  [ "$sessinfo" != '' ] && echo $sessinfo > "/tmp/$ifname-ppp-session"
+
+  # tell pppd to start with $ifname interface
+  mkdir -p $PPPDD
+  echo $ifname > $PPPDD/$pppname
+
+  local ARG=start
+  local VPNID=`cat $WAND/$WANID/vpnid 2>/dev/null`
+  if [ "$VPNID" != '' ]; then
+    return
+  elif [ -f $WAND/$WANID/mdmid ]; then
+    # Start PPP daemon with argument $IFNAME
+    local IFNAME=$pppname
+    base_call_initd 'pppd'
+  else
+    # Put $ifname interface in promiscuous mode
+    [ "$pppoa" = '' ] && ifconfig $ifname 0.0.0.0
+    # Start PPP daemon with argument $IFNAME
+    local IFNAME=$pppname
+    base_call_initd 'pppd'
+  fi
+}
+
+main_wanppp() {
+  eval $PUSH_ARG
+
+  check_wanppp
+  base_log "$INITD/wanppp $ARG $WANID" debug
+
+  case $ARG in
+  stop)
+    stop_wanppp
+    ;;
+  start)
+    start_wanppp
+    ;;
+  restart)
+    stop_wanppp
+    start_wanppp
+    ;;
+  esac
+}
+
+main_wanppp

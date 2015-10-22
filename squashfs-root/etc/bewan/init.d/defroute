@@ -1,0 +1,39 @@
+#!/bin/sh
+# /etc/bewan/init.d/defroute $1
+# $1 or $ARG = restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+check_defroute() {
+  [ "$ARG" != restart ] && ARG=nothing
+  [ "$old_route" = "$new_route" ] && ARG=nothing
+}
+
+restart_defroute() {
+  if [ "$old_route" != '' ]; then
+    WANID=$old_route
+    base_call_initd 'wannet4'
+  fi
+  if [ "$new_route" != '' ]; then
+    WANID=$new_route
+    base_call_initd 'wannet4'
+  fi
+}
+
+main_defroute() {
+  eval $PUSH_ARG
+
+  local old_route new_route
+
+  old_route=`cat $WAND/defroute 2>/dev/null`
+  new_route=${Layer3Forwarding_DefaultConnectionService:-}
+
+  check_defroute
+  base_log "$INITD/defroute $ARG" debug
+
+  [ "$ARG" = restart ] && restart_defroute
+}
+
+main_defroute

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "######### USBFS " > /dev/console
+mount -t usbfs none /proc/bus/usb

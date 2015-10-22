@@ -1,0 +1,3 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<keywords><keyword name="getWEPKeyLength" methods="cgi" call="wifi_ssi.so!getWEPKeyLength"/><keyword name="wan_phy_statistics.cgi" methods="plugin" call="wan_phy.so!wan_phy_statistics" no_session="1"/><keyword name="signal_wan_ppp" methods="cgi" call="web_3G.so!signal_wan_ppp"/>
+	</keywords>

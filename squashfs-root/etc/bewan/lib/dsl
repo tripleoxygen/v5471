@@ -1,0 +1,75 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/lib/dsl
+
+# specific vendor functions used by dsl scripts
+# setparam must be included
+
+# Working variables
+# $modulation
+
+[ ${DSL_LIB_LOADED:-0} -eq 1 ] && return;
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+
+check_vendor_dsl() {
+  which xdslctl > /dev/null
+  return $?
+}
+
+start_vendor_dsl() {
+  local mode=""
+  case "$modulation" in
+  ADSL_ANSI_T1.413) mode="t" ;;
+  ADSL_multi) mode="dtl2pe" ;;
+  ADSL_multi_AM) mode="dtl2pem" ;;
+  ADSL_G.dmt) mode="d" ;;
+  ADSL_G.lite) mode="l" ;;
+  ADSL_G.dmt.bis) mode="2" ;;
+  ADSL_2plus) mode="p" ;;
+  VDSL) mode="v" ;;
+  xDSL_multi) mode="a" ;;
+  *) mode="a" ;;
+  esac
+
+  local sramode=""
+  if [ "$WANDSLInterfaceConfig_SRAEnable" = "1" ]; then
+    sramode="--sra on"
+  fi
+ 
+# NLNM Threshold option 
+  local threshold=$WANDSLInterfaceConfig_NLNMThreshold
+  local adsl_threshold=0
+  if [ $threshold != 0 ]; then
+    if [ $mode = "p" ]; then
+      adsl_threshold=$(( ( $threshold >> 8 ) & 255 ))
+    else
+      adsl_threshold=$(( $threshold & 255 ))
+    fi
+  fi
+
+# phycfg: NITRO option
+# phyReXmt: PhyR option
+
+  adsl start --phycfg 0 0 0 0x01000000 0x01000000 0 0 0 0 --phyReXmt 0x1 --mod $mode $sramode --up
+# patch to optimize adsl connection
+  adsl configure --phycfg 0x00000800 0x00000800
+  if [ $adsl_threshold != 0 ]; then
+    adsl nlnm --setThld $adsl_threshold
+  fi
+
+  xtmctl start
+  xtmctl operate intf --state 1 enable
+  xtmctl operate intf --state 2 enable
+}
+
+stop_vendor_dsl() {
+#  xtmctl operate intf --state 1 disable
+#  xtmctl operate intf --state 2 disable
+#  xtmctl stop
+  # Known bcm bug #6661 :
+  # "adsl stop" command from console may cause a system crash. Use "adsl connection --down" instead
+  #adsl stop
+  adsl connection --down
+}

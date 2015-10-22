@@ -1,0 +1,144 @@
+#!/bin/sh
+# /etc/bewan/scripts/update-routes $1
+
+# Brings up a default route to the wan interface for source IP of the interface
+# Brings up the main default route to the specified wan interface
+# Brings up a route to the DHCP server if wan interface is not the default route
+# Brings up static routes to the specified wan interface
+
+# This script is called from /etc/bewan/scripts/ip-up
+# This script is called from /etc/bewan/scripts/ip-down
+# This script is call directly by pppd when pppx interface is created in ON DEMAND mode
+
+# Environment variables:
+
+#  WANID or $1:    WAN interface index
+#  DHCP121:        hexadecimal value or DHCP121 (additional routes)
+
+# Others variables come from setparam
+if [ "${WANID:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+  WANID=${1:-0}
+fi
+
+update_routes() {
+  local ifname=`cat $WAND/$WANID/ip/ifname 2>/dev/null`
+  local ipaddr=`cat $WAND/$WANID/ip/ipaddr 2>/dev/null`
+  local fakeip=`cat $WAND/$WANID/ip/fakeip 2>/dev/null`
+  local routers=`cat $WAND/$WANID/ip/routers 2>/dev/null`
+  local dhcpsrv=`cat $WAND/$WANID/ip/dhcpsrv 2>/dev/null`
+  local defroute=`cat $WAND/defroute 2>/dev/null`
+
+  local srule route router server num
+
+  # Remove previous source route first
+  srule=`cat $WAND/$WANID/ip/srule 2>/dev/null`
+  if [ "$srule" != '' ]; then
+    ip rule del $srule 2>/dev/null
+    rm $WAND/$WANID/ip/srule
+  fi
+  num=$((60 + $WANID))
+  ip route flush table $num 2>/dev/null
+
+  # IP is down or interface was removed
+  if [ "$ifname" = '' ] || ( [ "$ipaddr" = '' ] && [ "$fakeip" = '' ] ); then
+    # Set status of static routes to WANID in Error
+    if [ -d "$ROUTED/wan$WANID" ]; then
+      local tbl
+      for tbl in `ls $ROUTED/wan$WANID`; do
+        local idx=`cat $ROUTED/wan$WANID/$tbl/idx 2>/dev/null`
+        echo "Disabled" >$ROUTED/status/$idx
+      done
+    fi
+    return
+  fi
+
+  # IP is up or IP is fakeip
+
+  # Add a default route for packets with source IP of the interface, so that...
+  # DNS queries will be forwarded to the correct associated interface and...
+  # Ping replies will return through the same interface as remote ping requests
+
+  # Add a new rule
+  if [ "$ipaddr" != '' ]; then
+    srule="from $ipaddr/32 pref $num lookup $num"
+  else
+    srule="from $fakeip/32 pref $num lookup $num"
+  fi
+  echo $srule >$WAND/$WANID/ip/srule
+  ip rule add $srule 2>&1 | base_log - debug
+  # Add a new route
+  if [ "$routers" != '' ]; then
+    for router in $routers; do
+      ip route add default via $router dev $ifname table $num 2>&1 | base_log - debug
+    done
+  else
+    ip route add default dev $ifname table $num 2>&1 | base_log - debug
+  fi
+
+  # Brings-up the main default route to WAN
+  if [ "$defroute" = "$WANID" ]; then
+    if [ "$routers" != '' ]; then
+      for router in $routers; do
+        ip route add default via $router dev $ifname table default 2>&1 | base_log - debug
+      done
+    else
+      ip route add default dev $ifname table default 2>&1 | base_log - debug
+    fi
+  fi
+
+  # Brings-up static routes to WAN
+  if [ -d "$ROUTED/wan$WANID" ]; then
+    local tbl
+    for tbl in `ls $ROUTED/wan$WANID`; do
+      local res=0
+      local idx=`cat $ROUTED/wan$WANID/$tbl/idx 2>/dev/null`
+      local dest="`cat $ROUTED/wan$WANID/$tbl/dest 2>/dev/null`"
+      local gateway=`cat $ROUTED/wan$WANID/$tbl/gate 2>/dev/null`
+      [ "$dest" = '' ] && continue
+      # Gateway statically specified
+      if [ "$gateway" != '' ]; then
+        local ret_log
+        ret_log="$(ip route add $dest via $gateway dev $ifname table $tbl 2>&1)"
+        res=$?
+        [ "$ret_log" != '' ] && base_log "$ret_log" debug
+      # Routers given through dhcp
+      elif [ "$routers" != '' ]; then
+        for router in $routers; do
+          local ret_log
+          ret_log="$(ip route add $dest via $router dev $ifname table $tbl 2>&1)"
+          res=$?
+          [ "$ret_log" != '' ] && base_log "$ret_log" debug
+          [ $res != 0 ] && break
+        done
+      # No gateway found (ppp interface)
+      else
+        local ret_log
+        ret_log="$(ip route add $dest dev $ifname table $tbl 2>&1)"
+        res=$?
+        [ "$ret_log" != '' ] && base_log "$ret_log" debug
+      fi
+      # Update status
+      if [ $res = 0 ]; then
+        # Success
+        echo 'Enabled' >$ROUTED/status/$idx
+      else
+        # Error in ip route add...
+        echo 'Error' >$ROUTED/status/$idx
+      fi
+    done
+  fi
+
+  # Set-up additional routes specified through DHCP option 121
+  # These routes are put in the table 'main'
+  if [ "${DHCP121:-}" != '' ]; then
+    dhcp121 $ifname $DHCP121 2>&1 | /usr/bin/logger -t ipup -p daemon.debug
+  fi
+}
+
+base_log "$SCRIPTD/update-routes $WANID" debug
+
+update_routes
+
+# Optional dynamic routes to set-up
+base_call_scripts 'update-dynamic-routes'

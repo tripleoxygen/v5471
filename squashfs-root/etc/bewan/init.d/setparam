@@ -1,0 +1,29 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/init.d/setparam
+
+
+[ ${SETPARAM_LOADED:-0} = 1 ] && return
+
+SETPARAM_LOADED=1
+
+set -u
+ARG=${1:-}
+
+# Fix the same path for all scripts
+export PATH='/sbin:/usr/sbin:/bin:/usr/bin'
+
+# Get global variables
+. /etc/bewan/scripts/globals
+# Include base library
+. /etc/bewan/lib/base
+
+# Disable set -x to avoid dumping the whole router.conf
+local debug=0
+[ "${-##*x*}" != "$-" ] && debug=1 && set +x
+
+# Load configuration parameters as environment variables
+base_load_param
+
+# Re-enable set -x
+[ "$debug" != 0 ] && set -x

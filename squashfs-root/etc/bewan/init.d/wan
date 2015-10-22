@@ -1,0 +1,242 @@
+#!/bin/sh
+# vim: set ts=8 sw=8 et:
+# /etc/bewan/init.d/wan $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+# $NOITF = 1, do not restart physical interface
+# $NOFWL = 1, do not start/restart firewall
+# $NOPFW = 1, do not start restart port-forwarding
+# $NOIPT = 1, do not reload iptables
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+. /etc/bewan/lib/wan
+
+NOITF=${NOITF:-0}
+NOFWL=${NOFWL:-0}
+NOPFW=${NOPFW:-0}
+NOIPT=${NOIPT:-0}
+
+# Sanity check
+check_wan() {
+  if [ "$WANID" = "" ]; then
+    ARG=nothing
+    return
+  fi
+  local wandev='WANConnectionDevice_'$WANID
+  local en; eval en=\${$wandev'_Enable':-0}
+
+  local enable="test x$en = x1"
+  local active="test -d $WAND/$WANID"
+  base_check_arg "$enable" "$active"
+}
+
+stop_wan() {
+  local ARG=stop
+  IPPROTO=
+  base_call_initd 'wannet'
+
+  # Shutdown Device interface except for VPN
+  if [ "$NOITF" != 1 ] && ( [ -f $WAND/$WANID/ethmux ] || [ -f $WAND/$WANID/brctl ] ); then
+    local IFTYPE='WANConnectionDevice'
+    local ETHID=$WANID
+    base_call_initd 'interface'
+  fi
+
+  local ifname=`cat $WAND/$WANID/ifname`
+  local intf
+
+  # Remove bridge device
+  if [ -f $WAND/$WANID/brctl ]; then
+    for intf in `ls $WAND/$WANID/intfs`; do
+      brctl delif $ifname $intf
+    done
+    ifconfig $ifname down
+    brctl delbr $ifname
+    rm -f $WAND/$WANID/brctl
+  fi
+  # Remove ethmux device
+  if [ -f $WAND/$WANID/ethmux ]; then
+    ethmux rem $ifname
+    rm -f $WAND/$WANID/ethmux
+  fi
+  # Remove cross-links
+  for intf in `ls $WAND/$WANID/intfs`; do
+    rm -f $INTFD/$intf/wan/$WANID
+  done
+  rm -rf $WAND/$WANID
+}
+
+start_wan() {
+
+  # Check WAN mode (bridged/PPP/IP/VPN)
+  if ! wan_check_mode; then
+    rm -rf $WAND/$WANID
+    return
+  fi
+
+  local wandev='WANConnectionDevice_'$WANID
+  local ifname; eval ifname=\${$wandev'_Ifname'}
+  local intf
+
+  # Information collected by wan_check_mode
+  local count=`cat $WAND/$WANID/count`
+  local intfs="`ls $WAND/$WANID/intfs`"
+
+  # Wan network interface can be:
+  # directly the physical device (direct=1)
+  # An ethermux device (direct=0)
+  # a linux bridge (direct=0)
+  local direct=0 ethmux=0
+
+  # bridge or ethmux interface ?
+  rm -f $WAND/$WANID/brctl
+  rm -f $WAND/$WANID/ethmux
+
+  # Need to call interface script
+  local callitf=1
+  if [ "$NOITF" = 1 ]; then
+    callitf=0
+  fi
+  # wan <-> lan passthrough
+  if [ -f $WAND/$WANID/wan_bridged ]; then
+    # Multiple physical interfaces included in a lan bridge
+    if [ $count -gt 1 ]; then
+      direct=0
+      callitf=0
+    # One ethermux device include in the lan bridge
+    else
+      ethmux=1
+    fi
+
+  # Wan is an IP bridge
+  elif [ -f $WAND/$WANID/wan_ip_bridge ]; then
+
+    # Create bridge
+    brctl addbr $ifname
+    touch $WAND/$WANID/brctl
+
+    # Set spanning tree protocol on/off
+    local stpen; eval stpen=\${$wandev'_EnableSTP'}
+    local stp=off; [ "$stpen" = 1 ] && STP=on
+    brctl stp $ifname $stp
+    brctl setfd $ifname 5
+
+    # Include physical interfaces
+    for intf in $intfs; do
+      brctl addif $ifname $intf
+    done
+
+  # VPN interface
+  elif [ -f $WAND/$WANID/vpnid ]; then
+    direct=1
+    callitf=0
+
+  # Modem interface
+  elif [ -f $WAND/$WANID/mdmid ]; then
+    direct=1
+    callitf=0
+
+  # PPP over ATM
+  elif [ -f $WAND/$WANID/pppoa ]; then
+    direct=1
+    callitf=0
+
+  # other IP or PPP modes
+  elif [ -f $WAND/$WANID/wan_ip ] || [ -f $WAND/$WANID/wan_ip6 ] || [ -f $WAND/$WANID/wan_ppp ]; then
+    ethmux=1
+  fi
+
+  # Forced ethmux=0
+  if [ "$ethmux" = 1 ]; then
+    eval ethmux=\${$wandev'_Multiplexed'}
+    if ! which ethmux >/dev/null; then
+      ethmux=0
+    fi
+    if [ $ethmux = 0 ]; then
+      direct=1
+      callitf=0
+    fi
+  fi
+
+  # Create ethmux device
+  if [ "$ethmux" = 1 ]; then
+    # Use ethernet multiplexed device
+    modprobe -q ethmux_hal
+    modprobe -q ethmux
+    ethmux add $ifname $intfs
+    touch $WAND/$WANID/ethmux
+  fi
+
+  # Set cross-links
+  for intf in $intfs; do
+    mkdir -p $INTFD/$intf/wan
+    touch $INTFD/$intf/wan/$WANID
+  done
+
+  # WAN device is created
+  local ARG=start
+
+  # configure wan interface (mac, multicast, queue...)
+  if [ $callitf = 1 ]; then
+    local IFTYPE='WANConnectionDevice'
+    local ETHID=$WANID
+    base_call_initd 'interface'
+  fi
+
+  # if direct=1, interface name is $intfs
+  if [ $direct = 1 ]; then
+    ifname=$intfs
+  fi
+  # Store wan interface name
+  echo $ifname >$WAND/$WANID/ifname
+  # Store wanid into interface directory
+  if [ -d $INTFD/$ifname ]; then
+    echo $WANID >$INTFD/$ifname/wanid
+  fi
+
+  # Set-up Bridge/IP/PPP/VPN
+  IPPROTO=
+  base_call_initd 'wannet'
+}
+
+main_wan() {
+  eval $PUSH_ARG
+
+  check_wan
+  base_log "$INITD/wan $ARG $WANID" debug
+
+  case $ARG in
+  stop)
+    stop_wan
+    ;;
+  start)
+    start_wan
+    ;;
+  restart)
+    stop_wan
+    start_wan
+    ;;
+  esac
+}
+
+if [ "$WANID" = 'all' ]; then
+  # Start all wans
+  count=${WANConnectionDevice_Count:-0}
+  WANID=0; while [ $WANID -lt $count ]; do
+    WANID=$(($WANID + 1))
+    base_call_initd 'wan'
+  done
+
+  WANID='all'
+  return
+fi
+
+main_wan

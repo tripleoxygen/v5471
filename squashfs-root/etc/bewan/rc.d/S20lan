@@ -1,0 +1,15 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start LANs and associated daemons
+
+# Create global directories
+mkdir -p $LAND $BRIDGED $DHCPCLIENTD $DNSMASQD $DHCRELAYD
+
+LANID='all'
+base_call_initd 'lan'
+base_call_initd 'inetd'
+IFNAME='all'
+base_call_initd 'dnsmasq'
+DNSMASQ_ID='all'
+base_call_initd 'adddnsmasq'
+base_call_initd 'host'

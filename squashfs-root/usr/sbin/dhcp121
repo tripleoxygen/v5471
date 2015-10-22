@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# $1 : interface
+# $2..N : static routes
+
+. /etc/bewan/lib/base
+
+local interface=${1:-0}
+
+if [ "$interface" = "0" ]; then
+  base_log "dhcp121 : no interface defined" error
+  exit 1
+fi
+
+# Skip interface argument
+shift 1      
+
+# Read all static routes
+while [ "${1:-}" != "" ]
+do                      
+        local route=${1:-}
+        shift 1          
+        local gw=${1:-}      
+        shift 1
+        if [ "$route" != "" ] && [ "$gw" != "" ]; then
+	        base_log "ip route add $route via $gw dev $interface 2>&1" debug
+	        ip route add $route via $gw dev $interface 2>&1
+	fi
+done   
+
+

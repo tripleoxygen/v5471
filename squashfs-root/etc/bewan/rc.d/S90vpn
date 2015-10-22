@@ -1,0 +1,4 @@
+#!/bin/sh
+
+VPNID='all'
+base_call_initd 'wanvpn'

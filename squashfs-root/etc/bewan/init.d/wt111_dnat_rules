@@ -1,0 +1,116 @@
+#!/bin/sh
+# /etc/bewan/init.d/wt111_dnat_rules $1
+# $1 or $ARG = start stop restart
+# Create nat rules for wt111 devices
+
+if [ "${ARG:-}" = "" ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+# check
+check_wt111_dnat_rules()
+{
+	# We only check for the WT111Enable
+	local enable="test x$Services_TR111_WT111Enable = x1"
+	local active="test -d $dir"
+	base_check_arg "$enable" "$active"
+}
+
+stop_wt111_dnat_rules() {
+	cat >$nat_table <<EOF
+*nat
+-F WT111
+COMMIT
+EOF
+	iptables-restore -n $nat_table
+	rm -f $nat_table
+	rm -rf $dir
+}
+
+# start
+start_wt111_dnat_rules() {
+	cat >$nat_table <<EOF
+*nat
+-F WT111
+EOF
+
+	mkdir -p $dir
+
+	local index i
+	for index in $(strip $Services_TR111_Device_List); do
+
+		# Process only WT.111 devices
+		local type; eval type=\${'Services_TR111_Device_'$index'_Type'}
+		[ "$type" != 'WT111' ] && continue
+		# Process devices with Passthrough enabled
+		local pt; eval pt=\${'Services_TR111_Device_'$index'_ConnectionRequestPassThroughEnable'}
+		[ "$pt" != 1 ] && continue
+
+		local url; eval url=\${'Services_TR111_Device_'$index'_DeviceConnectionRequestURL'}
+		local host="`echo "$url" | sed -e 's~^http[s]\?://\(.*\):.*~\1~'`"
+		local port="`echo "$url" | sed -e 's~^.*:\([0-9]*\)/.*~\1~'`"
+		local path="`echo "$url" | sed -e 's~^http[s]\?://.*:[0-9]*/~~'`"
+
+		if [ "$host" = '' ] || [ "$port" = '' ] || [ "$path" = '' ]; then
+			continue
+		fi
+
+		local found=0
+		local remport=8081
+		while [ $found = 0 ]; do
+			# Choose a free port
+			while [ "$(test_freeport tcp $remport)" = 'NOK' ]; do
+				remport=$(($remport + 1))
+			done
+			found=1
+			# Reject the port if yet assigned to an other wt111 device
+			for i in `ls $dir`; do
+				[ "$i" = "$index" ] && continue
+				local natport="`cat $dir/$i/port 2>/dev/null`"
+				[ "$remport" != "$natport" ] && continue
+				remport=$(($remport + 1))
+				found=0
+				break
+			done
+		done
+
+		# Create and store the DNAT Rule
+		mkdir -p $dir/$index
+		echo $path >$dir/$index/path
+		echo $remport >$dir/$index/port
+
+		cat >>$nat_table <<EOF
+-A WT111 -p tcp -m tcp --dport $remport -j DNAT --to-destination $host:$port
+EOF
+	done
+	cat >>$nat_table <<EOF
+COMMIT
+EOF
+	iptables-restore -n $nat_table
+	rm -f $nat_table
+}
+
+main_wt111_dnat_rules() {
+	eval $PUSH_ARG
+
+	local dir='/var/bewan/tr111.d/nat'
+	local nat_table="/var/bewan/tr111.d/nat_table"
+
+	check_wt111_dnat_rules
+	base_log "$INITD/wt111_dnat_rules $ARG" debug
+
+	case $ARG in
+	stop)
+		stop_wt111_dnat_rules
+		;;
+	start)
+		start_wt111_dnat_rules
+		;;
+	restart)
+		start_wt111_dnat_rules
+		;;
+	esac
+}
+
+# work
+main_wt111_dnat_rules

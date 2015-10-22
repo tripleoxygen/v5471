@@ -1,0 +1,10 @@
+#!/bin/sh
+
+remove_computed_address() {
+  [ ! -f $WAND/$WANID/ip6/noiana ] && return
+  ipaddr=`cat $WAND/$WANID/ip6/noiana`
+  [ "$ipaddr" != '' ] && ip -6 addr del $ipaddr dev $IFNAME
+  rm -f $WAND/$WANID/ip6/noiana
+}
+
+remove_computed_address

@@ -1,0 +1,13 @@
+#!/bin/sh
+#Reset dsl stats
+
+if [ "${ARG:-}" = '' ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+reset_dsl_stats() {
+	base_log "reset_dsl_stats" debug
+	adslctl info --stats --reset        
+}
+
+reset_dsl_stats

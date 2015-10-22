@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+restart_voip() {
+	local wanid=${WANID:-0}
+	[ "$wanid" = 0 ] && return 0
+
+	local ipaddr=`cat /var/bewan/wan.d/$wanid/ip/ipaddr 2>/dev/null`
+	[ "$ipaddr" = '' ] && return 0
+
+	local ifname=`cat /var/bewan/wan.d/$wanid/ip/ifname 2>/dev/null`
+	[ "$ifname" = '' ] && return 0
+
+	# force first argument to 0 so that to adress all voice profiles
+	# Execute in background to avoid blocking. Up to application to remove the pipe when shutting down.  
+	(
+  	[ -e /var/tmp/PHONE.pipe ] && echo "IP_UP,0,$wanid,$ifname,$ipaddr" > /var/tmp/PHONE.pipe
+	) &
+}
+
+restart_voip

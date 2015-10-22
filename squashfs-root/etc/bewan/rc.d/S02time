@@ -1,0 +1,13 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start time management
+
+# tzm.ko =  kernel timezone/daylight-saving module
+
+# load tzm.ko, fat and vfat modules
+find /lib/modules -name "tzm.ko" |grep -q /tzm.ko$ && modprobe tzm
+find /lib/modules -name "fat.ko" |grep -q /fat.ko$ && modprobe fat
+find /lib/modules -name "vfat.ko" |grep -q /vfat.ko$ && modprobe vfat
+
+# Configure timezone for user and kernel space
+base_call_initd 'time'

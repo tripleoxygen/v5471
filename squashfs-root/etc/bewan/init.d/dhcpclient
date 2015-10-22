@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# /etc/bewan/init.d/dhcpclient $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $IFNAME = action for interface name
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+IFNAME=${IFNAME:-}
+if [ "$IFNAME" = '' ]; then
+  IFNAME=${2:-}
+fi
+
+# Sanity check
+check_udhcpc() {
+  if ! which udhcpc >/dev/null; then
+    ARG=nothing
+    return;
+  fi
+  local enable="test -f $DHCPCLIENTD/$ifname"
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_udhcpc() {
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+  # Kill udhcpc now
+  if [ "$pid" != '' ]; then
+    base_call_initd 'inittab'
+    # Release wan-up-down mutex
+    base_exit_critical 'wan-up-down'
+    # Wait udhcpc exit
+    while kill -0 $pid; do
+      sleep 1
+    done
+    # Take wan-up-down mutex
+    base_enter_critical 'wan-up-down'
+  fi
+
+  # Remove configuration file
+  rm -f $DHCPCLIENTD/$IFNAME
+}
+
+start_udhcpc() {
+  local args="`cat $DHCPCLIENTD/$ifname`"
+  local cmd="udhcpc -i $ifname -p $daemon_pid -s /etc/bewan/scripts/udhcpc_script -f -S -R -a $args"
+  base_add_daemon $daemon "$cmd"
+}
+
+
+main_udhcpc() {
+  eval $PUSH_ARG
+
+  local ifname="$IFNAME"
+  local daemon="udhcpc-$ifname"
+  local daemon_pid="/var/run/$daemon.pid"
+
+  check_udhcpc
+  base_log "$INITD/dhcpclient $ARG $ifname" debug
+
+  case $ARG in
+  stop)
+    stop_udhcpc
+    ;;
+  start)
+    start_udhcpc
+    ;;
+  restart)
+    stop_udhcpc
+    start_udhcpc
+    ;;
+  esac
+}
+
+main_udhcpc
+

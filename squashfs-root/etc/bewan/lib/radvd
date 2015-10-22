@@ -1,0 +1,131 @@
+#!/bin/sh
+
+[ ${RADVD_LIB:-0} = 1 ] && return
+
+RADVD_LIB=1
+
+radvd_config_wan() {
+  echo " " >$RADVDD/${ifname}.conf
+}
+
+radvd_config_lan() {
+  local raconf=$landev'_HostConfig6_RAServer'
+
+  local pltime; eval pltime=\${$raconf'_PreferredTime':-}
+  local vltime; eval vltime=\${$raconf'_ValidTime':-}
+  [ "$pltime" = '' ] && pltime=14400
+  [ "$vltime" = '' ] && vltime=86400
+  # Now, both pltime and vltime are ints
+
+  # Ensure that pltime <= vltime even if one is 0
+  [ "$pltime" = '0' ] || [ "$vltime" != '0' -a "$vltime" -lt "$pltime" ] && vltime=$pltime
+
+  # 0 => infinity
+  [ "$pltime" = '0' ] && pltime='infinity'
+  [ "$vltime" = '0' ] && vltime='infinity'
+
+  # If we have a DHCPv6 server, we most likely want users to use it, so advertise it and disable autoconf
+  local autonomous; eval autonomous=\${$raconf'_AutonomousFlag':-0}
+  [ "$autonomous" != 0 ] && autonomous='on' || autonomous='off'
+  local managed; eval managed=\${$raconf'_ManagedFlag':-0}
+  [ "$managed" != 0 ] && managed='on' || managed='off'
+  local other; eval other=\${$raconf'_OtherConfigFlag':-0}
+  [ "$other" != 0 ] && other='on' || other='off'
+  local link; eval link=\${$raconf'_AdvOnLinkFlag':-0}
+  [ "$link" != 0 ] && link='on' || link='off'  
+  local mtu; eval mtu=\${$raconf'_AdvLinkMTU':-1280}
+  local maxRtrAdv; eval maxRtrAdv=\${$raconf'_MaxRtrAdvInterval':-30}
+  local minRtrAdv; eval minRtrAdv=\${$raconf'_MinRtrAdvInterval':-10}
+  local minDelayRA; eval minDelayRA=\${$raconf'_MinDelayBetweenRAs':-3}
+  local ReachableTime; eval ReachableTime=\${$raconf'_AdvReachableTime':-0}
+  local DefaultLifetime; eval DefaultLifetime=\${$raconf'_AdvDefaultLifetime':-1800}
+
+  local wanmtu=0
+  [ -f "$INTFD/$ifname/assocwan" ] && {
+    local wanid="`cat $INTFD/$ifname/assocwan`"
+    [ -f $WAND/$wanid/ip6/mtu ] && wanmtu="`cat $WAND/$wanid/ip6/mtu`"
+  }
+  [ -z "$wanmtu" -o "$wanmtu" = 0 ] && wanmtu=1280
+  [ "$wanmtu" -lt "$mtu" ] && mtu=$wanmtu
+
+  cat >$RADVDD/${ifname}.conf <<EOF
+interface $ifname {
+  AdvManagedFlag $managed;
+  AdvOtherConfigFlag $other;
+  AdvSendAdvert on;
+  AdvLinkMTU $mtu;
+  MaxRtrAdvInterval $maxRtrAdv;
+  MinRtrAdvInterval $minRtrAdv;
+  MinDelayBetweenRAs $minDelayRA;
+  AdvReachableTime $ReachableTime;
+EOF
+
+  # Remove prefix from old prefixes
+  local oldprefixes oldprefix tmp=''
+  oldprefixes=`cat $RADVDD/${ifname}.old 2>/dev/null`
+  prefix=${prefix:-}
+  for oldprefix in $oldprefixes; do
+    [ "$oldprefix" = "$prefix" ] && continue
+    tmp="$tmp $oldprefix"
+  done
+  oldprefixes=$tmp
+
+  # If we don't have an associated wan up, then we can't
+  # be a default router => advertise with lifetime = 0
+  # + keep track of old prefixes
+  if [ "$isrouter" = 0 ]; then
+    DefaultLifetime=0
+    oldprefixes="$oldprefixes $prefix"
+    prefix=
+  fi
+    cat >>$RADVDD/${ifname}.conf <<EOF
+  AdvDefaultLifetime $DefaultLifetime;
+EOF
+  echo "$oldprefixes" > $RADVDD/${ifname}.old
+
+  [ "$prefix" != '' ] && {
+    cat >>$RADVDD/${ifname}.conf <<EOF
+  prefix $prefix {
+    AdvAutonomous $autonomous;
+    AdvValidLifetime $vltime;
+    AdvOnLink $link;
+    AdvPreferredLifetime $pltime;
+    DeprecatePrefix on;
+    DecrementLifetimes on;
+  };
+EOF
+  }
+
+  for oldprefix in $oldprefixes; do
+    cat >>$RADVDD/${ifname}.conf <<EOF
+  prefix $oldprefix {
+    AdvValidLifetime 0;
+    AdvPreferredLifetime 0;
+  };
+EOF
+  done
+
+  local dnsen; eval dnsen=\${$raconf'_DNS_Enable':-1}
+  if [ "$dnsen" = 1 ]; then
+    local servers; eval servers=\${$raconf'_DNS_Servers':-}
+    local proxy; eval proxy=\${$raconf'_DNS_Proxy':-0}
+    if [ "$proxy" != '1' ]; then
+      [ "$servers" = '' ] && [ -f $LAND/$LANID/ip6/servers ] && servers=`cat $LAND/$LANID/ip6/servers`
+      [ "$servers" = '' ] && servers=$lladdr
+    else
+      servers=$lladdr
+    fi
+
+    [ "$servers" != '' ] && {
+      cat >>$RADVDD/${ifname}.conf <<EOF
+    RDNSS $servers {
+      FlushRDNSS on;
+    };
+EOF
+    }
+  fi
+
+  cat >>$RADVDD/${ifname}.conf <<EOF
+};
+EOF
+}

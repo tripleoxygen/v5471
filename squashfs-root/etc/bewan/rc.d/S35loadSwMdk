@@ -1,0 +1,15 @@
+#!/bin/sh
+
+load_swmdk()
+{
+  local hpna; eval hpna=\${HPNA_Enable:-1}
+  ledctl Shpna_rst; sleep 1; ledctl shpna_rst
+  which swmdk > /dev/null 2> /dev/null && /bin/swmdk >/dev/console &
+
+  # Oh yeah, this is so ugly
+  if [ "$hpna" != 1 ]; then
+    (sleep 5; ledctl Shpna_rst) &
+  fi
+}
+
+load_swmdk

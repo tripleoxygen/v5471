@@ -1,0 +1,92 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-up6
+# common script for DHCP client and PPP client on the WAN side
+# setparam is already included by calling script
+
+# Environment variables:
+
+#  WANID:    WAN interface index
+#  IFNAME:   network interface
+#  IPADDR:   IP address
+#  PREFIX:   interface prefix
+#  DHCPSRV:  dhcp server (used by update-routes6)
+#  ROUTERS:  gateways
+#  SERVERS:  DNS servers
+#  RADNS:    DNS servers received by RA
+#  IPREMOTE: peer IP address (PPP)
+
+WANID=${WANID:-0}
+SERVERS=${SERVERS:-}
+
+base_log "$SCRIPTD/ip-up6 $WANID started" debug
+
+IFDIR=$WAND/$WANID/ip6
+if [ -d "$IFDIR" ]; then
+  echo $IPADDR >$IFDIR/ipaddr
+  echo ${PREFIX:-/128} >$IFDIR/prefix
+
+  [ -f $IFDIR/dhcp6-env ] && . $IFDIR/dhcp6-env
+
+  DNSSEL=`cat $IFDIR/dnssel 2>/dev/null`
+  [ -n "$DNSSEL" ] && SERVERS=
+
+  for sel in `strip $DNSSEL`; do
+    case "$sel" in
+      SLAAC)
+        SERVERS="${SERVERS:-} ${RADNS:-}"
+      ;;
+      DHCP)
+        SERVERS="${SERVERS:-} ${DHCPDNS:-}"
+      ;;
+    esac
+  done
+
+  # Sanity check, remove duplicates but keep order
+  # Some daemons are not happy when the same dns server is duplicated
+  tmpservers=
+  for serv in $SERVERS; do
+    echo "$tmpservers" |grep -q " $serv " && continue
+    tmpservers="$tmpservers $serv "
+  done
+  SERVERS=`echo $tmpservers`
+
+  [ "${DHCPSRV:-}" != '' ] && echo $DHCPSRV >$IFDIR/dhcpsrv
+  [ "$IPREMOTE" != '' ] && echo $IPREMOTE >$IFDIR/ipremote
+  [ "$ROUTERS" != '' ] && echo $ROUTERS >$IFDIR/routers
+  [ "$SERVERS" != '' ] && echo $SERVERS >$IFDIR/servers
+  cp -f /proc/uptime $IFDIR/uptime
+  # Record environment variables with leading and ending quotes
+  env | sed "s/=/='/g" | sed "s/$/'/g" >$IFDIR/ip-up6-env
+fi
+
+base_call_scripts 'update-routes6 update-dns'
+
+# compute args: $WANID $DEFRTE $INET
+
+# Default route flag
+DEFROUTE=`cat $WAND/defroute6 2>/dev/null`
+DEFRTE=0
+if [ "$DEFROUTE" = "$WANID" ] || [ -d "$ROUTED/wan$WANID/default" ]; then
+  DEFRTE=1
+fi
+
+# Internet connection flag
+INTERNET=`cat $WAND/internet 2>/dev/null`
+INET=0
+for ix in `strip $INTERNET`; do
+  [ "$ix" = "$WANID" ] && INET=1
+done
+
+# call scripts found in /etc/bewan/ip-up6.d directory
+# $1: $WANID, index of WAN interface
+# $2: $DEFRTE, true if WAN interface is a default route
+# $3: $INET, true if WAN interface is an Internet connection
+trap base_reboot_on_exit EXIT
+for script in `find /etc/bewan/ip-up6.d -follow -type f | sort`; do
+  base_log "$script $WANID" debug
+  . $script $WANID $DEFRTE $INET
+done
+trap '' EXIT
+[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+
+base_log "$SCRIPTD/ip-up6 $WANID exited" debug

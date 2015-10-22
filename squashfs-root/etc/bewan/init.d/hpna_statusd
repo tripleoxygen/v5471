@@ -1,0 +1,66 @@
+#!/bin/sh
+# /etc/bewan/init.d/hpna_statusd $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+check_hpna_statusd() {
+  # Sanity check
+  if ! which hpna_statusd >/dev/null 2>/dev/null; then
+    ARG=nothing
+    return
+  fi
+	local enable="test x$HPNA_Enable = x1 -a x$HPNA_Monitor_Enable = x1"
+  local active="base_exist_daemon $daemon"
+
+  base_check_arg "$enable" "$active"
+}
+
+stop_hpna_statusd() {
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+}
+
+kill_hpna_statusd() {
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+}
+
+start_hpna_statusd() {
+	local debug
+  local socket_path
+  local time_update
+
+  eval debug=\${'HPNA_Monitor_Debug':-0}
+  eval time_update=\${'HPNA_Monitor_UpdateStatusTime':-0}
+
+	local cmd="/usr/bin/hpna_statusd -p $daemon_pid -t $time_update"
+	base_add_daemon $daemon "$cmd"
+}
+
+main_hpna_statusd() {
+  eval $PUSH_ARG
+
+  local daemon='hpna_statusd'
+  local daemon_pid="/var/run/$daemon.pid"
+
+  check_hpna_statusd
+  base_log "$INITD/hpna_statusd $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_hpna_statusd
+    ;;
+  start)
+    start_hpna_statusd
+    ;;
+  restart)
+    kill_hpna_statusd
+    start_hpna_statusd
+    ;;
+  esac
+}
+
+main_hpna_statusd

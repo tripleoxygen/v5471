@@ -1,0 +1,13 @@
+# Alcatel X200
+
+DefaultVendor= 0x1BBB
+DefaultProduct= 0xF000
+
+TargetVendor= 0x1BBB
+TargetProduct= 0x0000
+
+MessageContent="55534243123456788000000080000606f50402527000000000000000000000"
+
+
+
+

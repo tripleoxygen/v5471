@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. /etc/bewan/lib/lan
+
+check_delegated_prefix()
+{
+  [ -f $WAND/$WANID/ip6/dprefix ] && {
+    local oldprefix; oldprefix=`cat $WAND/$WANID/ip6/dprefix`
+    [ "$oldprefix" != "$DPREFIX" ] && {
+      if [ -n "$DPREFIX" ]; then
+        echo -n $DPREFIX > $WAND/$WANID/ip6/dprefix
+        restart_delegated_prefix
+      else
+        stop_delegated_prefix
+        rm -f $WAND/$WANID/ip6/dprefix
+      fi
+    }
+  }
+}
+
+check_delegated_prefix

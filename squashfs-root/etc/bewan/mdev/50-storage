@@ -1,0 +1,4 @@
+-sd[a-z] 0:0 0660 $/etc/bewan/scripts/usb-storage-removed
+sd[a-z][0-9]+ 0:0 0660 */usr/bin/storage_sched block_part
+sd[a-z] 0:0 0660 */usr/bin/storage_sched block_disk
+

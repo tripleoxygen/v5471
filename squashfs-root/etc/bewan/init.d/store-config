@@ -1,0 +1,44 @@
+#!/bin/sh
+# /etc/bewan/init.d/store-config
+
+. /etc/bewan/lib/base
+
+# Acquire the lock that controls exclusive access to flash with no wait
+base_enter_critical 'store.lock' 'nowait'
+[ $? != 0 ] && exit 0
+
+. /etc/bewan/lib/config
+
+while [ 1 ]; do
+  # Acquire the lock that controls access to the file save.conf
+  base_enter_critical 'save.lock'
+  # If the file save.conf does not exist
+  if [ ! -f /var/bewan/tmp/save.conf ]; then
+    # Release the locks and exit
+    base_exit_critical 'save.lock'
+    base_exit_critical 'store.lock'
+    exit 0
+  fi
+  base_log "Storing configuration to NVRAM" debug
+  # Rename save.conf
+  mv /var/bewan/tmp/save.conf /var/bewan/tmp/store.conf
+  # Rename notify.save (tr069 permanent notify list to save)
+  [ -f /var/bewan/tmp/notify.save ] && mv /var/bewan/tmp/notify.save /var/bewan/tmp/notify.store
+  # And release the save lock
+  base_exit_critical 'save.lock'
+
+  # Allow temporary writes to /nvram
+  config_mtd_write
+  # Create the diff file
+  [ ! -d /nvram/bewan ] && mkdir /nvram/bewan
+  confdiff /var/bewan/factory.conf /var/bewan/tmp/store.conf /nvram/bewan/router.diff
+  # Create the magic diff file
+  (wc -c </nvram/bewan/router.diff) >/nvram/bewan/router.magic
+  # Copy tr069 permanent notify list to flash
+  [ -f /var/bewan/tmp/notify.store ] && mv /var/bewan/tmp/notify.store /nvram/bewan/notifylist
+  # Copy config filestsytem to flash
+  config_mtd_store
+  # And release the store lock
+  rm /var/bewan/tmp/store.conf
+  base_log "Store Done" debug
+done

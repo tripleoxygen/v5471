@@ -1,0 +1,32 @@
+#!/bin/sh
+# /etc/bewan/ip-up-lan.d/S10nat
+# called from /etc/bewan/scripts/ip-up-lan through sh
+# No environement variable
+# $LANID = lan interface index
+
+# Add an SNAT rule to allow DNAT from the subnet to the same subnet
+# escape packets initiated from the box
+ipup_lan_nat() {
+  [ ! -f /usr/bin/iptables ] && return 0
+
+  local ifname=`cat $LAND/$LANID/ifname 2>/dev/null`
+  [ "$ifname" = '' ] && return
+  local ipaddr=`cat $LAND/$LANID/ip/ipaddr 2>/dev/null`
+  [ "$ipaddr" = '' ] && return
+  local ipmask=`cat $LAND/$LANID/ip/ipmask 2>/dev/null`
+  [ "$ipmask" = '' ] && return
+  local snat="POSTROUTING -o $ifname -s $ipaddr -j RETURN"
+  echo $snat >$LAND/$LANID/ip/snat1
+  iptables -t nat -A $snat
+  # SNAT other packets coming from the subnet
+  local ipnet=`ipnet $ipaddr $ipmask`
+  local smask=`ipmask $ipmask`
+  snat="POSTROUTING -o $ifname -s $ipnet/$smask -d $ipnet/$smask -j SNAT --to $ipaddr"
+  echo $snat >$LAND/$LANID/ip/snat2
+  iptables -t nat -A $snat
+}
+
+# Not functional in v2 (to be reworked)
+return
+
+ipup_lan_nat

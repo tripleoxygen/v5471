@@ -1,0 +1,6 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start WiFi ACL
+
+LANID='all'
+base_call_initd 'lanacl'

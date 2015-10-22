@@ -1,0 +1,54 @@
+#!/bin/sh
+# /etc/bewan/init.d/switch_wan_port $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = WAN Ethernet interface index
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-}
+fi
+
+# Find which switch are impacted by this change
+SWITCHID=0
+while [ $SWITCHID -lt ${Switch_Count:-0} ]
+do
+  WANPORTMAP=0
+  SWITCHID=$(($SWITCHID + 1))
+  local callswitchhal=0
+  local switch='Switch_'$SWITCHID
+  local switchname
+  local portlist
+  eval switchname=\${$switch'_Name':-}
+  eval portlist=\${$switch'_Port_List':-}
+  for portidx in `strip $portlist`
+  do
+    local port portid ethidx
+    port=$switch'_Port_'$portidx
+
+    # Check if WANEthernetInterface affects this switch
+    eval ethidx=\${$port'_WANEthernetInterfaceIdx':-}
+    if [ "$ethidx" = "$ETHID" ]; then
+      callswitchhal=1
+    fi
+
+    eval portid=\${$port'_PortId':-}
+    if [ "$ethidx" != "" ]; then
+      # Check if associated WAN interface is enabled
+      local wanethitfen wanethitfname
+      eval wanethitfname=\${'WANEthernetInterface_'$ethidx'_Ifname':-}
+      if [ "$portid" != "" ]; then
+        WANPORTMAP=$(($WANPORTMAP + (1 << $portid)))
+      fi
+      if [ -f /proc/switchs/igmp_snooping_wanitf_name ]; then
+          echo "$wanethitfname" > /proc/switchs/igmp_snooping_wanitf_name
+      fi
+    fi
+  done 
+  if [ $callswitchhal -eq 1 ]; then
+    base_call_initd $switchname'_wan_port'
+  fi
+done

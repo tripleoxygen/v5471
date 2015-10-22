@@ -1,0 +1,50 @@
+#!/bin/sh
+# /etc/bewan/init.d/wifiacl $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = WIFI interface index
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+. /etc/bewan/lib/wifi
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-0}
+fi
+
+check_wifiacl() {
+  local en; eval en=\${'WLANInterface_'$ETHID'_Enable':-0}
+  local enable="test x$en = x1"
+  local active=''
+  base_check_arg "$enable" "$active"
+}
+
+start_wifiacl() {
+  start_vendor_wifiacl
+}
+
+restart_wifiacl() {
+  restart_vendor_wifiacl
+}
+
+main_wifiacl() {
+  eval $PUSH_ARG
+
+  local ifname; eval ifname=\${'WLANInterface_'$ETHID'_Ifname'}
+
+  check_wifiacl
+  base_log "$INITD/wifiacl $ARG $ETHID" debug
+
+  case $ARG in
+  start)
+    start_wifiacl
+    ;;
+  restart)
+    restart_wifiacl
+    ;;
+  esac
+}
+
+main_wifiacl

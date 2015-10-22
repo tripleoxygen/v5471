@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Prevent STB to get a lease from LAN DHCP server
+# until WAN3 (VoD) got an IP address
+# STB packets are marked with tag 0x400/0xf00
+# Insert a dynamic netfilter input rule
+
+mkdir -p $NFDYND/filter/input
+echo '-m mark --mark 0x400000/0xf00000 -j DROP' >$NFDYND/filter/input/00-gvtSTB
+base_call_initd 'fwdynamic'

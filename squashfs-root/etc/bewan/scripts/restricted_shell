@@ -1,0 +1,15 @@
+#!/bin/sh
+# /etc/bewan/scripts/restricted_shell
+#
+
+if [ -f /usr/sbin/chroot ]; then
+  if [ -d /home/diag/var/run ]; then
+    /bin/mount -t tmpfs -o size=10k shm /home/diag/var/run
+  fi
+  if [ -f /home/diag/bin/ash ]; then
+    /usr/sbin/chroot /home/diag /bin/ash --login
+  else
+    /usr/sbin/chroot /home/diag /bin/sh
+  fi
+fi
+

@@ -1,0 +1,58 @@
+#!/bin/sh
+# script called from /etc/bewan/scripts/dhcpd-call
+
+# environnment variables:
+# DNSMASQ_INTERFACE, lan interface
+# ACTION, add, old, del
+# MAC, host MAC address
+# IP, new host IP address
+# HOST, hostname
+
+# /etc/bewan/init.d/setparam is also included
+
+main_dhcphistory() {
+  local intf ix
+
+  local dir="/var/bewan/dhcpd.history/$DNSMASQ_INTERFACE"
+  mkdir -p $dir
+
+  # Check the existence of MAC address through the wifi interfaces
+  ix=1; while [ $ix -le ${WLANInterface_Count:-0} ]; do
+    intf=$(echo "status 1; cd WLANInterface_${ix}_Counters; get ARPTable" | cli -q | grep -i $MAC)
+    if [ "$intf" != '' ]; then
+      eval intf=\${'WLANInterface_'$ix'_Ifname'}
+      echo -n "wifi: $intf" > $dir/$MAC
+      return
+    fi
+    ix=$(( $ix + 1 ))
+  done
+
+  # Check the existence of MAC address through the ethernet interfaces
+  ix=1; while [ $ix -le ${LANEthernetInterface_Count:-0} ]; do
+    intf=$(echo "status 1; cd LANEthernetInterface_${ix}_Counters; get ARPTable" | cli -q | grep -i $MAC)
+    if [ "$intf" != '' ]; then
+      eval intf=\${'LANEthernetInterface_'$ix'_Ifname'}
+      echo -n "ethernet: $intf" > $dir/$MAC
+      return
+    fi
+    ix=$(( $ix + 1 ))
+  done
+
+  # Check the existence of MAC address through the USB interfaces
+  ix=1; while [ $ix -le ${LANUSBInterface_Count:-0} ]; do
+    intf=$(echo "status 1; cd LANUSBInterface_${ix}_Counters; get ARPTable" | cli -q | grep -i $MAC)
+    if [ "$intf" != '' ]; then
+      eval intf=\${'LANEthernetInterface_'$ix'_Ifname'}
+      echo -n "usb: $intf" > $dir/$MAC
+      return
+    fi
+    ix=$(( $ix + 1 ))
+  done
+
+  # No interface found for MAC address
+  base_log "$0: No LAN interface found for $MAC" debug
+}
+
+if [ "$DNSMASQ_INTERFACE" != '' ] && ( [ "$ACTION" = "add" ] || [ "$ACTION" = "old" ] ); then
+  ( main_dhcphistory ) &
+fi

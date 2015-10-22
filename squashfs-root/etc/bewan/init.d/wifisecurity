@@ -1,0 +1,44 @@
+#!/bin/sh
+# /etc/bewan/init.d/wifi $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = WIFI interface index
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+if [ -f /etc/bewan/lib/wifisecurity ]; then
+  . /etc/bewan/lib/wifisecurity
+else
+  . /etc/bewan/lib/wifi
+fi
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-0}
+fi
+
+restart_wifi() {
+  local en; eval en=\${'WLANConfig_RadioEnable'}
+  local wlanconfigen=\${'WLANConfig_Enable':-0}
+  local wifien; eval wifien=\${'WLANInterface_'$ETHID'_Enable':-0}
+  if [ "$en" = 1 ] && [ "$wlanconfigen" = 1 ] && [ "$wifien" = 1 ]; then 
+    restart_vendor_wifi
+  fi
+}
+
+main_wifi() {
+  eval $PUSH_ARG
+
+  local ifname; eval ifname=\${'WLANInterface_'$ETHID'_Ifname'}
+
+  base_log "$INITD/wifisecurity $ARG $ETHID" debug
+
+  case $ARG in
+  restart)
+    restart_wifi
+    ;;
+  esac
+}
+
+main_wifi

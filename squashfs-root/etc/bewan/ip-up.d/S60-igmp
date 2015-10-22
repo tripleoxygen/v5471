@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+restart_igmp() {
+	local wid=${WANID:-0}
+	[ "$wid" = 0 ] && return 0
+
+	local wanid=`cat /var/bewan/igmpproxy.d/upstream 2>/dev/null`
+	[ "$wanid" != "$wid" ] && return 0
+
+	local ifname=`cat /var/bewan/wan.d/$WANID/ip/ifname 2>/dev/null`
+	[ "$ifname" = '' ] && return 0
+
+	local ARG=restart
+	base_call_initd 'igmp'
+}
+
+restart_igmp

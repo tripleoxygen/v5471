@@ -1,0 +1,9 @@
+#!/bin/sh
+# Called during rc when booting from factory
+
+# CLI - use silent mode (sset, smk ...) to modify parameters silently and permanently, 
+# without starting onchange script.
+
+# Save the randomly generated UUID in configuration
+UUID=`cat /proc/sys/kernel/random/uuid`
+echo "cd _Services_MiniUPnPd; sset UUID $UUID" | cli -q

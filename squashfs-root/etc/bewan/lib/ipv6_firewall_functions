@@ -1,0 +1,614 @@
+#!/bin/sh
+# IPv6 firewall functions, included by /etc/bewan/init.d/firewall
+# This file is largely shared by what's in ipv6_firewall_functions.
+# So when you fix something here, please take a look at the other.
+
+[ ${IPV6_FIREWALL_LIB:-0} = 1 ] && return
+IPV6_FIREWALL_LIB=1
+
+check_firewall_ipv6() {
+  local enable="test -f $IP6ENABLE -a -d $WAND/$WANID/ip6 -a ! -f $WAND/$WANID/wan_bridged"
+  local active="test -d $WAND/$WANID/fw6"
+  base_check_arg "$enable" "$active"
+}
+
+stop_firewall_ipv6() {
+  rm -rf $WAND/$WANID/fw6
+}
+
+start_firewall_ipv6() {
+  mkdir -p $WAND/$WANID/fw6
+  local wandev='WANConnectionDevice_'$WANID
+
+  local fwen; eval fwen=\${$wandev'_Firewall6_Enable'}
+
+  # Firewall
+  if [ "$fwen" = 1 ]; then
+
+    # Protection against DOS attacks
+    local attack; eval attack=\${$wandev'_Firewall6_AttackDetection'}
+    if [ "$attack" = 1 ]; then
+      attack=''
+    else
+      attack='#'
+    fi
+
+#    # Allow Remote Ping
+#    local remping; eval remping=\${$wandev'_Firewall6_RemotePing'}
+#    if [ "$remping" = 1 ]; then
+#      remping=''
+#    else
+#      remping='#'
+#    fi
+#$remping-A INPUT$WANID -p icmpv6 --icmpv6-type echo-request -j RETURN
+
+    # WAN interface do multicast ?
+    local mcast; eval mcast=\${$wandev'_Multicast'}
+    local ifname; eval ifname=`cat $WAND/$WANID/ip6/ifname 2>/dev/null`
+    [ "$ifname" = '' ] && return
+    if [ "$mcast" = 1 ]; then
+      mcast=''
+    else
+      mcast='#'
+    fi
+    cat >>$WAND/$WANID/fw6/filter <<-EOF
+	$attack-A INPUT$WANID -j ATTACK-FILTER
+	-A INPUT$WANID -m state --state RELATED,ESTABLISHED -j RETURN
+	$mcast-A INPUT$WANID -p 2 -j RETURN
+	-A INPUT$WANID -p udp -m multiport --dports 546:547 -j RETURN
+	-A INPUT$WANID -p icmpv6 -j RETURN
+	$attack-A FORWARD -i $ifname -j ATTACK-FILTER
+	EOF
+  fi
+}
+
+add_service_ipv6()
+{
+  local remport; eval remport=\${$wandev'_Service_'$i'_RemotePort'}
+  local locport; eval locport=\${$wandev'_Service_'$i'_Port'}
+  local proto; eval proto=\${$wandev'_Service_'$i'_Protocol'}
+
+  if [ "$proto" = "tunnel" ]; then
+    proto="tcp"
+    locport=$remport
+  fi
+  if [ "$remport" = "" ]; then 
+    remport=$locport;
+  fi
+  if [ "$locport" = "" ]; then
+    locport=$remport
+  fi
+
+  local fwen; eval fwen=\${$wandev'_Firewall6_Enable'}
+  if [ "$fwen" = 1 ]; then
+    if [ "$proto" = ah -o "$proto" = esp ]; then
+      cat >>$WAND/$WANID/fw6/filter <<-EOF
+		-A INPUT$WANID -p $proto -j RETURN
+		EOF
+    else
+      cat >>$WAND/$WANID/fw6/filter <<-EOF
+		-A INPUT$WANID -p $proto --dport $locport -j RETURN
+		EOF
+    fi
+  fi
+}
+
+finalize_firewall_ipv6()
+{
+  if [ -f "$WAND/$WANID/fw6/filter" ]; then
+    cat >>$WAND/$WANID/fw6/filter <<-EOF
+	-A INPUT$WANID -j LOGDROP
+	EOF
+  fi
+}
+
+check_fwrules_ipv6()
+{
+  local enable="test -f $IP6ENABLE -a x$Firewall_Enable = x1"
+  local active="test -f $FIREWALL6"
+  base_check_arg "$enable" "$active"
+}
+
+stop_fwrules_ipv6()
+{
+  rm -f $FIREWALL6 $MANGLE6 $PREROUTING6 $POSTROUTING6 $NATRULES6 $NFD6/*.subchains
+}
+
+start_fwrules_ipv6()
+{
+  rm -f $FIREWALL6 $MANGLE6 $PREROUTING6 $POSTROUTING6 $NATRULES6 $NFD6/*.subchains
+  mkdir -p $NFD6
+}
+
+add_fwrule_ipv6()
+{
+  local inv
+  local not
+
+  # Table (filter)
+  local table=$FIREWALL6
+
+  # Chain
+  local in='' out=''
+  local chain mchain
+  local chn; eval chn=\${${rule}'_Chain'}
+  case "$chn" in
+    Input) in=1 chain='-A INPUT' mchain='-A OUTPUT' ;;
+    Output) out=1 chain='-A OUTPUT' mchain='-A INPUT' ;;
+    Forward) in=1 out=1 chain='-A FORWARD' mchain='-A FORWARD' ;;
+    Prerouting) in=1 out=1 chain='-A PREROUTING' mchain='-A POSTROUTING' table=$PREROUTING6 ;;
+    Postrouting) in=1 out=1 chain='-A POSTROUTING' mchain='-A PREROUTING' table=$POSTROUTING6 ;;
+    Conntrack_filter) chain='-A CONNTRACK_FILTER' mchain='-A CONNTRACK_FILTER' table=$MANGLE ;;
+    *) chain='' mchain='' ;;
+  esac
+
+  # Input interface
+  local inputs; eval inputs=\${${rule}'_Input'}
+  if [ "$inputs" = "" ]; then
+    inputs='any'
+  fi
+
+  # Enter the loop event if Input is empty
+  local current_input
+  for current_input in `strip $inputs`; do
+    local ext
+    local phys=''
+    local inintf=''
+    local minintf=''
+    local itf
+
+    if [ "$in" = 1 -a "$current_input" != 'any' ]; then
+      # Inverted Match ?
+      eval not=\${${rule}'_InputNot'}
+      inv=''
+      if [ "$not" = 1 ]; then
+        inv='!'
+      fi
+      # External Interface
+      eval ext=\${${rule}'_InputExt'}
+      if [ "$ext" = 1 ]; then
+        if [ -f "$WAND/$current_input/wan_bridged" ]; then
+          # WAN bridged in LAN
+          itf=`cat $WAND/$current_input/ifname 2>/dev/null`
+          phys='-m physdev'
+          bridge_nf=1
+        else
+          # WAN Input interface
+          itf=`cat $WAND/$current_input/ip6/ifname 2>/dev/null`
+        fi
+      else
+        # LAN Input interface
+        itf=`cat $LAND/$current_input/ifname 2>/dev/null`
+      fi
+      if [ "$itf" = '' ]; then
+        inintf='bad'
+      elif [ "$phys" = '' ]; then
+        inintf="$inv -i $itf"
+        minintf="$inv -o $itf"
+      else
+        inintf="$inv --physdev-in $itf"
+        minintf="$inv --physdev-out $itf"
+      fi
+    fi
+
+    # Output interface
+    local outputs; eval outputs=\${${rule}'_Output'}
+    if [ "$outputs" = "" ]; then
+      outputs='any'
+    fi
+    # Enter the loop event if Output is empty
+    local current_output
+    for current_output in `strip $outputs`; do
+      local physout=''
+      local outintf=''
+      local moutintf=''
+
+       if [ "$out" = 1 -a "$current_output" != 'any' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_OutputNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        # External Interface
+        eval ext=\${${rule}'_OutputExt'}
+        if [ "$ext" = 1 ]; then
+          if [ -f "$WAND/$current_output/wan_bridged" ]; then
+            # WAN bridged in LAN
+            itf=`cat $WAND/$current_output/ifname 2>/dev/null`
+            phys='-m physdev'
+            physout=1
+            bridge_nf=1
+          else
+            # WAN Output interface
+            itf=`cat $WAND/$current_output/ip6/ifname 2>/dev/null`
+          fi
+        else
+          # LAN Output interface
+          itf=`cat $LAND/$current_output/ifname`
+        fi
+        if [ "$itf" = '' ]; then
+          outintf='bad'
+        elif [ "$physout" = '' ]; then
+          outintf="$inv -o $itf"
+          moutintf="$inv -i $itf"
+        else
+          outintf="$inv --physdev-out $itf"
+          moutintf="$inv --physdev-in $itf"
+        fi
+      fi
+
+      # Source IP address
+      local srcip=''
+      local msrcip=''
+      local sip2=''
+      local ip1
+      eval ip1=\${${rule}'_SrcIPStart'}
+      if [ "$ip1" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_SrcIPNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        # IP address range ?
+        eval sip2=\${${rule}'_SrcIPEnd'}
+        if [ "$sip2" != '' ]; then
+          srcip="-m iprange $inv --src-range $ip1-$sip2"
+          msrcip="-m iprange $inv --dst-range $ip1-$sip2"
+        else
+          srcip="$inv -s $ip1"
+          msrcip="$inv -d $ip1"
+        fi
+      fi
+
+      # Destination IP address
+      local dstip=''
+      local mdstip=''
+      eval ip1=\${${rule}'_DstIPStart'}
+      if [ "$ip1" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_DstIPNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        # IP address range ?
+        local ip2; eval ip2=\${${rule}'_DstIPEnd'}
+        if [ "$ip2" != '' ]; then
+          if [ "$sip2" = '' ]; then
+            dstip="-m iprange $inv --dst-range $ip1-$ip2"
+            mdstip="-m iprange $inv --src-range $ip1-$ip2"
+          else
+            dstip="$inv --dst-range $ip1-$ip2"
+            mdstip="$inv --src-range $ip1-$ip2"
+          fi
+        else
+          dstip="$inv -d $ip1"
+          mdstip="$inv -s $ip1"
+        fi
+      fi
+
+      # Source ports
+      local srcpt=''
+      local srcmpt=''
+      local msrcpt=''
+      local msrcmpt=''
+      local pt
+      eval pt=\${${rule}'_SrcPorts'}
+      if [ "$pt" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_SrcPortsNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        # Multiple Port Match ?
+        echo $pt | grep -e , >/dev/null
+        if [ $? = 0 ]; then
+          srcmpt="-m multiport $inv --sports $pt"
+          msrcmpt="-m multiport $inv --dports $pt"
+        else
+          srcpt="$inv --sport $pt"
+          msrcpt="$inv --dport $pt"
+        fi
+      fi
+
+      # Destination ports
+      local dstpt=''
+      local dstmpt=''
+      local mdstpt=''
+      local mdstmpt=''
+      eval pt=\${${rule}'_DstPorts'}
+      if [ "$pt" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_DstPortsNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        # Multiple Port Match ?
+        echo $pt | grep -e , >/dev/null
+        if [ $? = 0 ]; then
+          if [ "$srcmpt" = '' ]; then
+            dstmpt="-m multiport $inv --dports $pt"
+            mdstmpt="-m multiport $inv --sports $pt"
+          else
+            dstmpt="$inv --dports $pt"
+            mdstmpt="$inv --sports $pt"
+          fi
+        else
+          dstpt="$inv --dport $pt"
+          mdstpt="$inv --sport $pt"
+        fi
+      fi
+
+      # ICMP Packet Type
+      local icmpt
+      local type; eval type=\${${rule}'_IcmpType'}
+      case $type in
+        EchoRequest) icmpt='--icmpv6-type echo-request' ;;
+        EchoReply) icmpt='--icmpv6-type echo-reply' ;;
+        *) icmpt='' ;;
+      esac
+
+      # Mark match
+      local mark
+      local match=''
+      eval mark=\${${rule}'_Mark'}
+      if [ "$mark" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_MarkNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        match="$match -m mark $inv --mark $mark"
+      fi
+
+      # IP prec match
+      local prec; eval prec=\${${rule}'_IPPrec'}
+      if [ "$prec" != '' ]; then
+        # Inverted Match ?
+        eval not=\${${rule}'_IPPrecNot'}
+        inv=''
+        if [ "$not" = 1 ]; then
+          inv='!'
+        fi
+        match="$match -m dscp $inv --ip-prec $prec"
+      fi
+
+      # Any additional match
+      local addmatch; eval addmatch=\${${rule}'_AddMatch'}
+      if [ "$addmatch" != '' ]; then
+        match="$match $addmatch"
+      fi
+
+      # Specific table
+      local otbl; eval otbl=\${${rule}'_Table'}
+      case "$otbl" in
+      Filter) otbl='filter' table=$FIREWALL6 ;;
+      Mangle) otbl='mangle' table=$MANGLE6 ;;
+      Nat) otbl='nat' table=$NATRULES6 ;;
+      Auto) otbl='';;
+      esac
+
+      # Target, Other target
+      local target
+      local tgt; eval tgt=\${${rule}'_Target'}
+      local otgt; eval otgt=\${${rule}'_OtherTarget'}
+      case "$tgt" in
+        Drop) target='LOGDROP' ;;
+        Accept) target='ACCEPT' ;;
+        RejectNet) target='REJECT --reject-with icmp6-net-unreachable' ;;
+        RejectHost) target='REJECT --reject-with icmp6-host-unreachable' ;;
+        RejectProto) target='REJECT --reject-with icmp6-proto-unreachable' ;;
+        RejectPort) target='REJECT --reject-with icmp6-port-unreachable' ;;
+        Queue) target='QUEUE' ;;
+        Other) target=$otgt ;;
+        Jump) ;;
+        *) target='' ;;
+      esac
+
+      # Mirror the rule
+      local mirror; eval mirror=\${${rule}'_Symetric'}
+
+      # Protocols
+      local protos; eval protos=\${${rule}'_Protos'}
+      if [ "$protos" = '' ]; then
+        protos='all'
+      fi
+
+      # Clamp MSS
+      local mss; eval mss=\${${rule}'_ClampMss'}
+      if [ "$mss" != '' -a "$mss" -lt 1460 ]; then
+        chain='CLAMP-MSS'
+        target="TCPMSS --clamp-mss $mss"
+        if [ "$protos" != '' -a "$protos" != tcp ]; then
+          target=''
+        fi
+      fi
+
+      # Set DSCP
+      local dscp; eval dscp=\${${rule}'_SetDSCP'}
+      if [ "$dscp" != '' -a "$dscp" -lt 64 ]; then
+        target="DSCP --set-dscp $dscp"
+        if [ "$table" = $FIREWALL6 ]; then
+          table=$MANGLE6
+        fi
+      fi
+
+      # Set Class
+      local class; eval class=\${${rule}'_SetClass'}
+      if [ "$class" != '' ]; then
+        local colonPosition; colonPosition=`expr index $class :`
+        if [ $colonPosition -eq 0 ]; then #There is no colon i.e class=x
+          high=0;
+          low=$class;
+        else #There is colon i.e class=y:x 
+          local high; high=`echo $class | grep -E -o "[0-9]+:" | grep -E  -o "[0-9]+"`
+          local low; low=`echo $class | grep -E -o ":[0-9]+" | grep -E  -o "[0-9]+"`
+        fi  
+        if [ $low -lt 16 -o $high -lt 16 ]; then
+          local hexhigh; hexhigh=`printf "%x" $high`
+          local hexlow; hexlow=`printf "%x" $low`
+          target="CLASSIFY --set-class $hexhigh:$hexlow"
+          if [ "$table" = $FIREWALL6 ]; then
+            table=$MANGLE6
+          fi
+        fi
+      fi
+
+      # Set Mark
+      eval mark=\${${rule}'_SetMark'}
+      if [ "$mark" != '' ]; then
+        target="MARK --set-mark $mark"
+        if [ "$table" = $FIREWALL6 ]; then
+          table=$MANGLE6
+        fi
+      fi
+
+      # Set ConnMark
+      eval mark=\${${rule}'_SetConnMark':-}
+      if [ "$mark" != '' ]; then
+        target="CONNMARK --set-mark $mark"
+        if [ "$table" = $FIREWALL ]; then
+          table=$MANGLE
+        fi
+      fi
+
+      # Redirect Ports
+      local redirect; eval redirect=\${${rule}'_Redirect'}
+      if [ "$redirect" != '' ]; then
+        redirect=`echo $redirect | sed "s/:/-/"`
+        target="REDIRECT --to-ports $redirect"
+        table=$NATRULES6
+        chain='-A PREROUTING0'
+      fi
+
+      # Sanity check on netfilter table for Jump chain or OtherTarget commands
+      if [ "$otgt" != '' ] && ( [ "$tgt" = 'Jump' ] || [ "$tgt" = 'Other' ] ); then
+        [ "$otbl" = '' ] && otbl='filter'
+        if [ "$otbl" = 'filter' ]; then
+          [ "$table" = "$NATRULES6" ] && otbl='nat'
+          [ "$table" = "$PREROUTING6" ] && otbl='mangle'
+          [ "$table" = "$POSTROUTING6" ] && otbl='mangle'
+          [ "$table" = "$MANGLE6" ] && otbl='mangle'
+        fi
+        if [ "$otbl" = 'mangle' ]; then
+          [ "$table" = "$NATRULES6" ] && otbl='nat'
+        fi
+        if [ "$otbl" = 'nat' ]; then
+          [ "$table" = "$MANGLE6" ] && otbl='mangle'
+        fi
+        # Sanity check CHAIN in nat table
+        if [ "$otbl" = 'nat' ]; then
+          [ "$chn" = 'Input' ] && chain='-A PREROUTING0'
+          [ "$chn" = 'Forward' ] && chain='-A POSTROUTING0'
+          [ "$chn" = 'Prerouting' ] && chain='-A PREROUTING0'
+          [ "$chn" = 'Postrouting' ] && chain='-A POSTROUTING0'
+        fi
+        mirror=''
+        target=$otgt
+        [ "$tgt" = 'Jump' ] && echo "$otgt" >>"$NFD6/$otbl.subchains"
+      fi
+
+      # BAD-BAD-BAD: Fails if both source and destination multiport matches
+      if [ "$srcmpt" != '' -a "$dstmpt" != '' ]; then
+        base_log "$INITD/fwrules, multiport match for both source and destination unsupported" debug
+        continue
+      fi
+
+      # BAD: Fails if no target specified
+      if [ "$target" = '' ]; then
+        base_log "$INITD/fwrules:$i, no target specified" debug
+        continue
+      fi
+
+      # Skip rule if invalid input or output interface
+      if [ "$inintf" = 'bad' -o "$outintf" = 'bad' ]; then
+        continue
+      fi
+
+      # Build Rules according to protocol
+      local proto; for proto in `strip $protos`; do
+        local fwrule
+        local mfwrule
+        case $proto in
+        all)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip $match -j $target"
+          ;;
+        tcp)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p tcp $srcpt $dstpt $srcmpt $dstmpt $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p tcp $msrcpt $mdstpt $msrcmpt $mdstmpt $match -j $target"
+          ;;
+        udp)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p udp $srcpt $dstpt $srcmpt $dstmpt $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p udp $msrcpt $mdstpt $msrcmpt $mdstmpt $match -j $target"
+          ;;
+        icmp)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p icmpv6 $icmpt $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p icmpv6 $icmpt $match -j $target"
+          ;;
+        igmp)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p 2 $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p 2 $match -j $target"
+          ;;
+        esp)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p esp $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p esp $match -j $target"
+          ;;
+        ah)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p ah $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p ah $match -j $target"
+          ;;
+        gre)
+          fwrule="$chain $phys $inintf $outintf $srcip $dstip -p 47 $match -j $target"
+          mfwrule="$mchain $phys $minintf $moutintf $msrcip $mdstip -p 47 $match -j $target"
+          ;;
+        *)
+          fwrule=''
+          mfwrule=''
+          ;;
+        esac
+        # IPv6 does not support nat right now (hopefully, this will never happen.
+        # If you need it, I strongly recommend you take a look at what a proxy is.
+        [ "$otbl" = 'nat' ] && return
+        [ "$table" = 'nat' ] && return
+        # Add rule to firewall or mangle table
+        if [ "$fwrule" != '' ]; then
+          echo $fwrule >>$table
+        fi
+        if [ "$mirror" = 1 -a "$mfwrule" != '' ]; then
+          echo $mfwrule >>$table
+        fi
+      done # protos
+    done # output interfaces
+  done # input interfaces
+}
+ 
+finalize_fwrules_ipv6()
+{
+  # Allow ougoing traffic by default
+  local i
+  for i in `ls $LAND`; do
+    local ifname=`cat $LAND/$i/ifname 2>/dev/null`
+    [ "$ifname" = '' ] && continue
+    echo "-A FORWARD -i $ifname -j ACCEPT" >>$FIREWALL6
+  done
+  # Default policy
+  local target='ACCEPT'
+  case "$Firewall_DefaultPolicy6" in
+    Drop) target='LOGDROP' ;;
+    Accept) target='ACCEPT' ;;
+    *) ;;
+  esac
+  echo "-A FORWARD -j $target" >>$FIREWALL6
+  if [ -f /proc/sys/net/bridge/bridge-nf-call-ip6tables ]; then
+    echo $bridge_nf > /proc/sys/net/bridge/bridge-nf-call-ip6tables
+  elif [ "$bridge_nf" = '1' ]; then
+    base_log "Bridge firewalling is not available, please check your configuration" debug
+  fi
+}
+

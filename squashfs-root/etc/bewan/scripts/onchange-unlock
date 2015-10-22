@@ -1,0 +1,4 @@
+#!/bin/sh
+
+base_exit_critical 'onchange'
+

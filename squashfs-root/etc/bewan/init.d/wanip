@@ -1,0 +1,136 @@
+#!/bin/sh
+# /etc/bewan/init.d/wanip $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+# Sanity check
+check_wanip() {
+  if [ ! -d "$WAND/$WANID/ip" ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test -f $WAND/$WANID/wan_ip"
+  local active="test -f $WAND/$WANID/ipname"
+  base_check_arg "$enable" "$active"
+}
+
+stop_wanip() {
+  ARG=stop
+  local IFNAME=`cat $WAND/$WANID/ipname`
+
+  if [ ! -f "$WAND/$WANID/mdmid" ]; then
+    # Stop DHCP client
+    base_call_initd 'dhcpclient'
+    rm -f $DHCPCLIENTD/$IFNAME
+  fi
+
+  base_call_initd 'dslite'
+
+  # Shutdown IP in case of static addressing
+  if [ -f $WAND/$WANID/ip/staticip ]; then
+    base_call_scripts 'ip-down-dhcp'
+    ifconfig $IFNAME 0.0.0.0
+  fi
+
+  # Disconnect USB modem
+  if [ -f "$WAND/$WANID/mdmid" ]; then
+    local ifname=`cat $WAND/$WANID/ifname`
+    ifconfig $ifname down
+  fi
+
+  rm -f $WAND/$WANID/ipname
+  rm -f $WAND/$WANID/ip/staticip
+}
+
+start_wanip() {
+  ARG=start
+
+  local ifname=`cat $WAND/$WANID/ifname`
+  echo $ifname >$WAND/$WANID/ipname
+  echo $ifname >$WAND/$WANID/ip/ifname
+  rm -f $WAND/$WANID/ip/staticip
+
+  # Set up IP interface
+  local wandev='WANConnectionDevice_'$WANID
+  local iptype; eval iptype=\${$wandev'_WANIPConnection_AddressingType'}
+  if [ "$iptype" = 'Static' ] || [ -f "$WAND/$WANID/mdmid" ]; then
+
+    touch $WAND/$WANID/ip/staticip
+    local ipaddr; eval ipaddr=\${$wandev'_WANIPConnection_IPAddress'}
+    local smask; eval smask=\${$wandev'_WANIPConnection_SubnetMask'}
+    local routers; eval routers=\${$wandev'_WANIPConnection_DefaultGateway'}
+    local servers=''
+
+    # Get USB modem IP address
+    if [ -f "$WAND/$WANID/mdmid" ]; then
+      local mdmid=`cat $WAND/$WANID/mdmid`
+      $SCRIPTD/modem3g all $mdmid
+      ipaddr=`cat $MODEMD/$mdmid/ipaddr 2>/dev/null`
+      smask='255.255.255.255'
+      servers=`cat $MODEMD/$mdmid/dns 2>/dev/null`
+    fi
+
+    local bcast=`ipbcast $ipaddr $smask`
+
+    # brings-up network interface in case of static ip
+    IFNAME=$ifname IPADDR=$ipaddr SMASK=$smask BCAST=$bcast ROUTERS=$routers SERVERS=$servers DHCPSRV='' DOMAIN=''
+    base_call_scripts 'ip-up-dhcp'
+
+  # DOCSIS interface use the foreign TI DHCP client
+  elif [ "$iptype" = 'DHCP' ]; then
+
+    ifconfig $ifname 0.0.0.0
+
+    # Used to construct command line or configuration file
+    . /etc/bewan/lib/dhcpclient
+    dhcpclient_config_wan
+    
+    # Switch to zeroconf IPaddress if DHCP request fails
+    rm -f $INTFD/$ifname/zeroconf
+    local ze; eval ze=\${$wandev'_WANIPConnection_Zeroconf'}
+    if [ "$ze" != '' ] && [ "$ze" -eq 1 ] && [ -f "$SCRIPTD/zeroconf-dhcp" ]; then
+      touch $INTFD/$ifname/zeroconf
+    fi
+
+  elif [ "$iptype" = 'DSLite' ]; then
+    base_call_initd 'dslite'
+
+  # DOCSIS interface use the foreign TI DHCP client
+  elif [ "$iptype" = 'Other' ]; then
+    return
+  fi
+
+  local IFNAME=$ifname
+  base_call_initd 'dhcpclient'
+}
+
+main_wanip() {
+  eval $PUSH_ARG
+
+  check_wanip
+  base_log "$INITD/wanip $ARG $WANID" debug
+
+  case $ARG in
+  stop)
+    stop_wanip
+    ;;
+  start)
+    start_wanip
+    ;;
+  restart)
+    stop_wanip
+    start_wanip
+   ;;
+  esac
+}
+
+main_wanip

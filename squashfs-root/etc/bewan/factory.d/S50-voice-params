@@ -1,0 +1,7 @@
+#!/bin/sh
+local VOICE_CLI=/nvram/gvt/voice.cli
+if [ -f ${VOICE_CLI} ]; then
+		base_log "GVT Setting default voice configuration" debug
+		cli -q < ${VOICE_CLI}
+		rm -f ${VOICE_CLI}
+fi

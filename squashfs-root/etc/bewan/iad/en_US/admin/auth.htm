@@ -1,0 +1,129 @@
+<div class="col-722 left">
+	<h3 class="text-up">Authentication</h3>
+	<script type="text/javascript" src="../js/sha256.javascript"></script>
+	<div class="bloc">
+		<div class="bloc_header" >You are not logged in</div>
+		<div class="bloc_desc">
+			<p>To make changes to the configuration, you must login</p>
+		</div>
+		<div class="bloc_body">
+			<div class="form">
+				<p class="label left">
+					<label for="login">Username:</label>
+				</p>
+				<p class="field right">
+					<input tabindex="1" type="text" name="login" id="login" />
+				</p>
+				<p class="label left">
+					<label>Password:</label>
+				</p>
+				<p class="field right">
+					<input  tabindex="2" onkeypress="actionOnEnter(event);" type=password name="password" id="password" />
+				</p>
+				<p id="errorMsg" style="padding:10px; margin:0; display:none; color:red; clear:both"></p>
+			</div>
+			
+			<form name="login_form" method="post" enctype="multipart/form-data" action="/cgi-bin/login.cgi">
+				<input name="request" type="hidden" value="authentication" />
+				<input id="level" name="level" type="hidden" value="" />
+				<input name="seed" type="hidden" />
+			</form>
+			<div class="validation">
+				<a tabindex="2" onclick="javascript:if(checkSubmit())document.login_form.submit();" class="btn-default-orange-small right" ><span>Login</span></a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+// Bad authentication
+if ( getParamValue('pwd') == 'ko') {
+    document.getElementById('errorMsg').innerHTML ='Username and/or password are not correct';
+    document.getElementById('errorMsg').style.display='';
+}
+
+function actionOnEnter(e) {
+    var keycode;
+    if (window.event) {
+        keycode = window.event.keyCode;
+    }
+    else if (e) {
+        keycode = e.which;
+    }
+
+    if (keycode == "13") {
+        if(checkSubmit()) {
+            document.login_form.submit();
+        }
+    }
+}
+
+function trim(str) {
+    return str.replace(/^\s+|\s+$/g,"");
+}
+
+function encrypt_form(login, password, level, cookie_value) {
+    // var cli = new ConfigAccess(cookie_value);
+    var crypt = ConfigAccess.encrypt(cookie_value, login + ":" + password);
+    document.login_form.seed.value = hex_sha256(crypt);
+    document.login_form.level.value = level;
+}
+
+function checkSubmit() {
+    var emptyMsg = 'Username and password are mandatory';
+    var login = document.getElementById('login');
+    var password = document.getElementById('password');
+    var level_auth = document.getElementById('level_auth').innerHTML.split('&')[0] || "";
+    var errorMsg = document.getElementById('errorMsg');
+
+    DomUtil.removeClass(login, "invalid");
+    DomUtil.removeClass(password, "invalid");
+    
+    
+    var lVal = trim(login.value);
+    var pVal = trim(password.value);
+    var hasError = false;
+    
+    if(!lVal) {
+        DomUtil.addClass(login, "invalid");
+        hasError = true;
+    }
+    if(!pVal) {
+        DomUtil.addClass(password, "invalid");
+        hasError = true;
+    }
+    
+    if(hasError) {
+        errorMsg.innerHTML = emptyMsg;
+        errorMsg.style.display = "block";
+        return false;
+    }else {
+        errorMsg.innerHTML = "";
+        errorMsg.style.display = "none";
+    }
+
+    var cookie_vars = document.cookie.split(";");
+    var elm_cookie;
+
+    for (elm_cookie in cookie_vars) {
+        var elm = {
+            "key": trim(cookie_vars[elm_cookie].split("=")[0]),
+            "value": trim(cookie_vars[elm_cookie].split("=")[1])
+        };
+        if (elm.key == "BW_iad_ID") {
+            encrypt_form(lVal, pVal, level_auth, elm.value);
+            return true;
+        }
+    }
+    return false;
+}
+
+function getParamValue(param) {
+    var u = document.location.href ;
+    var reg = new RegExp('(\\?|&|^)'+param+'=(.*?)(&|$)');
+    var matches = u.match(reg);
+    if (matches != null)
+        return matches[2] ;
+}
+
+</script>

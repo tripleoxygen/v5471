@@ -1,0 +1,10 @@
+#!/bin/sh
+# No environment variable
+# $LANID = lan interface index
+
+restart_host() {
+	local ARG=restart
+	base_call_initd 'host'
+}
+
+restart_host

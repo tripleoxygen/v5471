@@ -1,0 +1,13 @@
+#!/bin/sh
+
+restore_rpfilter()
+{
+	local wanid=${WANID:-0}
+	local name=`cat $WAND/$WANID/ip/ifname 2>/dev/null`
+	[ -z "$name" ] && return
+	# Restore default value when going down
+	local default; eval default=`sysctl -n net.ipv4.conf.default.rp_filter`
+	sysctl -w net.ipv4.conf.$name.rp_filter=$default >/dev/null 2>/dev/null
+}
+
+restore_rpfilter

@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# This script is run by pppd when ppp link fails to established.
+
+# Environnement variables:
+
+#  IFNAME:    $1, interface name (pppi)
+#  DEVICE:    $2, device name
+
+IFNAME=${1:-}
+DEVICE=${2:-}
+
+. /etc/bewan/scripts/globals
+. /etc/bewan/lib/base
+
+base_log "$SCRIPTD/ip-fail-ppp $IFNAME $DEVICE" debug
+
+# Take wan-up-down mutex
+base_enter_critical 'wan-up-down'
+
+# Get config parameters after taking lock
+base_call_initd 'setparam'
+
+if [ -f "$INTFD/$IFNAME/wanid" ]; then
+  WANID=`cat $INTFD/$IFNAME/wanid`
+  base_call_scripts 'ip-fail'
+fi
+
+# Release wan-up-down mutex
+base_exit_critical 'wan-up-down'

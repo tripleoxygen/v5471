@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+<link rel="stylesheet" type="text/css" href="../../css/gateway.css"/>
+
+<script type="text/javascript" src="../js/morpheus.min.js"></script>
+<script type="text/javascript" src="../js/menu.js"></script>
+<script type="text/javascript" src="../js/dns.js"></script>
+<script type="text/javascript" src="../js/lite.javascript"></script>
+<script type="text/javascript" src="../js/app.javascript"></script>
+<script type="text/javascript" src="../js/base64.javascript"></script>
+<script type="text/javascript" src="../js/configAccess.javascript"></script>
+<script type="text/javascript" src="../js/languages.javascript"></script>
+
+<!--#isAuth level=admin -->
+	<script type="text/javascript">
+		$.event.ready(function() {
+			var util = $.util,
+			pageData = {
+				token: util.parseJson('<!--#echo jsonvar="token=Services_IADConfigurator_CurrentLanguage"-->'),
+				lanIP: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_IPInterface_1_IPAddress"-->'),
+				lang  : util.parseJson('<!--#echo jsonvar="cli=Services_IADConfigurator_CurrentLanguage"-->')
+			};
+			Page.init(pageData);
+		});
+	</script>
+<!--#endAuth var=ok-->
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+	<div class="wrap text-right">
+		
+		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+		<img src="../../img/power-box.png" alt="Power Box GVT">
+		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+		
+	</div>
+	
+	<div class="clear"></div>
+	
+</div><!--header-gateway-->
+
+<div id="content">
+
+	<div class="wrap">
+
+		<div id="conteudo-gateway">
+			
+			<div class="col-192 left">
+				<script type="text/javascript">ImportMenu('menu_languages');</script>
+			</div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->
+			
+			<div class="col-722 left" id="col-722">
+			
+				<h3 class="text-up">Idioma</h3>
+			
+				<table class="setupWifiTable">
+					<thead>
+						<th>Idioma</th>
+					</thead>
+					<tbody>
+						</tr>
+						<tr class="header">
+							<td>Escolha o idioma que deseja utilizar na interface de configuração do Power Box:</td>
+						</tr>
+						<tr>
+							<td class="cinza">
+							Português<input type="radio"  name="lang" id="radioPT" value="PT" />
+							English<input type="radio" name="lang"  id="radioEN" value="EN" />
+							</td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td>
+								<a id="cancel" class="btn-default-orange-small right"><span>Cancelar</span></a>
+								<a id="save" class="btn-default-orange-small right"><span>Salvar</span></a>
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+				
+			</div><!--col-722-->
+<!--#endAuth var=ok-->
+			<div class="clear"></div>
+			
+			
+		</div><!--conteudo-->
+		
+		<div class="clear"></div>
+		
+	</div><!--wrap-->
+	
+</div><!--content-->
+
+</body>
+	

@@ -1,0 +1,82 @@
+#!/bin/sh
+
+led_usb_mono() {
+	local dev
+	# Storage: if mtab is not empty then a usb storage device is mounted 
+	if [ -f /var/bewan/mtab ]; then  
+		for dev in $(cat /var/bewan/mtab | cut -d\  -f 1); do 
+			if [ -e $dev ]; then
+				ledctl Susb
+				return 0
+			fi
+		done
+	fi
+
+	# Printer
+	echo "status 1; cd _Printer_Item; ls" |cli -q |grep -q '\[Connected\]$' && {
+		ledctl Susb
+		return 0
+	}
+
+	ledctl susb
+}
+
+led_usb_multi() {
+	local ledcount
+	local idx
+
+	# How many leds ?
+	ledcount=`echo "status 1; cd Device_LedButtons; ls" |cli -q |grep '\[usb.\]$' |wc -l`
+	# Check if ledcount is ok and an integer
+	[ -z "$ledcount" ] && return
+	expr "$ledcount" + 1 >/dev/null 2>&1 || return
+
+	for obj in `echo "status 1; cd Storage_Item; ls" |cli -q |grep '\[ConnectedMounted\]$' | cut -d \  -f 1`; do
+		local usbid=`echo "status 1; cd ${obj%%_State}; get SysDevice" |cli -q |cut -d / -f 7 |cut -d - -f 2`
+		ledctl Susb${usbid}
+		# Set var usb$idx for checks later
+		eval usb${usbid}=1
+	done
+
+	# Ok, check leds that we set
+	idx=1
+	while [ "$idx" -le "$ledcount" ]; do
+		[ -n "$(eval echo \${usb$idx:-})" ] || break
+		idx=$(($idx + 1))
+	done
+	# If all leds are on, no need to go further
+	[ "$idx" -gt "$ledcount" ] && return 0
+
+	# Printer
+	for obj in `echo "status 1; cd Printer_Item; ls" |cli -q |grep '\[Connected\]$' | cut -d \  -f 1`; do
+		local usbid=`echo "status 1; cd ${obj%%_State}; get Device" |cli -q |cut -d / -f 7 |cut -d - -f 2`
+		ledctl Susb${usbid}
+		# Set var usb$idx for checks later
+		eval usb${usbid}=1
+	done
+
+	# Ok, now, set all unset leds as down
+	idx=1
+	while [ "$idx" -le "$ledcount" ]; do
+		[ -z "$(eval echo \${usb$idx:-})" ] && ledctl susb$idx
+		idx=$(($idx + 1))
+	done
+}
+
+led_usb() {
+	which ledctl >/dev/null || return
+
+	local monoled=
+	local ledcount=
+
+	# Ok, this may be dumb, but this is the easiest way right now ...
+	echo "status 1; cd Device_LedButtons; ls" |cli -q |grep -q '\[usb\]$' && monoled=1
+
+	if [ -n "$monoled" ]; then
+		led_usb_mono
+	else
+		led_usb_multi
+	fi
+}
+
+led_usb

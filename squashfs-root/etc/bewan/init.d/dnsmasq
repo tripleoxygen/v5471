@@ -1,0 +1,140 @@
+#!/bin/sh
+# /etc/bewan/init.d/dnsmasq $1
+# $1 or $ARG = start stop restart
+# $2 or $IFNAME = stop or restart for interface name
+# $2 or $IFNAME = all, action for all DHCP interfaces
+# $2 or $IFNAME = '', action for dns proxy
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+IFNAME=${IFNAME:-}
+if [ "$IFNAME" = '' ]; then
+  IFNAME=${2:-}
+fi
+
+check_dnsmasq() {
+  # Sanity check
+  if ! which dnsmasq > /dev/null; then
+    ARG=nothing
+    return
+  fi
+
+  local active=''
+
+  base_check_arg "$enable" "$active"
+}
+
+build_conf_file() {
+  # DHCP server
+  local domain=''
+  [ "$Device_Domain" != '' ] && domain="domain=$Device_Domain"
+
+  cat <<EOF >$conf_file
+keep-in-foreground
+dhcp-authoritative
+# Currenlty following optional parameter 'domain' for dnsmasq is not being used.
+# $domain
+dhcp-script=/etc/bewan/scripts/dhcpd-call
+dhcp-leasefile=/var/bewan/dnsmasq.leases
+pid-file=/var/run/dnsmasq.pid
+user=root
+EOF
+  # Import DHCP server configs
+  cat $DNSMASQD/* >>$conf_file 2>/dev/null
+
+  # DNS Forwarder
+  local en=${Services_DnsForwarder_Enable:-0}
+  if [ $en != 1 ]; then
+    echo "port=0" >>$conf_file
+  else
+    local port=$Services_DnsForwarder_Port
+    [ "$port" = '' ] && port=53
+    local log='#'; [ "$Services_DnsForwarder_LogQueries" = 1 ] && log=''
+    local drd='#'; [ "$Services_DnsForwarder_DnsRedirect" = 1 ] && drd=''
+    local dft=''
+    # Only if dns-fallback-time is more than 0 seconds than write it to
+    # dnsmasq.conf
+    [ "$Services_DnsForwarder_DnsFallbackTime" -gt 0 ] && {
+      dft="dns-fallback-time=$Services_DnsForwarder_DnsFallbackTime"
+    }
+    local bogusdn=''
+    [ "$Services_DnsForwarder_RemoveDnsRedirectFrom" != '' ] && {
+      bogusdn="bogus-nxdomain=$Services_DnsForwarder_RemoveDnsRedirectFrom"
+    }
+    local filtersrv='#'; [ "$Services_DnsForwarder_FilterSRVRequest" = 1 ] && filtersrv=''
+    local csize=${Services_DnsForwarder_CacheSize:-0}
+    touch $resolv
+    cat <<EOF >>$conf_file
+$filtersrv filterwin2k
+bogus-priv
+port=$port
+$log log-queries
+resolv-file=$resolv
+cache-size=$csize
+$drd dns-redirect
+$bogusdn
+$dft
+EOF
+  fi
+
+  local list=${Services_DnsForwarder_DomainAlternateDNS_List:-}
+  for i in `strip $list`; do
+    local domain; eval domain=\${'Services_DnsForwarder_DomainAlternateDNS_'$i'_Domain'}
+    local altdns; eval altdns=\${'Services_DnsForwarder_DomainAlternateDNS_'$i'_DNS'}
+    cat <<EOF >>$conf_file
+server=/$domain/$altdns
+EOF
+  done
+}
+
+kill_dnsmasq() {
+  local pid=`cat $daemon_pid 2>/dev/null`
+  base_kill_daemon $daemon "$pid"
+}
+
+stop_dnsmasq() {
+  kill_dnsmasq
+  rm -f $conf_file
+}
+
+start_dnsmasq() {
+  build_conf_file
+
+  if [ -f $conf_file ]; then
+    # install daemon
+    local cmd="/sbin/dnsmasq -C $conf_file"
+    base_add_daemon $daemon "$cmd"
+  fi
+}
+
+main_dnsmasq() {
+  eval $PUSH_ARG
+
+  local daemon='dnsmasq'
+  local daemon_pid="/var/run/$daemon.pid"
+
+  local conf_file='/var/bewan/dnsmasq.conf'
+  local resolv='/var/bewan/resolv.conf'
+
+  local endns=${Services_DnsForwarder_Enable:-0}  
+  local endhcp=`ls $DNSMASQD/* 2> /dev/null | wc -l`
+  local enable="test $endns = 1 -o $endhcp != 0"
+
+  check_dnsmasq
+  base_log "$INITD/dnsmasq $ARG $IFNAME" debug
+
+  case $ARG in
+  start)
+    kill_dnsmasq
+    start_dnsmasq
+    ;;
+  stop|restart)
+    stop_dnsmasq
+    $enable && start_dnsmasq
+    ;;
+  esac
+}
+
+main_dnsmasq

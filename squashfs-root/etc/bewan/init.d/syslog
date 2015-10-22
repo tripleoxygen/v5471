@@ -1,0 +1,46 @@
+#!/bin/sh
+# /etc/bewan/init.d/syslog $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+base_log "$INITD/syslog $ARG" debug
+
+stop_syslog() {
+  local ex=0
+  [ -f /var/bewan/syslog ] && ex=1
+  rm -f /var/bewan/syslog
+  # syslog is not part of daemons built from /var/bewan/inittab.d
+  # syslog is the first daemon to be launched
+  if [ $ex = 1 ]; then
+    base_call_initd 'inittab'
+    kill `pidof syslogd 2>/dev/null` 2>/dev/null
+  fi
+}
+
+start_syslog() {
+  local remote=''
+  if [ "$Services_SyslogRemote_Enable" = 1 ]; then
+    remote="-R $Services_SyslogRemote_Host"
+    if [ "$Services_SyslogRemote_Port" != "" ]; then
+      remote=$remote:$Services_SyslogRemote_Port
+    fi
+    remote="$remote -L"
+  fi
+  echo "/dev/null::respawn:/sbin/syslogd -n -C64 $remote" >/var/bewan/syslog
+}
+
+case $ARG in
+stop)
+  stop_syslog
+  ;;
+start)
+  start_syslog
+  ;;
+restart)
+  stop_syslog
+  start_syslog
+  base_call_initd 'inittab'
+  ;;
+esac

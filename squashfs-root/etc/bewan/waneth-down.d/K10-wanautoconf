@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# Called by waneth-down
+# $1 : down
+
+. /etc/bewan/lib/wanautoconf
+
+trigger_autoconf() {
+	if [ ${Services_WANAutoConfig_Enable:-0} -ne 1 ]; then
+		return
+	fi
+
+	base_enter_critical 'wanautoconf'
+
+	base_log "K10-wanautoconf (waneth-down) ${1:-}" debug
+
+	# Get the enabled physical interface
+	local current_mode=''
+	retrieve_current_mode
+
+	# Get the WAN phy state
+	local phy_state
+	retrieve_phy_state WANEthernetInterface 1
+
+	# Actions when WAN Ethernet cable is unplugged
+	# If we were in WAN Ethernet mode and xDSL is already synchronised, switch to xDSL mode
+	if [ "$phy_state" = "0" ] && [ "$current_mode" = "WANEthernetInterface" ]; then
+		xdslsynchro=`adslinfo | grep "line state" | grep "Connected" | wc -l`
+		if [ "$xdslsynchro" -eq 1 ]; then
+			local xdsl_mode=''
+			retrieve_xdsl_mode
+			if [ "$xdsl_mode" = "vdsl" ]; then
+				change_wan_mode PTMEthernetInterface
+			else
+				change_wan_mode ATMEthernetInterface
+			fi
+		fi
+	fi
+
+	base_exit_critical 'wanautoconf'
+}
+
+trigger_autoconf $@

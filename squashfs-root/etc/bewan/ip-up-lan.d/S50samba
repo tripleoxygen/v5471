@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Called on ip-up event on a LAN interface
+# $LANID= LAN connection index
+start_samba() {
+	# Nothing to do during boot
+	[ -f /var/run/rcrunning ] && return 0
+	local ARG=refresh
+	base_call_initd 'samba'
+}
+
+start_samba

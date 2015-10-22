@@ -1,0 +1,82 @@
+#!/bin/sh
+# /etc/init.d/lanradvd $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $LANID = action for lanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+LANID=${LANID:-}
+if [ "$LANID" = '' ]; then
+  LANID=${2:-}
+fi
+
+check_lanradvd() {
+  if [ "$IFNAME" = "" ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test -d $LAND/$LANID/ip6"
+  local active="test -d $LAND/$LANID/radvd"
+  base_check_arg "$enable" "$active"
+}
+
+stop_lanradvd() {
+
+  # Stop radvd daemon for $IFNAME
+  ARG=stop
+  base_call_initd 'radvd'
+
+  # Remove radvd configuration
+  rm -rf $LAND/$LANID/radvd
+}
+
+start_lanradvd() {
+
+  mkdir $LAND/$LANID/radvd
+  local landev='LANDevice_'$LANID
+
+  local en; eval en=\${$landev'_HostConfig6_RAServer_Enable':-0}
+  [ "$en" != 1 ] && return
+
+  . /etc/bewan/lib/radvd
+  local ipaddr=`cat $LAND/$LANID/ip6/ipaddr 2>/dev/null`
+  local lladdr=`cat $LAND/$LANID/ip6/lladdr 2>/dev/null`
+  lladdr=${lladdr%%/*}
+  local prefix=`cat $LAND/$LANID/ip6/prefix 2>/dev/null`
+  local ifname=$IFNAME
+  local isrouter=0
+  if [ -f $INTFD/$ifname/assocwan ]; then
+    isrouter=1
+  fi
+  radvd_config_lan $ifname
+
+  # Start radvd daemon
+  ARG=start
+  base_call_initd 'radvd'
+}
+
+main_lanradvd() {
+  eval $PUSH_ARG
+
+  local IFNAME=`cat $LAND/$LANID/ifname 2>/dev/null`
+
+  check_lanradvd
+  base_log "$INITD/lanradvd $ARG $LANID" debug
+
+  case $ARG in
+  stop)
+    stop_lanradvd
+    ;;
+  start)
+    start_lanradvd
+    ;;
+  restart)
+    stop_lanradvd
+    start_lanradvd
+    ;;
+  esac
+}
+
+main_lanradvd

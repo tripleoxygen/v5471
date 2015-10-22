@@ -1,0 +1,3 @@
+#!/bin/sh
+
+base_enter_critical 'bcmwl-init'

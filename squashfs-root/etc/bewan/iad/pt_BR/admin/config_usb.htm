@@ -1,0 +1,189 @@
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+        <link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+        <script type="text/javascript" src="../js/morpheus.min.js"></script>
+        <script type="text/javascript" src="../js/menu.js"></script>
+        <script type="text/javascript" src="../js/dns.js"></script>
+        <script type="text/javascript" src="../js/lite.javascript"></script>
+        <script type="text/javascript" src="../js/app.javascript"></script>
+        <script type="text/javascript" src="../js/base64.javascript"></script>
+        <script type="text/javascript" src="../js/configAccess.javascript"></script>
+        <script type="text/javascript" src="../js/config_usb.javascript"></script>
+<!--#isAuth level=admin -->
+<script type="text/javascript">
+    $.event.ready(function() {
+        var util = $.util,
+        token = util.parseJson('<!--#echo jsonvar="token=Services_Samba_Enable,Services_SuperDLNA_Enable,Services_Ippos_Enable"-->'),
+        pageData = {
+            token: token,
+            Services: {
+                Samba: { "Enable" : util.parseJson('<!--#echo jsonvar="cli=Services_Samba_Enable"-->')},
+                Ippos:    { "Enable" : util.parseJson('<!--#echo jsonvar="cli=Services_Ippos_Enable"-->')},
+                SuperDLNA:   { "Enable" : util.parseJson('<!--#echo jsonvar="cli=Services_SuperDLNA_Enable"-->')}
+            }
+        };
+        Page.init(pageData);
+
+        $("#tab-01").slideUp("normal");
+        $("#menu-configUSB li").find("a").addClass("active");
+        $("#menu-configUSB").find("a").bind("click", function(){ 
+            var cur_tab_idx = $("#menu-configUSB li a.active").attr("rel");
+            $("#menu-configUSB li a").removeClass("active");
+            $(this).addClass("active");
+            $("#tab-" + cur_tab_idx).slideDown("normal", function() {
+                var i = $("#menu-configUSB li a.active").attr("rel");
+                $("#tab-" + i).slideUp("normal");
+            });
+            return false;
+        });
+    });
+</script>
+<!--#endAuth var=ok--> 
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+    <div class="wrap text-right">
+        
+        <a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+        <img src="../../img/power-box.png" alt="Power Box GVT">
+        <p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+        
+    </div>
+    
+    <div class="clear"></div>
+    
+</div><!--header-gateway-->
+
+<div id="content">
+
+    <div class="wrap">
+
+        <div id="conteudo-gateway">
+            
+            <div class="col-192 left">
+            <script type="text/javascript">ImportMenu('menu_usb');</script>
+            </div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->            
+            <div class="col-722 left" id="col-722">
+            
+                <h3 class="text-up">Dispositivos USB</h3>
+
+                <div  id="menu-configUSB">
+                    <ul>
+                        <li><a href="#" rel="01">Compartilhamento</a></li>
+                        <li><a href="#" rel="02">Impressoras</a></li>
+                        <li><a href="#" rel="03">DLNA</a></li>
+                    </ul>
+                </div>
+
+                <div class="clear"></div>
+
+                <div id="tab-01" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th>Compartilhamento</th>
+                        </thead>
+                        <tbody>
+                            </tr>
+                            <tr class="header">
+                                <td>Permita que dispositivos como Pen-Drives e HD-Externos conectados na porta USB sejam compartilhados na sua rede. </br> To access, type \\Powerbox in your file manager.</td>
+                            </tr>
+                            <tr>
+                                <td class="cinza">
+                                    <div class="switchButton"  type="switch" id="Services_Samba_Enable" state="" style="margin-left:310px"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>
+                                    <a id="cancelFiles" class="btn-default-orange-small right"><span>Cancelar</span></a>
+                                    <a id="saveFiles"  class="btn-default-orange-small right"><span>Salvar</span></a>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div id="tab-02" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th>Impressoras</th>
+                        </thead>
+                        <tbody>
+                            </tr>
+                            <tr class="header">
+                                <td>Permita que impressoras conectadas na porta USB sejam compartilhadas na sua rede.</td>
+                            </tr>
+                            <tr>
+                                <td class="cinza">
+                                    <div class="switchButton"  type="switch" id="Services_Ippos_Enable" state="" style="margin-left:310px"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>
+                                    <a id="cancelPrint" class="btn-default-orange-small right"><span>Cancelar</span></a>
+                                    <a id="savePrint" class="btn-default-orange-small right"><span>Salvar</span></a>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div id="tab-03" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th>DLNA</th>
+                        </thead>
+                        <tbody>
+                            </tr>
+                            <tr class="header">
+                                <td>Permita que dispositivos como Pen-Drives e HD-Externos conectados na porta USB, compartilhem arquivos multimídia com outros dispositivos DLNA, como PCS, TVs e smartfones.
+                            </tr>
+                            <tr>
+                                <td class="cinza">
+                                    <div class="switchButton"  type="switch" id="Services_SuperDLNA_Enable" state="" style="margin-left:310px"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>
+                                    <a id="cancelDLNA" class="btn-default-orange-small right"><span>Cancelar</span></a>
+                                    <a id="saveDLNA" class="btn-default-orange-small right"><span>Salvar</span></a>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div><!--col-722-->
+<!--#endAuth var=ok-->        
+            <div class="clear"></div>
+                
+        </div><!--conteudo-->
+        
+        <div class="clear"></div>
+        
+    </div><!--wrap-->
+    
+</div><!--content-->
+
+</body>
+<!--#endCheck var=ok-->

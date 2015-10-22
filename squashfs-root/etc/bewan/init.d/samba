@@ -1,0 +1,386 @@
+#!/bin/sh
+# /etc/bewan/init.d/samba $1
+# $1 or $ARG = start stop restart
+
+# Acquire the samba lock
+tnset /var/bewan/lock/samba
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+# load string lib
+. /etc/bewan/lib/string
+
+##################################################
+# Sanity check
+##################################################
+check_samba() {
+  if [ ! -f /bin/nmbd ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test x$Services_Samba_Enable = x1"
+  local active='base_exist_daemon nmbd'
+  base_check_arg "$enable" "$active"
+}
+
+##################################################
+#------SETUP------
+##################################################
+setup_samba() {
+  # Required directories
+  mkdir -p ${samba_spool_dir}
+  mkdir -p ${samba_config_dir}
+  mkdir -p ${samba_config_parts}
+  mkdir -p ${samba_config_locks}
+  mkdir -p ${samba_passwd_dir}
+
+  # Linking codepages
+  ln -fs /etc/codepages/lowcase.dat ${samba_config_dir}/lowcase.dat 2>/dev/null
+  ln -fs /etc/codepages/upcase.dat ${samba_config_dir}/upcase.dat 2>/dev/null
+  ln -fs /etc/codepages/valid.dat ${samba_config_dir}/valid.dat 2>/dev/null
+
+  # Linking charsets
+  mkdir -p ${samba_config_dir}/charset
+  ln -fs /etc/codepages/CP850.so ${samba_config_dir}/charset/CP850.so 2>/dev/null
+  ln -fs /etc/codepages/CP437.so ${samba_config_dir}/charset/CP437.so 2>/dev/null
+
+  # Adding empty files (just in case...)
+  # touch ${samba_config_file}
+  #	touch ${samba_passwd_file}
+	touch ${samba_printcap_file}
+}
+
+##################################################
+#------UPDATE SAMBA------
+##################################################
+## Regenerate shares part of the samba configuration 
+## file, depending of current mount points, plugged 
+## storages, etc.
+update_samba()
+{
+  local conf="${samba_config_parts}/10-global"
+
+  # FIXME: check what this code is really doing...
+  local lan_ifaces=""
+  local ipaddr ipmask
+  local lansnumber=
+  eval lansnumber=${LANDevice_Count}
+  local lans=0
+  while [ ${lans} -lt ${lansnumber} ]; do
+    lans=`expr ${lans} + 1`
+    ipaddr=`cat ${LAND}/${lans}/ip/ipaddr 2>/dev/null`
+    ipmask=`cat ${LAND}/${lans}/ip/ipmask 2>/dev/null`
+    [ "${ipaddr}" = '' ] && continue
+    [ "${ipmask}" = '' ] && continue
+    ipmask=`ipmask ${ipmask}`
+    if [ "${Services_Samba_InterfaceList:-}" = "" ]; then
+      lan_ifaces="${lan_ifaces} ${ipaddr}/${ipmask}"
+    else
+      local i
+      for i in `strip ${Services_Samba_InterfaceList:-}`; do
+        if [ $i -eq ${lans} ]; then
+          lan_ifaces="${lan_ifaces} ${ipaddr}/${ipmask}"
+          break
+        fi
+      done
+    fi
+  done
+
+  local wkgroup=${Services_Samba_Workgroup:-"WORKGROUP"}
+
+  # read parameters from configlib/router.conf
+  cat > ${conf} <<-EOF 
+  [global]
+  log file = ${samba_config_dir}/log.%m
+  debug level = 0
+  preferred master = yes
+	
+  # Samba 3 charset
+  dos charset = CP850
+  unix charset = UTF-8
+
+  lock directory = ${samba_config_locks}
+  encrypt passwords = yes
+  socket options = TCP_NODELAY
+  workgroup = ${wkgroup}
+  server string = ${Services_Samba_ServerString:-"ibox"}
+  load printers = yes
+  printcap name = ${samba_printcap_file}
+  bind interfaces only = true
+  interfaces = ${lan_ifaces}
+  passdb backend = smbpasswd
+  guest account = root
+  map to guest = bad user
+
+	EOF
+
+  if [ ${Services_Samba_Opened:-0} = 1 ]; then
+    cat >> ${conf} <<-EOF
+		security = share
+		public = yes
+		writable = yes
+
+		EOF
+  fi
+
+  #If SMBNetFS is present, update workgroup	
+  if [ "${Services_SMBNetFS_Enable:-2}" != "2" ]; then
+    echo "cd _Services_SMBNetFS_Samba; set Workgroup $wkgroup; fcommit" | cli -s
+  fi
+
+}
+
+##################################################
+#------UPDATE SHARE------
+##################################################
+## Regenerate shares part of the samba configuration 
+## file, depending of current mount points, plugged 
+## storages, etc.
+
+# Use only less than 12 ASCII-7 char for the share name:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# - On Apple MacOS X (10.4.8), a share name like ''Disque(s) en partage'' will
+# be displayed truncated as ''Disque(s) en''. Of course, accessing to its data 
+# with the obtained share name is impossible.
+# - On Microsoft Windows, chars beeing not ASCII-7 are shown as strange chars
+# combinations. It seems that using CPxxx, unicode (\u...), UTF8 or UTF16 does
+# not solve the problem.
+update_share_samba()
+{
+  local conf="${samba_config_parts}/20-share"
+  local storage_shareenable=""
+  local storage_sharename=""
+  local storage_state=""
+  local storage_mountpoint=""
+  local storage_index=""
+  local storage_list=""
+
+  if [ ${Services_Samba_Opened:-0} != 1 ]; then
+    # fixme: share only home directory when not opened
+    return 0
+  fi
+  
+  # share all disks when opened
+  echo "" > ${conf}
+  if [ ${Services_Samba_StorageEnable:-0} = 1 ]; then
+
+	storage_update_share_samba $conf
+
+	if [ "${Services_Samba_ExportMediaFileSystem:-0}" = "1" ]; then
+		if [ "${Services_MediaFileSystem_Enable:-0}" = "1" ] && [ -d "${Services_MediaFileSystem_MountPoint:-/void}" ]; then
+			base_log "adding MediaFuse"  debug
+			cat >> ${conf} <<-EOF
+			[MediaFileSystem]
+			path = ${Services_MediaFileSystem_MountPoint:-}
+			read only = yes
+
+			EOF
+		fi
+	fi
+    # FIXME: should chmod on mount, not in samba
+    # chmod 777 /var/mnt/* 2>/dev/null
+  fi
+}
+
+##################################################
+#------UPDATE PRINTER------
+##################################################
+update_printer_samba()
+{
+  local conf="${samba_config_parts}/30-printer"
+  local printer_list=""
+  local printer_index=""
+  local printer_desc=""
+  local printer_name=""
+  local printer_state=""
+  local printer_dev=""
+  local printer_enable=""
+
+  echo "" > ${conf}
+  if [ ${Services_Samba_PrinterEnable:-0} = 1 ]; then
+    cat >> ${conf} <<-EOF
+		[printers]
+		comment = All Printers
+		path = ${samba_spool_dir}
+		create mask = 0700
+		printable = yes
+		browseable = yes
+		guest ok = yes
+		use client driver = yes
+	
+		EOF
+	
+    echo "" > ${samba_printcap_file}
+    printer_list=`strip ${Printer_Item_List}`
+    if [ "${printer_list}" != "" ]; then
+      for printer_index in ${printer_list}; do
+        eval printer_desc=\${'Printer_Item_'${printer_index}'_Description'}
+        eval printer_enable=\${'Printer_Item_'${printer_index}'_Share_Enable'}
+        if [ "$printer_enable" != "1" ]; then
+          continue;
+        fi
+        eval printer_name=\${'Printer_Item_'${printer_index}'_Share_Name'}
+        if [ "$printer_name" = '' ]; then
+          printer_name=$( String_sanitizeShareName 13 ${printer_desc} )
+        fi
+        printer_state=`echo "status 1; cd _Printer_Item_${printer_index}_Status; get State" | cli -q`
+        printer_dev=`echo "status 1; cd _Printer_Item_${printer_index}_Status; get Device" | cli -q`
+
+        if [ "$printer_state" != "Connected" ]; then
+          continue
+        fi
+
+        base_log "adding printer ${printer_name} " debug
+        cat >> ${conf} <<-EOF
+				[${printer_name}]
+				comment = Printer ${printer_desc}
+				path = ${samba_spool_dir}
+				read only = yes
+				printable = yes
+				guest ok = yes
+				print command = dd if=%s of=${printer_dev} bs=1024; rm -f %s
+
+				EOF
+
+        sed "s/^[[:space:]]*//" >> ${samba_printcap_file} <<-EOF
+				${printer_name}|${printer_desc}
+				EOF
+      done
+    fi
+  fi
+}
+
+##################################################
+#------UPDATE CONFIG------
+##################################################
+## Regenerate the whole configureation file
+## from the parts previously generated
+update_config_samba()
+{
+  # do nothing
+  echo "" > ${samba_config_file}
+  find ${samba_config_parts} -type f -follow |sort |while read smb_conf ; do
+    sed -e 's/^[[:space:]]*//g' ${smb_conf} >> ${samba_config_file}
+  done
+}
+
+##################################################
+#------STOP------
+##################################################
+stop_samba() {
+  local pid
+  pid="`pidof smbd`"
+  base_kill_daemon smbd "$pid"
+  pid="`pidof nmbd`"
+  base_kill_daemon nmbd "$pid"
+
+  base_call_initd chroot_samba
+
+  ( while mount | grep -q "on ${samba_spool_dir} type" ; do \
+    umount "${samba_spool_dir}" ; \
+  done ) &
+}
+
+##################################################
+#------START------
+##################################################
+# Put samba in inittab
+start_samba() {
+  local cmd
+  local dbglvl=${Services_Samba_Debug:-0}
+  local cmddbg=''
+  local smbport=${Services_Samba_Port:-139}
+  local nmbport=${Services_Samba_NmbPort:-137}
+
+  if [ $dbglvl != 0 ]; then
+    cmddbg="-S -d=$dbglvl -i"
+  fi
+
+  mount -t tmpfs -o size=2M shm ${samba_spool_dir}
+  chmod -R 777 ${samba_spool_dir}
+
+  # populate chroot (if any)
+  base_call_initd chroot_samba
+
+  cmd="${samba_chroot:-}/bin/nmbd -F $cmddbg -p $nmbport"
+  base_add_daemon nmbd "$cmd"
+  cmd="${samba_chroot:-}/bin/smbd -F $cmddbg -p $smbport"
+  base_add_daemon smbd "$cmd"
+}
+
+##################################################
+#------START------
+##################################################
+# Tells smbd that the configuration file has changed
+reload_samba() {
+  killall -SIGHUP smbd 2>/dev/null
+}
+
+##################################################
+#------MAIN-------
+##################################################
+main_samba() {
+  eval $PUSH_ARG
+
+  check_samba
+  base_log "$INITD/samba $ARG" debug
+
+  local samba_spool_dir="/var/spool/samba"
+  local samba_config_dir="/var/bewan/samba"
+  local samba_config_locks="${samba_config_dir}/locks"
+  local samba_config_parts="${samba_config_dir}/conf.d"
+  local samba_passwd_dir="${samba_config_dir}/private"
+  local samba_config_file="${samba_config_dir}/smb.conf"
+  local samba_passwd_file="${samba_config_dir}/private/smbpasswd"
+  local samba_printcap_file="${samba_config_dir}/printcap"
+
+  setup_samba
+
+  case $ARG in
+  stop)
+    stop_samba
+    ;;
+  start)
+    update_samba
+    update_printer_samba
+    update_share_samba
+    update_config_samba
+    start_samba
+    ;;
+  restart)
+    base_exist_daemon smbd && stop_samba
+    base_exist_daemon nmbd && stop_samba
+    update_samba
+    update_printer_samba
+    update_share_samba
+    update_config_samba
+    start_samba
+    ;;
+  refresh)
+    update_samba
+    update_config_samba
+    reload_samba
+    ;;
+  refresh-printers)
+    update_printer_samba
+    update_config_samba
+    reload_samba
+    ;;
+  refresh-shares)
+    update_share_samba
+    update_config_samba
+    reload_samba
+    ;;
+  nothing)
+    ;;
+  *)
+    echo "ERROR: Unknown ARG=$ARG"
+    ;;
+  esac
+}
+
+main_samba
+
+rm /var/bewan/lock/samba

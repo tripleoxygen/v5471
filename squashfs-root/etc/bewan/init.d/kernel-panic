@@ -1,0 +1,25 @@
+#!/bin/sh
+# /etc/bewan/init.d/kernel-panic
+
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+kernel_panic=${Device_Panic:-0}
+kernel_panic_on_oops=${Device_PanicOnOops:-0}
+kernel_panic_on_oom=${Device_PanicOnOom:-0}
+
+if [ -f /proc/sys/kernel/panic ]; then
+	echo $kernel_panic > /proc/sys/kernel/panic
+fi
+
+if [ -f /proc/sys/kernel/panic_on_oops ]; then
+	echo $kernel_panic_on_oops > /proc/sys/kernel/panic_on_oops
+fi
+
+if [ -f /proc/sys/vm/panic_on_oom ]; then
+	echo $kernel_panic_on_oom > /proc/sys/vm/panic_on_oom
+fi
+

@@ -1,0 +1,1425 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+  <InternetGatewayDevice type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+    <DeviceSummary type="string" writable="no" implemented="yes" libraryName="custom_GVT_tr98.so" addInInformList="yes"/>
+    <LANDeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+    <WANDeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+    <DeviceInfo type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <Manufacturer type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <ManufacturerOUI type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <ModelName type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <Description type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ProductClass type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <SerialNumber type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <HardwareVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so" addInInformList="yes"/>
+      <SoftwareVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so" notifyValue="2" addInInformList="yes"/>
+      <ModemFirmwareVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <EnabledOptions type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <AdditionalHardwareVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <AdditionalSoftwareVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <SpecVersion type="string" writable="no" implemented="yes" libraryName="tr098plugins.so" specificPath="InternetGatewayDevice.DeviceInfo.SpecVersion" addInInformList="yes"/>
+      <ProvisioningCode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so" notifyValue="2" addInInformList="yes"/>
+      <UpTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <FirstUseDate type="dateTime" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <DeviceLog type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <VendorConfigFileNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <VendorConfigFile type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <Name type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Version type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Date type="dateTime" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Description type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      </VendorConfigFile>
+      <MemoryStatus type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+        <Total type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <Free type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+      </MemoryStatus>
+      <ProcessStatus type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+        <CPUUsage type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <ProcessNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <Process type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+          <PID type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Command type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <State type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Size type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Priority type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <CPUTime type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        </Process>
+      </ProcessStatus>
+      <TemperatureStatus type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+        <TemperatureSensorNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <TemperatureSensor type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Status type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Reset type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <ResetTime type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Name type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Value type="int" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <LastUpdate type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <MinValue type="int" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <MinTime type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <MaxValue type="int" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <MaxTime type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <LowAlarmValue type="int" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <LowAlarmTime type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <HighAlarmValue type="int" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <HighAlarmTime type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        </TemperatureSensor>
+      </TemperatureStatus>
+    </DeviceInfo>
+    <DeviceConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <PersistentData type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ConfigFile type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+    </DeviceConfig>
+    <ManagementServer type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <EnableCWMP type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <URL type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <Username type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <Password type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <PeriodicInformEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <PeriodicInformInterval type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <PeriodicInformTime type="dateTime" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ParameterKey type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so" addInInformList="yes"/>
+      <ConnectionRequestURL type="string" writable="no" implemented="yes" libraryName="tr098plugins.so" notifyValue="2" addInInformList="yes"/>
+      <ConnectionRequestUsername type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ConnectionRequestPassword type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <UpgradesManaged type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <KickURL type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <DefaultActiveNotificationThrottle type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ManageableDeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <ManageableDeviceNotificationLimit type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <ManageableDevice type="object" array="yes" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+        <ManufacturerOUI type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SerialNumber type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ProductClass type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Active type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <RetainDeviceEntry type="boolean" writable="yes" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ConnectionRequestPassThroughEnable type="boolean" writable="yes" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DeviceConnectionRequestURL type="string" writable="yes" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ConnectionRequestURL type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      </ManageableDevice>
+      <AutonomousTransferCompletePolicy type="object" array="no" writable="yes" implemented="yes" libraryName="tr157plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <TransferTypeFilter type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <FileTypeFilter type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      </AutonomousTransferCompletePolicy>
+    </ManagementServer>
+    <Time type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <NTPServer1 type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <NTPServer2 type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <NTPServer3 type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <NTPServer4 type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <NTPServer5 type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <CurrentLocalTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <LocalTimeZone type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <LocalTimeZoneName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <DaylightSavingsUsed type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <DaylightSavingsStart type="dateTime" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <DaylightSavingsEnd type="dateTime" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+    </Time>
+    <UserInterface type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <PasswordRequired type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <PasswordUserSelectable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+    </UserInterface>
+    <Firewall type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+      <Config type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <Version type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+      <LastChange type="dateTime" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+    </Firewall>
+    <Layer3Forwarding type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <DefaultConnectionService type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so" notifyValue="2"/>
+      <ForwardNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <PublicIPAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so" hidden="yes" notifyValue="2"/>
+      <Forwarding type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Type type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DestIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DestSubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SourceIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SourceSubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <GatewayIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Interface type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ForwardingMetric type="int" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <MTU type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      </Forwarding>
+    </Layer3Forwarding>
+    <Layer2Bridging type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <MaxBridgeEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <MaxFilterEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <MaxMarkingEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      <BridgeNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <FilterNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <MarkingNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <AvailableInterfaceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <Bridge type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+        <BridgeKey type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BridgeEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <BridgeStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BridgeName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <VLANID type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      </Bridge>
+      <AvailableInterface type="object" array="yes" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+        <AvailableInterfaceKey type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <InterfaceType type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <InterfaceReference type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+      </AvailableInterface>
+    </Layer2Bridging>
+    <LANConfigSecurity type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <ConfigPassword type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+    </LANConfigSecurity>
+    <IPPingDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="libippingdiagtr069.so">
+      <DiagnosticsState type="string" writable="yes" action="yes" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <Interface type="string" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <Host type="string" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <NumberOfRepetitions type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <Timeout type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <DataBlockSize type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <DSCP type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <SuccessCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <FailureCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <AverageResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <MinimumResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+      <MaximumResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libippingdiagtr069.so"/>
+    </IPPingDiagnostics>
+    <TraceRouteDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so">
+      <DiagnosticsState type="string" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <Interface type="string" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <Host type="string" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <NumberOfTries type="unsignedInt" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <Timeout type="unsignedInt" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <DataBlockSize type="unsignedInt" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <DSCP type="unsignedInt" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <MaxHopCount type="unsignedInt" writable="yes" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <ResponseTime type="unsignedInt" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <RouteHopsNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      <RouteHops type="object" array="yes" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so">
+        <HopHost type="string" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+        <HopHostAddress type="string" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+        <HopErrorCode type="unsignedInt" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+        <HopRTTimes type="string" writable="no" implemented="yes" libraryName="libtraceroutediagtr069.so"/>
+      </RouteHops>
+    </TraceRouteDiagnostics>
+    <Capabilities type="object" array="no" writable="no" implemented="yes" libraryName="libtr143diag.so">
+      <PerformanceDiagnostic type="object" array="no" writable="no" implemented="yes" libraryName="libtr143diag.so">
+        <DownloadTransports type="string" writable="no" action="yes" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+        <UploadTransports type="string" writable="no" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      </PerformanceDiagnostic>
+    </Capabilities>
+    <DownloadDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="libtr143diag.so">
+      <DiagnosticsState type="string" writable="yes" action="yes" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <Interface type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <DownloadURL type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <DSCP type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EthernetPriority type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <ROMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <BOMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EOMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TestBytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TotalBytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TCPOpenRequestTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TCPOpenResponseTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+    </DownloadDiagnostics>
+    <UploadDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="libtr143diag.so">
+      <DiagnosticsState type="string" writable="yes" action="yes" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <Interface type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <UploadURL type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <DSCP type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EthernetPriority type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TestFileLength type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <ROMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <BOMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EOMTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TotalBytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TCPOpenRequestTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TCPOpenResponseTime type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+    </UploadDiagnostics>
+    <UDPEchoConfig type="object" array="no" writable="no" implemented="yes" libraryName="libtr143diag.so">
+      <Enable type="boolean" writable="yes" action="yes" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <Interface type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <SourceIPAddress type="string" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <UDPPort type="unsignedInt" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EchoPlusEnabled type="boolean" writable="yes" action="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <EchoPlusSupported type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <PacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <PacketsResponded type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <BytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <BytesResponded type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TimeFirstPacketReceived type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+      <TimeLastPacketReceived type="dateTime" writable="no" noActNotify="yes" implemented="yes" libraryName="libtr143diag.so"/>
+    </UDPEchoConfig>
+    <LANDevice type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+      <LANEthernetInterfaceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <LANUSBInterfaceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <LANWLANConfigurationNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <LANHostConfigManagement type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <DHCPServerConfigurable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DHCPServerEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DHCPRelay type="boolean" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MinAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <MaxAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ReservedAddresses type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DNSServers type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DomainName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <IPRouters type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DHCPLeaseTime type="int" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <UseAllocatedWAN type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <AssociatedConnection type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <AllowedMACAddresses type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <IPInterfaceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <DHCPConditionalPoolNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <IPInterface type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IPInterfaceIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IPInterfaceSubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IPInterfaceAddressingType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </IPInterface>
+        <DHCPConditionalServingPool type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <VendorClassID type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <UserClassID type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MinAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MaxAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <SubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSServers type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DomainName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IPRouters type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPLeaseTime type="int" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AssociatedConnection type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPServerIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPStaticAddressNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPOptionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPStaticAddress type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+            <Chaddr type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <Yiaddr type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </DHCPStaticAddress>
+          <DHCPOption type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+            <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <Tag type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <Value type="base64" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </DHCPOption>
+        </DHCPConditionalServingPool>
+      </LANHostConfigManagement>
+      <LANEthernetInterfaceConfig type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MACAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MACAddressControlEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <MaxBitRate type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DuplexMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Stats type="object" array="no" writable="no" name="LANEthernetInterfaceConfigStats" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+          <BytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <BytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <PacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <PacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <ErrorsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <ErrorsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <UnicastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <UnicastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <DiscardPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <DiscardPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <MulticastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <MulticastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <BroadcastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <BroadcastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <UnknownProtoPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+        </Stats>
+      </LANEthernetInterfaceConfig>
+      <LANUSBInterfaceConfig type="object" array="yes" writable="no" implemented="yes" libraryName="custom_GVT_tr98.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+      </LANUSBInterfaceConfig>
+      <WLANConfiguration type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BSSID type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MaxBitRate type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Channel type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <AutoChannelEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SSID type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <BeaconType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <MACAddressControlEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Standard type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <WEPKeyIndex type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <KeyPassphrase type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <WEPEncryptionLevel type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BasicEncryptionModes type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <BasicAuthenticationMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <WPAEncryptionModes type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <WPAAuthenticationMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <IEEE11iEncryptionModes type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <IEEE11iAuthenticationMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <PossibleChannels type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BasicDataTransmitRates type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <OperationalDataTransmitRates type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <PossibleDataTransmitRates type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <BeaconAdvertisementEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SSIDAdvertisementEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <RadioEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TransmitPower type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <AutoRateFallBackEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <LocationDescription type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalPSKFailures type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalIntegrityFailures type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ChannelsInUse type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DeviceOperationMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <WMMSupported type="boolean" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <WMMEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <UAPSDEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalBytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalBytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ErrorsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ErrorsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DiscardPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DiscardPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalAssociations type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Stats type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+          <ErrorsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <ErrorsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <DiscardPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <DiscardPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <MulticastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <MulticastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <BroadcastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <BroadcastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+          <UnknownProtoPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WLANConfigurationStats" libraryName="tr098plugins.so"/>
+        </Stats>
+        <WPS type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DevicePassword type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </WPS>
+        <AssociatedDevice type="object" array="yes" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+          <AssociatedDeviceMACAddress type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AssociatedDeviceIPAddress type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AssociatedDeviceAuthenticationState type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </AssociatedDevice>
+        <WEPKey type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <WEPKey type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </WEPKey>
+        <PreSharedKey type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <PreSharedKey type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <KeyPassphrase type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </PreSharedKey>
+      </WLANConfiguration>
+      <Hosts type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <HostNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Host type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <IPAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <AddressSource type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LeaseTimeRemaining type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <Layer2Interface type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <VendorClassID type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ClientID type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <UserClassID type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HostName type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <InterfaceType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <Active type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        </Host>
+      </Hosts>
+      <LANHPNAInterfaceConfig type="object" array="yes" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <MACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <MACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <MaxBitRate type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <NetworkUtilization type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <PossibleConnectionTypes type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <ConnectionType type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <NoiseMargin type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <DefaultNonLARQPER type="unsignedint" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <MinMulticastRate type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <LocalNode type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <NodeNumberOfEntries type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <MTU type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        <Stats type="object" array="no" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+          <BytesSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <BytesReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <ErrorsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <ErrorsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <NonUnicastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <NonUnicastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <UnicastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <UnicastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <DiscardPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <DiscardPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        </Stats>
+        <Node type="object" array="yes" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+          <MACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <NodeId type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <IsMaster type="boolean" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <Synced type="boolean" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <TotalSyncTime type="int" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <FirmwareVersion type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <FirmwareSignature type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <Active type="boolean" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <Manufacturer type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <OUI type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <ProductClass type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <SerialNumber type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <MaxBitRate type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <ConnectionType type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <MTU type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <NoiseMargin type="int" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <DefaultNonLARQPER type="unsignedint" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PHYDiagnosticsEnable type="boolean" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+        </Node>
+        <PHYDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+          <DiagnosticsState type="string" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <NumPacketsInBurst type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <BurstInterval type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <TestPacketPayloadLength type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PayloadEncoding type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PayloadDataGen type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PayloadType type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <PriorityLevel type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <ResultNumberOfEntries type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <Result type="object" array="yes" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+            <SrcMACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <DestMACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <PHYRate type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <BaudRate type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <SNR type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <PacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <Attenuation type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          </Result>
+        </PHYDiagnostics>
+        <PerformanceMonitoring type="object" array="no" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+          <SampleState type="string" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <SampleInterval type="unsignedint" writable="yes" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+          <Nodes type="object" array="no" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+            <CurrentNumberOfEntries type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <PreviousNumberOfEntries type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <PreviousStart type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <PreviousEnd type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <CurrentStart type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <CurrentEnd type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            <Current type="object" array="yes" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+              <MACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BytesSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BytesReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsCrcErrored type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsCrcErroredHost type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsShortErrored type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsShortHost type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <RxPacketsDropped type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <TxPacketsDropped type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlRequestLocal type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlReplyLocal type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlRequestRemote type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlReplyRemote type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsInternalControl type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsInternalControl type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceivedQueued type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceivedForwardUnknown type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <NodeUtilization type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            </Current>
+            <Previous type="object" array="yes" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so">
+              <MACAddress type="string" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BytesSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BytesReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsSent type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsReceived type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsCrcErrored type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsCrcErroredHost type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsShortErrored type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsShortHost type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <RxPacketsDropped type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <TxPacketsDropped type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlRequestLocal type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlReplyLocal type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlRequestRemote type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <ControlReplyRemote type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <MulticastPacketsSentWire type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsInternalControl type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <BroadcastPacketsInternalControl type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceivedQueued type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <PacketsReceivedForwardUnknown type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+              <NodeUtilization type="unsignedint" writable="no" implemented="yes" libraryName="tr069-hpnaplugin.so"/>
+            </Previous>
+          </Nodes>
+        </PerformanceMonitoring>
+      </LANHPNAInterfaceConfig>
+    </LANDevice>
+    <WANDevice type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <WANConnectionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+      <WANCommonInterfaceConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <EnabledForInternet type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <WANAccessType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Layer1UpstreamMaxBitRate type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Layer1DownstreamMaxBitRate type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <PhysicalLinkStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalBytesSent type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalBytesReceived type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalPacketsSent type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalPacketsReceived type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MaximumActiveConnections type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <NumberOfActiveConnections type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <Connection type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <ActiveConnectionDeviceContainer type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ActiveConnectionServiceID type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        </Connection>
+      </WANCommonInterfaceConfig>
+      <WANDSLInterfaceConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <LinkEncapsulationSupported type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <LinkEncapsulationRequested type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <LinkEncapsulationUsed type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ModulationType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <StandardsSupported type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <StandardUsed type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <LineEncoding type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <AllowedProfiles type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <CurrentProfile type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <UPBOKLE type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <DataPath type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <InterleaveDepth type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TRELLISds type="int" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TRELLISus type="int" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ACTSNRMODEds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ACTSNRMODEus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ACTUALCE type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <UpstreamCurrRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DownstreamCurrRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <UpstreamMaxRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DownstreamMaxRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <UpstreamNoiseMargin type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DownstreamNoiseMargin type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <SNRMpbus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <SNRMpbds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <UpstreamAttenuation type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DownstreamAttenuation type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <UpstreamPower type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DownstreamPower type="int" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ATURVendor type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ATURCountry type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ATUCVendor type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ATUCCountry type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TotalStart type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ShowtimeStart type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <LastShowtimeStart type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <CurrentDayStart type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <QuarterHourStart type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <TestParams type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <HLOGGds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HLOGGus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HLOGpsds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HLOGpsus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HLOGMTds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <HLOGMTus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNGds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNGus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNpsds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNpsus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNMTds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <QLNMTus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRGds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRGus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRpsds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRpsus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRMTds type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SNRMTus type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LATNds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LATNus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SATNds type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <SATNus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        </TestParams>
+        <Stats type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+          <Total type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <ReceiveBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <TransmitBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CellDelin type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LinkRetrain type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitTimeouts type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LossOfFraming type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <SeverelyErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <FECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCFECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <HECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCHECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCCRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </Total>
+          <Showtime type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <ReceiveBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <TransmitBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CellDelin type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LinkRetrain type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitTimeouts type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LossOfFraming type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <SeverelyErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <FECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCFECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <HECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCHECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCCRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </Showtime>
+          <LastShowtime type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <ReceiveBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <TransmitBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CellDelin type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LinkRetrain type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitTimeouts type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LossOfFraming type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <SeverelyErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <FECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCFECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <HECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCHECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCCRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </LastShowtime>
+          <CurrentDay type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <ReceiveBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <TransmitBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CellDelin type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LinkRetrain type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitTimeouts type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LossOfFraming type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <SeverelyErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <FECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCFECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <HECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCHECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCCRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </CurrentDay>
+          <QuarterHour type="object" array="no" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <ReceiveBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <TransmitBlocks type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CellDelin type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LinkRetrain type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <InitTimeouts type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <LossOfFraming type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <SeverelyErroredSecs type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <FECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCFECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <HECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCHECErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <CRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+            <ATUCCRCErrors type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          </QuarterHour>
+        </Stats>
+      </WANDSLInterfaceConfig>
+      <WANEthernetInterfaceConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Status type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MACAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <MaxBitRate type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <DuplexMode type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ShapingRate type="int" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <ShapingBurstSize type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+        <Stats type="object" array="no" writable="no" name="WANEthernetInterfaceConfigStats" implemented="yes" libraryName="tr098plugins.so">
+          <BytesSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <BytesReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <PacketsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+          <PacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANEthernetInterfaceConfigStats" libraryName="tr098plugins.so"/>
+        </Stats>
+      </WANEthernetInterfaceConfig>
+      <WANDSLConnectionManagement type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+        <ConnectionServiceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <ConnectionService type="object" array="yes" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <WANConnectionDevice type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <WANConnectionService type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DestinationAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LinkType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <Name type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        </ConnectionService>
+      </WANDSLConnectionManagement>
+      <WANConnectionDevice type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+        <WANIPConnectionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <WANPPPConnectionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        <WANDSLLinkConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <LinkStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LinkType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AutoConfig type="boolean" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ModulationType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DestinationAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMEncapsulation type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMAAL type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMTransmittedBlocks type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMReceivedBlocks type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMQoS type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMPeakCellRate type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMMaximumBurstSize type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMSustainableCellRate type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AAL5CRCErrors type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ATMCRCErrors type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        </WANDSLLinkConfig>
+        <WANATMF5LoopbackDiagnostics type="object" array="no" writable="no" implemented="yes" libraryName="libatmpingdiagtr069.so">
+          <DiagnosticsState type="string" writable="yes" action="yes" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <NumberOfRepetitions type="unsignedInt" writable="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <Timeout type="unsignedInt" writable="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <SuccessCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <FailureCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <AverageResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <MinimumResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+          <MaximumResponseTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="libatmpingdiagtr069.so"/>
+        </WANATMF5LoopbackDiagnostics>
+        <WANPTMLinkConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <LinkStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <X_Pace_VID type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Stats type="object" array="no" writable="no" name="WANPTMLinkConfigStats" implemented="yes" libraryName="tr098plugins.so">
+            <BytesSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <BytesReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <FramesSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <FramesReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <OOSNearEnd type="boolean" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <OOSFarEnd type="boolean" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <ErrorsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <ErrorsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <UnicastPacketsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <UnicastPacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <DiscardPacketsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <DiscardPacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <MulticastPacketsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <MulticastPacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <BroadcastPacketsSent type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <BroadcastPacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+            <UnknownProtoPacketsReceived type="unsignedInt" writable="no" implemented="yes" prefixName="WANPTMLinkConfigStats" libraryName="tr098plugins.so"/>
+          </Stats>
+        </WANPTMLinkConfig>
+        <WANEthernetLinkConfig type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+          <EthernetLinkStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+        </WANEthernetLinkConfig>
+        <WANIPConnection type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PossibleConnectionTypes type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Name type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Uptime type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <LastConnectionError type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <RSIPAvailable type="boolean" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <NATEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AddressingType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ExternalIPAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <SubnetMask type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DefaultGateway type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSOverrideAllowed type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSServers type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MaxMTUSize type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddressOverride type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionTrigger type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IGMPForwardingEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <RouteProtocolRx type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PortMappingNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DHCPClient type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+            <SentDHCPOptionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+            <ReqDHCPOptionNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          </DHCPClient>
+          <PortMapping type="object" array="yes" writable="yes" name="WANIPConnectionPortMapping" implemented="yes" libraryName="tr098plugins.so">
+            <PortMappingEnabled type="boolean" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingLeaseDuration type="unsignedInt" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <RemoteHost type="string" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <ExternalPort type="unsignedInt" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <ExternalPortEndRange type="unsignedInt" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <InternalPort type="unsignedInt" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingProtocol type="string" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <InternalClient type="string" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingDescription type="string" writable="yes" implemented="yes" prefixName="WANIPConnectionPortMapping" libraryName="tr098plugins.so"/>
+          </PortMapping>
+          <Stats type="object" array="no" writable="no" name="WANIPConnectionStats" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <EthernetBytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetErrorsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetErrorsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnicastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnicastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetDiscardPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetDiscardPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetMulticastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetMulticastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBroadcastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBroadcastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnknownProtoPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANIPConnectionStats" libraryName="tr098plugins.so"/>
+          </Stats>
+        </WANIPConnection>
+        <WANPPPConnection type="object" array="yes" writable="yes" implemented="yes" libraryName="tr098plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Reset type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionStatus type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PossibleConnectionTypes type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionType type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPoESessionID type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <DefaultGateway type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <Name type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Uptime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <LastConnectionError type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <AutoDisconnectTime type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <IdleDisconnectTime type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <WarnDisconnectDelay type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <RSIPAvailable type="boolean" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <NATEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Username type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <Password type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPEncryptionProtocol type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPCompressionProtocol type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPAuthenticationProtocol type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <ExternalIPAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <RemoteIPAddress type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <MaxMRUSize type="unsignedInt" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <CurrentMRUSize type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSEnabled type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSOverrideAllowed type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <DNSServers type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddress type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <MACAddressOverride type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <TransportType type="string" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPoEACName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPoEServiceName type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <ConnectionTrigger type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <RouteProtocolRx type="string" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPLCPEcho type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PPPLCPEchoRetry type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <IGMPForwardingEnable type="boolean" writable="yes" implemented="yes" libraryName="tr098plugins.so"/>
+          <PortMappingNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+          <PortMapping type="object" array="yes" writable="yes" name="WANPPPConnectionPortMapping" implemented="yes" libraryName="tr098plugins.so">
+            <PortMappingEnabled type="boolean" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingLeaseDuration type="unsignedInt" writable="yes" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <RemoteHost type="string" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <ExternalPort type="unsignedInt" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <ExternalPortEndRange type="unsignedInt" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <InternalPort type="unsignedInt" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingProtocol type="string" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <InternalClient type="string" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+            <PortMappingDescription type="string" writable="yes" implemented="yes" prefixName="WANPPPConnectionPortMapping" libraryName="tr098plugins.so"/>
+          </PortMapping>
+          <Stats type="object" array="no" writable="no" name="WANPPPConnectionStats" noActNotify="yes" implemented="yes" libraryName="tr098plugins.so">
+            <EthernetBytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetErrorsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetErrorsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnicastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnicastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetDiscardPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetDiscardPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetMulticastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetMulticastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBroadcastPacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetBroadcastPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+            <EthernetUnknownProtoPacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="WANPPPConnectionStats" libraryName="tr098plugins.so"/>
+          </Stats>
+        </WANPPPConnection>
+      </WANConnectionDevice>
+    </WANDevice>
+    <Services type="object" array="no" writable="no" implemented="yes" libraryName="tr098plugins.so">
+      <X_Bewan_Com type="object" array="no" implemented="yes" libraryName="internal"/>
+      <VoiceService type="object" array="yes" writable="no" implemented="yes" libraryName="tr104plugins.so">
+        <VoiceProfileNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+        <Capabilities type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+          <MaxProfileCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <MaxLineCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <MaxSessionsPerLine type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <MaxSessionCount type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SignalingProtocols type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <Regions type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RTCP type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SRTP type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SRTPKeyingMethods type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SRTPEncryptionKeySizes type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RTPRedundancy type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DSCPCoupled type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <EthernetTaggingCoupled type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <PSTNSoftSwitchOver type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <FaxT38 type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <FaxPassThrough type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ModemPassThrough type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ToneGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ToneDescriptionsEditable type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <PatternBasedToneGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <FileBasedToneGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ToneFileFormats type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RingGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RingDescriptionsEditable type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <PatternBasedRingGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RingPatternEditable type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <FileBasedRingGeneration type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <RingFileFormats type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DigitMap type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <NumberingPlan type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ButtonMap type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <VoicePortTests type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SIP type="object" array="no" writable="no" name="CapabilitiesSIP" implemented="yes" libraryName="tr104plugins.so">
+            <Role type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <Extensions type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <Transports type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <URISchemes type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <EventSubscription type="boolean" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <ResponseMap type="boolean" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <TLSAuthenticationProtocols type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <TLSAuthenticationKeySizes type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <TLSEncryptionProtocols type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <TLSEncryptionKeySizes type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+            <TLSKeyExchangeProtocols type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesSIP" libraryName="tr104plugins.so"/>
+          </SIP>
+          <MGCP type="object" array="no" writable="no" name="CapabilitiesMGCP" implemented="yes" libraryName="tr104plugins.so">
+            <Extensions type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesMGCP" libraryName="tr104plugins.so"/>
+          </MGCP>
+          <H323 type="object" array="no" writable="no" name="CapabilitiesH323" implemented="yes" libraryName="tr104plugins.so">
+            <FastStart type="boolean" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesH323" libraryName="tr104plugins.so"/>
+            <H235AuthenticationMethods type="string" writable="no" noActNotify="yes" implemented="yes" prefixName="CapabilitiesH323" libraryName="tr104plugins.so"/>
+          </H323>
+          <Codecs type="object" array="yes" writable="no" implemented="yes" libraryName="tr104plugins.so">
+            <EntryID type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <Codec type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <BitRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <PacketizationPeriod type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <SilenceSuppression type="boolean" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          </Codecs>
+        </Capabilities>
+        <VoiceProfile type="object" array="yes" writable="yes" implemented="yes" libraryName="tr104plugins.so">
+          <Enable type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <Reset type="boolean" writable="yes" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <NumberOfLines type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+          <Name type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SignalingProtocol type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <MaxSessions type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DTMFMethod type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DTMFMethodG711 type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <Region type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DigitMap type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <DigitMapEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <STUNEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <STUNServer type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <NonVoiceBandwidthReservedUpstream type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <NonVoiceBandwidthReservedDownstream type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <PSTNFailOver type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <FaxPassThrough type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <ModemPassThrough type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          <SIP type="object" array="no" writable="no" name="VoiceProfileSIP" implemented="yes" libraryName="tr104plugins.so">
+            <ProxyServer type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <ProxyServerPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <ProxyServerTransport type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegistrarServer type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegistrarServerPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegistrarServerTransport type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <UserAgentDomain type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <UserAgentPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <UserAgentTransport type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <OutboundProxy type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <OutboundProxyPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <Organization type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegistrationPeriod type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerT1 type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerT2 type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerT4 type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerA type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerB type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerC type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerD type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerE type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerF type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerG type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerH type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerI type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerJ type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <TimerK type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <InviteExpires type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <ReInviteExpires type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegisterExpires type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegistersMinExpires type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <RegisterRetryInterval type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <InboundAuth type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <InboundAuthUsername type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <InboundAuthPassword type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <UseCodecPriorityInSDPResponse type="boolean" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <DSCPMark type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <VLANIDMark type="int" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <EthernetPriorityMark type="int" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <SIPEventSubscribeNumberOfElements type="unsignedInt" writable="no" implemented="yes" prefixName="VoiceProfileSIP" libraryName="tr104plugins.so"/>
+            <EventSubscribe type="object" array="yes" writable="yes" prefixName="VoiceProfileSIP" implemented="yes" libraryName="tr104plugins.so">
+              <Event type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIPEventSubscribe" libraryName="tr104plugins.so"/>
+              <Notifier type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIPEventSubscribe" libraryName="tr104plugins.so"/>
+              <NotifierPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIPEventSubscribe" libraryName="tr104plugins.so"/>
+              <NotifierTransport type="string" writable="yes" prefixName="VoiceProfileSIPEventSubscribe" implemented="yes" libraryName="tr104plugins.so"/>
+              <ExpireTime type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileSIPEventSubscribe" libraryName="tr104plugins.so"/>
+            </EventSubscribe>
+            <ConferenceCallURI type="string" writable="yes" implemented="yes" prefixName="VoiceProfileSIP" libraryName="custom_GVT_tr104.so"/>
+          </SIP>
+          <MGCP type="object" array="no" writable="no" name="VoiceProfileMGCP" implemented="yes" libraryName="tr104plugins.so">
+            <CallAgent1 type="string" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <CallAgentPort1 type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <CallAgent2 type="string" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <CallAgentPort2 type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <RetranIntervalTimer type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <MaxRetranCount type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <RegisterMode type="string" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <LocalPort type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <Domain type="string" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <User type="string" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <DSCPMark type="unsignedInt" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <VLANIDMark type="int" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <EthernetPriorityMark type="int" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <AllowPiggybackEvents type="boolean" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+            <SendRSIPImmediately type="boolean" writable="yes" implemented="yes" prefixName="VoiceProfileMGCP" libraryName="tr104plugins.so"/>
+          </MGCP>
+          <RTP type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+            <LocalPortMin type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <LocalPortMax type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <DSCPMark type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <VLANIDMark type="int" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <EthernetPriorityMark type="int" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <TelephoneEventPayloadType type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <RTCP type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+              <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <TxRepeatInterval type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <LocalCName type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            </RTCP>
+          </RTP>
+          <NumberingPlan type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+            <MinimumNumberOfDigits type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <MaximumNumberOfDigits type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <InterDigitTimerStd type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <InterDigitTimerOpen type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <InvalidNumberTone type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <PrefixInfoMaxEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+            <PrefixInfoNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+            <PrefixInfo type="object" array="yes" writable="yes" implemented="yes" libraryName="tr104plugins.so">
+              <PrefixRange type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <PrefixMinNumberOfDigits type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <PrefixMaxNumberOfDigits type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <NumberOfDigitsToRemove type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <PosOfDigitsToRemove type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <DialTone type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <FacilityAction type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <FacilityActionArgument type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            </PrefixInfo>
+          </NumberingPlan>
+          <FaxT38 type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+            <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <BitRate type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <HighSpeedPacketRate type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <HighSpeedRedundancy type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <LowSpeedRedundancy type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <TCFMethod type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+          </FaxT38>
+          <Line type="object" array="yes" writable="yes" implemented="yes" libraryName="tr104plugins.so">
+            <Enable type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <DirectoryNumber type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <Status type="string" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+            <CallState type="string" writable="no" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <PhyReferenceList type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <SIP type="object" array="no" writable="no" name="LineSIP" implemented="yes" libraryName="tr104plugins.so">
+              <AuthUserName type="string" writable="yes" implemented="yes" prefixName="LineSIP" libraryName="tr104plugins.so"/>
+              <AuthPassword type="string" writable="yes" implemented="yes" prefixName="LineSIP" libraryName="tr104plugins.so"/>
+              <URI type="string" writable="yes" implemented="yes" prefixName="LineSIP" libraryName="tr104plugins.so"/>
+              <SIPEventSubscribeNumberOfElements type="unsignedInt" writable="no" implemented="yes" prefixName="LineSIP" libraryName="tr104plugins.so"/>
+            </SIP>
+            <MGCP type="object" array="no" writable="no" name="LineMGCP" implemented="yes" libraryName="tr104plugins.so">
+              <LineName type="string" writable="yes" implemented="yes" prefixName="LineMGCP" libraryName="tr104plugins.so"/>
+            </MGCP>
+            <CallingFeatures type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+              <CallerIDEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallerIDNameEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallerIDName type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallWaitingEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <MaxSessions type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <ConferenceCallingStatus type="string" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+              <ConferenceCallingSessionCount type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardUnconditionalEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardUnconditionalNumber type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardOnBusyEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardOnBusyNumber type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardOnNoAnswerEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardOnNoAnswerNumber type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallForwardOnNoAnswerRingCount type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallTransferEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <MWIEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <MessageWaiting type="boolean" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+              <AnonymousCallBlockEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <AnonymousCallEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <DoNotDisturbEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <CallReturnEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <RepeatDialEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            </CallingFeatures>
+            <VoiceProcessing type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+              <TransmitGain type="int" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <ReceiveGain type="int" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              <EchoCancellationEnable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            </VoiceProcessing>
+            <Codec type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+              <List type="object" array="yes" writable="no" implemented="yes" libraryName="tr104plugins.so">
+                <EntryID type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+                <Codec type="string" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+                <BitRate type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+                <PacketizationPeriod type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+                <SilenceSuppression type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+                <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+                <Priority type="unsignedInt" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+              </List>
+            </Codec>
+            <Stats type="object" array="no" writable="no" name="LineStats" noActNotify="yes" implemented="yes" libraryName="tr104plugins.so">
+              <ResetStatistics type="boolean" writable="yes" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <PacketsSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <PacketsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <BytesSent type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <BytesReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <PacketsLost type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <Overruns type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <Underruns type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <IncomingCallsReceived type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <IncomingCallsAnswered type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <IncomingCallsConnected type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <IncomingCallsFailed type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <OutgoingCallsAttempted type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <OutgoingCallsAnswered type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <OutgoingCallsConnected type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <OutgoingCallsFailed type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <CallsDropped type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <TotalCallTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <ServerDownTime type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <ReceivePacketLossRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <FarEndPacketLossRate type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <ReceiveInterarrivalJitter type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <FarEndInterarrivalJitter type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <RoundTripDelay type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <AverageReceiveInterarrivalJitter type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <AverageFarEndInterarrivalJitter type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+              <AverageRoundTripDelay type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" prefixName="LineStats" libraryName="tr104plugins.so"/>
+            </Stats>
+          </Line>
+        </VoiceProfile>
+        <PhyInterface type="object" array="yes" writable="no" implemented="yes" libraryName="tr104plugins.so">
+          <PhyPort type="string" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+          <InterfaceID type="unsignedInt" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+          <Description type="string" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+          <Tests type="object" array="no" writable="no" implemented="yes" libraryName="tr104plugins.so">
+            <TestState type="string" writable="yes" action="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <TestSelector type="string" writable="yes" implemented="yes" libraryName="tr104plugins.so"/>
+            <PhoneConnectivity type="boolean" writable="no" implemented="yes" libraryName="tr104plugins.so"/>
+          </Tests>
+        </PhyInterface>
+      </VoiceService>
+      <StorageService type="object" array="yes" writable="no" implemented="yes" libraryName="tr140plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <PhysicalMediumNumberOfEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <StorageArrayNumberOfEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <LogicalVolumeNumberOfEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <UserAccountNumberOfEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <UserGroupNumberOfEntries type="unsignedInt" writable="no" noActNotify="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        <Capabilities type="object" array="no" writable="no" implemented="yes" libraryName="tr140plugins.so">
+          <FTPCapable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <HTTPCapable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <HTTPSCapable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <HTTPWritable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <SFTPCapable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <SupportedFileSystemTypes type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <SupportedNetworkProtocols type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <SupportedRaidTypes type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <VolumeEncryptionCapable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+        </Capabilities>
+        <NetworkServer type="object" array="no" writable="no" implemented="yes" libraryName="tr140plugins.so">
+          <SMBEnable type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <NetworkProtocolAuthReq type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        </NetworkServer>
+        <PhysicalMedium type="object" array="yes" writable="no" implemented="yes" libraryName="tr140plugins.so">
+          <Name type="string" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <Vendor type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <Model type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <SerialNumber type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <FirmwareVersion type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <ConnectionType type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <Removable type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <Capacity type="unsignedInt" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <Status type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+        </PhysicalMedium>
+        <LogicalVolume type="object" array="yes" writable="yes" implemented="yes" libraryName="tr140plugins.so">
+          <Name type="string" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <Status type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <PhysicalReference type="string" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <FileSystem type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <Capacity type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <UsedSpace type="unsignedInt" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+        </LogicalVolume>
+        <HTTPServer type="object" array="no" writable="no" implemented="yes" libraryName="tr140plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <Status type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <MaxNumUsers type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <IdleTime type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <HTTPWritingEnabled type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <PortNumber type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <AuthenticationReq type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        </HTTPServer>
+        <HTTPSServer type="object" array="no" writable="no" implemented="yes" libraryName="tr140plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <Status type="string" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <MaxNumUsers type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <IdleTime type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <HTTPWritingEnabled type="boolean" writable="no" implemented="yes" libraryName="tr140plugins.so"/>
+          <PortNumber type="unsignedInt" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+          <AuthenticationReq type="boolean" writable="yes" implemented="yes" libraryName="tr140plugins.so"/>
+        </HTTPSServer>
+      </StorageService>
+      <VoiceServiceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr098plugins.so"/>
+    </Services>
+    <USBHosts type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+      <HostNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+      <Host type="object" array="yes" writable="no" implemented="yes" prefixName="USBHosts" libraryName="tr157plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <Name type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <Type type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <Reset type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <PowerManagementEnable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <USBVersion type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <DeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <Device type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+          <DeviceNumber type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <USBVersion type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <DeviceClass type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <DeviceSubClass type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <DeviceVersion type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <DeviceProtocol type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <ProductID type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <VendorID type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Manufacturer type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <ProductClass type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <SerialNumber type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Port type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Rate type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Parent type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <MaxChildren type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <IsSuspended type="boolean" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <IsSelfPowered type="boolean" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <ConfigurationNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Configuration type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+            <ConfigurationNumber type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+            <InterfaceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+            <Interface type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+              <InterfaceNumber type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+              <InterfaceClass type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+              <InterfaceSubClass type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+              <InterfaceProtocol type="hexBinary" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+            </Interface>
+          </Configuration>
+        </Device>
+      </Host>
+    </USBHosts>
+    <User type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+      <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <Username type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <Password type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <Language type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+    </User>
+    <UPnP type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+      <Device type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPMediaServer type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPMediaRenderer type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPWLANAccessPoint type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPQoSDevice type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPQoSPolicyHolder type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <UPnPIGD type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      </Device>
+      <Discovery type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+        <RootDeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <DeviceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <ServiceNumberOfEntries type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        <RootDevice type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+          <Status type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <UUID type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <USN type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <LeaseTime type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Location type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Server type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        </RootDevice>
+        <Device type="object" array="yes" writable="no" prefixName="Discovery" implemented="yes" libraryName="tr157plugins.so">
+          <Status type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <UUID type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <USN type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <LeaseTime type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Location type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Server type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        </Device>
+        <Service type="object" array="yes" writable="no" implemented="yes" libraryName="tr157plugins.so">
+          <Status type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <UUID type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <USN type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <LeaseTime type="unsignedInt" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Location type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+          <Server type="string" writable="no" implemented="yes" libraryName="tr157plugins.so"/>
+        </Service>
+      </Discovery>
+    </UPnP>
+    <PeriodicStatistics type="object" array="no" writable="no" implemented="yes" libraryName="tr157plugins.so">
+      <MinSampleInterval type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <MaxReportSamples type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <SampleSetNumberOfEntries type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+      <SampleSet type="object" array="yes" writable="yes" implemented="yes" libraryName="tr157plugins.so">
+        <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <Status type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so" notifyvalue="1"/>
+        <Name type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <SampleInterval type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <ReportSamples type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <TimeReference type="dateTime" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <FetchSamples type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <ForceSample type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <ReportStartTime type="dateTime" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <ReportEndTime type="dateTime" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <SampleSeconds type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <ParameterNumberOfEntries type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        <Parameter type="object" array="yes" writable="yes" implemented="yes" libraryName="tr157plugins.so">
+          <Enable type="boolean" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Reference type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <SampleMode type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <CalculationMode type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <LowThreshold type="int" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <HighThreshold type="int" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <SampleSeconds type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <SuspectData type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Values type="string" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+          <Failures type="unsignedInt" writable="yes" implemented="yes" libraryName="tr157plugins.so"/>
+        </Parameter>
+      </SampleSet>
+    </PeriodicStatistics>
+    <X_GVT_Hotspot_Maximum_Clients type="unsignedint" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_GRE_Concentrator_Address type="string" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_GRE_Backup_Concentrator_Address type="string" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_Hotspot_SBC_Address type="string" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_Hotspot_VOIP_Server_Address type="string" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_GRE_Hotspot_Enable type="boolean" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+    <X_GVT_AccessClass type="string" writable="yes" implemented="yes" libraryName="custom_GVT_tr98.so"/>
+  </InternetGatewayDevice>
+</root>

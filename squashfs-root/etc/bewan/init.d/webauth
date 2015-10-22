@@ -1,0 +1,145 @@
+#!/bin/sh
+# /etc/bewan/init.d/webauth $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+##################################################
+# Function to build web authentication configfile
+##################################################
+webauth_build_configfile()
+{
+  # Debug mode
+  if [ "$WebAuthenticator_Debug" = 1 ]; then
+    echo 'debug' >>$conf
+  fi
+  # loops through authentication realms
+  local loop
+  for loop in `strip $WebAuthenticator_Realm_List`; do
+    [ "$WebAuthenticator_Enable" != 1 ] && continue
+    local field='WebAuthenticator_Realm_'$loop
+    # Realm name
+    local realm; eval realm=\${$field'_Name'}
+    [ "$realm" = '' ] && continue
+    # Authentication method
+    local method; eval method=\${$field'_Method'}
+    case "$method" in
+    Basic) method='basic' ;;
+    Digest) method='digest' ;;
+    DigestQop) method='digest_qop' ;;
+    Embedded) method='embedded' ;;
+    *) continue ;;
+    esac
+    # loops through authentication groups in this realms
+    local loop2
+    local list2; eval list2=\${$field'_Group_List'}
+    for loop2 in `strip $list2`; do
+      local field2='WebAuthenticator_Realm_'$loop'_Group_'$loop2
+      local group; eval group=\${$field2'_Name'}
+      local pwdfile
+      if [ "$group" = '' ]; then
+        pwdfile='nocheck'
+      else
+        # Path to password file
+        pwdfile="$webdir/.$group"
+        #[ ! -f $pwdfile ] && continue
+      fi
+      # Check authentication for these directories
+      local dirs; eval dirs=\${$field2'_Directories'}
+      [ "$dirs" = '' ] && continue
+      # Do we have to skip authentication for these directories
+      local ifname='noskip'
+      local enable; eval enable=\${$field2'_SkipAuth_Enable'}
+      if [ "$enable" = 1 ]; then
+        local type; eval type=\${$field2'_SkipAuth_Interface'}
+        local ix; eval ix=\${$field2'_SkipAuth_InterfaceNumber'}
+        case "$type" in
+        LANDevice)
+          ifname=`cat $LAND/$ix/ifname 2>/dev/null`
+          ;;
+        WANConnectionDevice)
+          ifname=`cat $WAND/$ix/ip/ifname 2>/dev/null`
+          ;;
+        Local)
+          ifname='lo'
+          ;;
+        esac
+      fi
+      # Add this authentication group
+      cat >>$conf <<EOF
+auth_group $realm $method $pwdfile $dirs $ifname
+EOF
+    done
+  done
+  # Add tr069 connection request server authentication
+  local srv_url_path; eval srv_url_path=\${'Services_TR069_SrvUrlPath':-}
+  if [ -e /bin/tr069 ]; then
+    echo "auth_group TR069 digest /var/bewan/tr069/.htpasswd /$srv_url_path noskip" >>$conf
+  fi
+}
+
+##################################################
+# Sanity check
+##################################################
+check_webauth() {
+  if [ ! -e /lib/libwebauth.so ]; then
+    ARG=nothing
+    return
+  fi
+  local dirsession='/var/bewan/session'
+  if [ ! -d ${dirsession} ]; then
+    mkdir -p ${dirsession}
+  fi
+  local enable="test x$WebAuthenticator_Enable = x1 -o -e /bin/tr069"
+  local active="test -f $conf"
+  base_check_arg "$enable" "$active"
+}
+
+##################################################
+#------STOP------
+##################################################
+stop_webauth() {
+  rm -f $conf
+}
+
+##################################################
+#------START------
+##################################################
+start_webauth() {
+  mkdir -p $dir
+  webauth_build_configfile
+}
+
+##################################################
+#------MAIN-------
+##################################################
+main_webauth() {
+  eval $PUSH_ARG
+
+  local dir='/var/bewan'
+  local webdir='/var/bewan/webuser.d'
+  local conf="$dir/webauth.conf"
+
+  check_webauth
+  base_log "$INITD/webauth $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_webauth
+    ;;
+  start)
+    start_webauth
+    ;;
+  restart)
+    stop_webauth
+    start_webauth
+    ;;
+  esac
+}
+
+##################################################
+#------WORK-------
+##################################################
+main_webauth

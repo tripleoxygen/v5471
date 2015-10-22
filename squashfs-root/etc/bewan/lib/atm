@@ -1,0 +1,135 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/lib/atm
+
+# specific vendor functions used by atm scripts
+# setparam must be included
+
+# Working variables
+# $ETHID: ATMEternetInterface index
+# $config: 'ATMEternetInterface_x_ATMLinkConfig'
+# $ifname: name of atm network interface
+# $ATMD/$ifname: working directory of ATM interface
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+if [ ${ATM_LIB_LOADED:-0} -eq 1 ]; then
+  return
+fi
+
+. /etc/bewan/lib/qos
+
+check_vendor_atm() {
+  mkdir -p $ATMD
+  touch $ATMD/enable
+
+  which xtmctl > /dev/null
+  return $?
+}
+
+start_vendor_atm() {
+
+  # ATM virtual circuit
+  local vc=$(cat $ATMD/$ifname/atmvc)
+  local encaps=$(cat $ATMD/$ifname/encaps)
+  local aalprio=$(cat $ATMD/$ifname/aalprio); eval aalprio=\${aalprio:-0}
+  local bcm_encaps=
+
+  local class; eval class=\${$config'_ATMClass'}
+  local pcr; eval pcr=\${$config'_ATMPeakCellRate':-0}
+  local mbs; eval mbs=\${$config'_ATMMaximumBurstSize':-0}
+  local scr; eval scr=\${$config'_ATMSustainableCellRate':-0}
+
+  case "$encaps" in
+    vc-encaps)
+      bcm_encaps=vcmux_eth
+      ;;
+    llc-encaps)
+      bcm_encaps=llcsnap_eth
+      ;;
+    *)
+      return
+      ;;
+  esac
+
+  ## Create tdte
+  local result=''
+  case "$class" in
+    UBR)
+      if [ $pcr -eq 0 ]; then
+        result=$(xtmctl operate tdte --add ubr)
+      else
+        result=$(xtmctl operate tdte --add ubr_pcr $pcr)
+      fi
+      ;;
+    CBR)
+      result=$(xtmctl operate tdte --add cbr $pcr)
+      ;;
+    VBR-rt)
+      result=$(xtmctl operate tdte --add rtvbr $pcr $scr $mbs)
+      ;;
+    VBR-nrt)
+      result=$(xtmctl operate tdte --add nrtvbr $pcr $scr $mbs)
+      ;;
+  esac
+  # Use it if successfully created
+  local tdte_index=1
+  if [ "$result" != '' ]; then
+    # Takes tdte index
+    tdte_index=$(echo $result | cut -d' ' -f3)
+    if [ "$tdte_index" = '' ]; then
+      tdte_index=1
+    fi
+  fi
+  if [ $tdte_index != 1 ]; then
+    # Store tdte index needed to delete it later
+    echo $tdte_index > $ATMD/$ifname/tdte_index
+  fi
+
+  # Create ATM interface on interleaved path only (for now)
+  xtmctl operate conn --add 1.$vc aal5 $bcm_encaps $aalprio 100 $tdte_index
+  xtmctl operate conn --createnetdev 1.$vc $ifname
+
+  queue_up_vendor_atm
+
+  ifconfig $ifname up
+}
+
+stop_vendor_atm() {
+
+  # ATM virtual circuit
+  local vc=$(cat $ATMD/$ifname/atmvc)
+
+  rm -f $ATMD/enable
+  ifconfig $ifname down
+
+  queue_down_vendor_atm
+
+  xtmctl operate conn --deletenetdev 1.$vc
+  xtmctl operate conn --delete 1.$vc
+
+  local tdte_index=$(cat $ATMD/$ifname/tdte_index)
+  if [ "$tdte_index" != '' ] && [ "$tdte_index" != 1 ]; then
+    xtmctl operate tdte --delete $tdte_index
+  fi
+}
+
+
+queue_up_vendor_atm() {
+  # create the QOS queues
+  vendor_qos_start_ifname $ifname
+
+  # or the default one
+  local vc=$(cat $ATMD/$ifname/atmvc)
+  vendor_qos_add_default_queue $vc $ifname
+}
+
+queue_down_vendor_atm() {
+  # del the queues or the default queue
+  # attached to  the $ifname
+  vendor_qos_stop_ifname $ifname
+  vendor_qos_del_default_queue $ifname
+}
+
+
+ATM_LIB_LOADED=1

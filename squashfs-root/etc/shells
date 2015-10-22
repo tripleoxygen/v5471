@@ -1,0 +1,4 @@
+/bin/sh
+/bin/ash
+/sbin/cli
+/etc/bewan/scripts/restricted_shell

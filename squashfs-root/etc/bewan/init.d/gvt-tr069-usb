@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+change_tr069_usb() {
+  local usb; eval usb=\${Services_GvtConfig_TR069USB:-1}
+  cat > /tmp/gvt_usb.cli <<EOF
+cd _Services_GvtConfig
+set EnableUSB $usb
+fcommit
+EOF
+  (cli -s < /tmp/gvt_usb.cli; rm -f /tmp/gvt_usb.cli) &
+}
+
+change_tr069_usb

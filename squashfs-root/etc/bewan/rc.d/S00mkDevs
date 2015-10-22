@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Create Broadcom specific devices
+
+mknod /dev/dect c 197 0
+mknod /dev/dectdbg c 197 1
+mknod /dev/bcmatm0 c 205 0
+mknod /dev/brcmboard c 206 0
+mknod /dev/bcmvdsl0 c 207 0
+mknod /dev/bcmadsl0 c 208 0
+mknod /dev/bcmadsl1 c 208 1
+mknod /dev/bcmendpoint0 c 209 0
+mknod /dev/bcmaal20 c 210 0
+mknod /dev/bcmles0 c 211 0
+mknod /dev/bcm c 212 0
+mknod /dev/bounce c 213 0
+mknod /dev/pmon c 214 0
+mknod /dev/ac97 c 222 0
+mknod /dev/slac c 223 0
+mknod /dev/bcmprof c 224 0
+mknod /dev/si3215 c 225 0
+mknod /dev/bcmatmb0 c 226 0
+mknod /dev/p8021ag0 c 227 0
+mknod /dev/bcmxtmcfg0 c 228 0
+mknod /dev/pktcmf c 232 0
+mknod /dev/spu c 233 0
+mknod /dev/bcmmoca0 c 234 0
+mknod /dev/bcmmoca10 c 234 1
+mknod /dev/bcm_user_ploam c 235 0
+mknod /dev/bcm_omci c 236 0
+mknod /dev/bcm_ploam c 237 0
+mknod /dev/bcmvlan c 238 0
+mknod /dev/pwrmngt c 240 0
+mknod /dev/bcmfap c 241 0
+mknod /dev/fcache c 242 0
+mknod /dev/ingqos c 243 0
+mknod /dev/bpm c 244 0
+mknod /dev/bcmarl c 245 0

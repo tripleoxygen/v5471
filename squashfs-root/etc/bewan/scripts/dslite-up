@@ -1,0 +1,9 @@
+#!/bin/sh
+
+restart_dslite() {
+	local ARG=restart
+	local WANID=${WANID:-0}
+	base_call_initd 'dslite'
+}
+
+restart_dslite

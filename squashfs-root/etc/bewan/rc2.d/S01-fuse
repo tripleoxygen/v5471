@@ -1,0 +1,4 @@
+#!/bin/sh
+# Load fuse kernel driver
+module=`find /lib/modules -name fuse.ko`
+[ "$module" != '' ] && modprobe fuse

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+# $DEFRTE, set to 1 if WAN is a default route
+# $INET, set to 1 if WAN is an Internet connection
+
+restart_miniupnp() {
+	[ "$INET" != 1 ] && return 0
+
+	local interface=`cat /var/bewan/miniupnp.d/wan-interface 2>/dev/null`
+	local ifname=`cat $WAND/$WANID/ip/ifname`
+	# Interface is already monitored
+	if [ "$interface" = "$ifname" ]; then
+		killall -USR1 miniupnpd
+		return 0
+	fi
+
+	# Restart if wan interface has changed
+	local ARG=restart
+	base_call_initd 'miniupnpd'
+}
+
+restart_miniupnp

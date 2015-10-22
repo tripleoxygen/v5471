@@ -1,0 +1,78 @@
+#!/bin/sh
+# /etc/bewan/scripts/update-dns $1
+# common script part of /etc/bewan/scripts/ip-up and /etc/bewan/scripts/ip-down
+
+# Arguments or environment variables:
+# $1 or $WANID :    the WAN interface index
+
+# Others variables come from setparam
+if [ "${WANID:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+  WANID=${1:-0}
+fi
+
+[ -d /proc/sys/net/ipv4 ] && [ -f /etc/bewan/lib/ipv4_dns_functions ] && . /etc/bewan/lib/ipv4_dns_functions
+[ -d /proc/sys/net/ipv6 ] && [ -f /etc/bewan/lib/ipv6_dns_functions ] && . /etc/bewan/lib/ipv6_dns_functions
+
+update_dns() {
+  local alt i server pid
+
+  # Initialize DNS server lists
+  local dns_list=''
+  local defdns_list=''
+  for alt in `strip ${Services_AddDnsForwarder_List:-}`; do
+    eval dns_list_$alt=''
+  done
+
+  # Gather DNS servers from all WAN interfaces
+  local defroute=`cat $WAND/defroute 2>/dev/null`
+  for i in `ls $WAND`; do
+    local dnspref; eval dnspref=\${'WANConnectionDevice_'$i'_DNSPreference':-IPv4}
+    if [ "$dnspref" = 'IPv4' ] ; then
+      [ ${IPV4_DNS_LIB:-0} = 1 ] && append_dns4 $i
+      [ ${IPV6_DNS_LIB:-0} = 1 ] && append_dns6 $i
+    else
+      [ ${IPV6_DNS_LIB:-0} = 1 ] && append_dns6 $i
+      [ ${IPV4_DNS_LIB:-0} = 1 ] && append_dns4 $i
+    fi
+  done
+
+  # Update resolv.conf of alternate DNS forwarders
+  for alt in `strip ${Services_AddDnsForwarder_List:-}`; do
+    rm -f /var/bewan/resolv-$alt.conf
+    touch /var/bewan/resolv-$alt.conf
+    chmod 644 /var/bewan/resolv-$alt.conf
+    eval srv=\${dns_list_$alt}
+    if [ "$srv" != '' ]; then
+      for server in `strip $srv`; do
+        echo nameserver $server >>/var/bewan/resolv-$alt.conf
+      done
+      # Flush DNS cache (in case of DNS redirect)
+      pid=`cat /var/run/dnsmasq-*.pid 2>/dev/null`
+      [ "$pid" != '' ] && kill -HUP $pid 2>/dev/null
+    fi
+  done
+
+  # Update resolv.conf of main DNS forwarder
+  rm -f $RESOLV
+  touch $RESOLV
+  chmod 644 $RESOLV
+  # Put DNS servers of default route first
+  if [ "$defdns_list" != '' ]; then
+    for server in $defdns_list; do
+      echo nameserver $server >>$RESOLV
+    done
+  fi
+  # Put DNS servers of other WAN interfaces
+  if [ "$dns_list" != '' ]; then
+    for server in $dns_list; do
+      echo nameserver $server >>$RESOLV
+    done
+  fi
+  # Flush DNS cache (in case of DNS redirect)
+  pid=`cat /var/run/dnsmasq.pid 2>/dev/null`
+  [ "$pid" != '' ] && kill -HUP $pid 2>/dev/null
+}
+
+base_log "$SCRIPTD/update-dns $WANID" debug
+update_dns

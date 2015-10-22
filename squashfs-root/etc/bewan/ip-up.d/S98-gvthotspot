@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+
+if [ "${CRON_LIB:-0}" = 0 ] && [ -f /etc/bewan/lib/crontab ]; then
+	. /etc/bewan/lib/crontab
+fi
+
+if [ "${CRON_LIB:-0}" = 0 ]; then
+	echo "Cron Library Does not Exists !"
+	return 1
+fi
+
+start_crontab_gre() {
+	local wanid=${WANID:-0}
+	if [ "$wanid" = 1 ]; then
+		if [ "$WLANInterface_2_Enable" = 1 ]; then
+			if [ "$Services_GvtHotspot_Address_1_IP" != "" ] || [ "$Services_GvtHotspot_Address_2_IP" != "" ]; then
+			  wl -i $WLANInterface_2_Ifname ssid "$WLANInterface_2_Config_SSID"
+			fi
+			#And for next subsequent time; put it into CRONTAB
+			crontab_add '*' '*' '*' '*' '*' '/etc/bewan/scripts/gre_tunnel_mngt' gre_tunnel_mngt
+		fi
+	fi
+}
+
+start_crontab_gre

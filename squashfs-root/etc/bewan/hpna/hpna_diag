@@ -1,0 +1,9 @@
+#!/bin/sh
+
+FILE=${1}
+
+while [ "1" = "1" ]; do
+    sleep 2s
+    (cat ${FILE} | grep "_=done") && exit 0
+done
+

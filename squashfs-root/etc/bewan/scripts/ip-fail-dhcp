@@ -1,0 +1,27 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-fail-dhcp
+# called when DHCP client fails to get its IP address
+# setparam is already included by calling script
+
+# Environnement variables:
+#  IFNAME:  interface name
+
+main_ip_fail_dhcp() {
+	base_log "$SCRIPTD/ip-fail-dhcp $IFNAME" debug
+
+	rm -f "$INTFD/$IFNAME/dhcp-up"
+
+	# Fails WAN interface
+	if [ -f "$INTFD/$IFNAME/wanid" ]; then
+	  local WANID=`cat $INTFD/$IFNAME/wanid`
+	  base_call_scripts 'ip-fail'
+	fi
+
+	# Fails LAN interface
+	if [ -f "$INTFD/$IFNAME/lanid" ]; then
+	  local LANID=`cat $INTFD/$IFNAME/lanid`
+	  base_call_scripts 'ip-fail-lan'
+	fi
+}
+
+main_ip_fail_dhcp

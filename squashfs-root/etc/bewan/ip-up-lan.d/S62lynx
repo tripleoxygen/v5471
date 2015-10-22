@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Called on ip-up event on a LAN interface
+# $LANID= LAN connection index
+. /etc/bewan/lib/process
+process_ip_up "lynx.init" $LANID $Services_UpnpTracker_Interface

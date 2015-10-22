@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "hotspot"
+
+. /etc/bewan/lib/crontab
+
+crontab_add '*' '*' '*' '*' '*' '/etc/bewan/scripts/stopssid' stopssid

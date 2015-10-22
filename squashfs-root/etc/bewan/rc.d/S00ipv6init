@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Ignore router advertisement and force configuration as a router
+# /etc/bewan/init.d/wanip6 will handle autoconf case
+[ -d /proc/sys/net/ipv6 ] && {
+  sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>/dev/null
+  for dir in $(find /proc/sys/net/ipv6/conf/ -type d); do
+    [ ! -f ${dir}/accept_ra ] && continue
+    local name=$(basename $dir)
+    echo "${Device_IPv6SkipInterfaces:-}" | grep -qE "(^|,)$name(,|$)" && continue
+    echo 0 > ${dir}/accept_ra
+    echo 0 > ${dir}/accept_ra_defrtr
+    echo 0 > ${dir}/autoconf
+    # Skip all and default + don't touch to lo (since it holds ::1)
+    echo "all,default,lo" | grep -qE "(^|,)$name(,|$)" && continue
+    sysctl -w net.ipv6.conf.$name.disable_ipv6=1 >/dev/null 2>/dev/null
+    ip -6 addr flush dev $name
+  done
+}
+
+# Enable IPv6
+[ "${Device_IPv6Enable:-0}" = 1 ] && touch $IP6ENABLE
+

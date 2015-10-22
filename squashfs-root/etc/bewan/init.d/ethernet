@@ -1,0 +1,113 @@
+#!/bin/sh
+# /etc/bewan/init.d/ethernet $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = ethernet interface index
+
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-0}
+fi
+
+# Sanity check
+check_ethernet() {
+  if [ "$ifname" = '' ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test x$en = x1"
+  local active="test -d $INTFD/$ifname"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ethernet() {  
+  # Destroy VLAN interfaces
+  base_call_initd 'vlan_interface'
+
+  if [ "$TOP_ARG" = restart ]; then
+    # Remove interface from lan bridge
+    if [ -f /etc/bewan/lib/lan ]; then
+      . /etc/bewan/lib/lan
+      remove_interface_from_lan_bridge $ifname
+    fi
+  fi
+  # Stop interface
+  base_call_initd 'interface'
+}
+
+start_ethernet() {
+
+  base_call_initd 'interface vlan_interface'
+
+  if [ "$TOP_ARG" = restart ]; then
+    # Add interface to lan bridge
+    if [ -f /etc/bewan/lib/lan ]; then
+      . /etc/bewan/lib/lan
+      add_interface_to_lan_bridge $ifname all
+    fi
+  fi
+}
+
+restart_ethlink() {
+
+  if [ "$TOP_ARG" = restart ]; then
+    local ARG=restart
+    base_call_initd 'ethlink'
+  fi
+}
+
+restart_ethled() {
+
+  if [ "$TOP_ARG" = restart ]; then
+    local ARG=restart
+    base_call_initd 'ethled'
+  fi
+}
+
+if [ "$ETHID" = 'all' ] && ( [ $ARG = start ] || [ $ARG = stop ] ); then
+
+  # Start all interfaces
+  ETHID=0; while [ $ETHID -lt ${LANEthernetInterface_Count:-0} ]; do
+    ETHID=$(($ETHID + 1))
+    base_call_initd 'ethernet'
+  done
+
+  ETHID='all'
+  return
+fi
+
+main_ethernet() {
+  eval $PUSH_ARG
+
+  local IFTYPE='LANEthernetInterface'
+  local en; eval en=\${$IFTYPE'_'$ETHID'_Enable':-0}
+  local ifname; eval ifname=\${$IFTYPE'_'$ETHID'_Ifname':-}
+
+  check_ethernet
+  base_log "$INITD/ethernet $ARG $ETHID" debug
+
+  case $ARG in
+  stop)
+    stop_ethernet
+    restart_ethled
+    restart_ethlink
+    ;;
+  start)
+    start_ethernet
+    restart_ethled
+    restart_ethlink
+    ;;
+  restart)
+    stop_ethernet
+    start_ethernet
+    restart_ethled
+    restart_ethlink
+    ;;
+  esac
+}
+
+main_ethernet

@@ -1,0 +1,33 @@
+#!/bin/sh
+# /etc/bewan/init.d/factory-reset
+
+# retrieve user voice configuration (Voice_*, voiceProfile_*, VoiceCustomizations_*) and convert it to a cli script to store it to nvram to be applied at next reboot
+local VOICE_CLI=/nvram/gvt/voice.cli
+save_voice_params() {
+		local path name val 
+		local OLD_IFS=$IFS
+		echo "diff" | cli -q | sed -e 's/+ \(Voice\|VoiceProfile\|VoiceCustomizations\)\([_a-zA-Z0-9]*\)_\([^=]\+\)=\([^#$]*\).*$/\1\2;\3;\4/p;d' | while IFS=\; read path name val 
+		do
+				val="$(echo "cd _$path; get $name" | cli -q)"
+				echo "cd _$path; sset $name '$val'"
+		done > ${VOICE_CLI}
+		IFS=$OLD_IFS
+}
+
+# check if wps button is cliked
+# wpsbut == 0 means wps button not cliked => partial factory (save voice config), 
+# wpsbut == 1 means wps button clicked    => full factory
+check_wps_button() {
+	local wpsbut=$(ledctl zwps | tr -d " "| cut -f2 -d "=")
+	rm -f ${VOICE_CLI}
+	[ "${wpsbut}" = "0" ] && save_voice_params  
+}
+
+if [ -f "/bin/stopleds" ]; then
+	/bin/stopleds &
+fi
+
+# reset button long presss (6s) => partial reset
+check_wps_button
+echo 'factory' | cli -s
+

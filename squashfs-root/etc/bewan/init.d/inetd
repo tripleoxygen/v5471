@@ -1,0 +1,79 @@
+#!/bin/sh
+# /etc/bewan/init.d/inetd $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+check_inetd() {
+  if [ ! -f /usr/sbin/inetd ]; then
+    ARG=nothing
+    return
+  fi
+  local enable='/bin/true'
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_inetd() {
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+  rm -f $conf_file
+}
+
+start_inetd() {
+  # Detect if ipv6 has been compiled in kernel
+  local tcp_proto='tcp'
+  [ -d /proc/sys/net/ipv6 ] && tcp_proto='tcp6'
+
+  rm -f $conf_file
+  # Enable SSH and Telnet if console is enable (test firmware)
+  local test_console_enable=0
+  cat /proc/cmdline | grep 'console=' 2>&1 >/dev/null
+  [ "$?" = "0" ] && test_console_enable=1
+
+  if [ "$Services_Telnet_Enable" = 1 -o "${test_console_enable}" = 1 ] && [ -f /usr/sbin/telnetd ]; then
+    echo "telnet stream ${tcp_proto} nowait root /bin/busybox telnetd" >>$conf_file
+  fi
+
+  if [ "$Services_SSH_Enable" = 1 -o "${test_console_enable}" = 1 ] && [ -f /usr/sbin/sshd ]; then
+    echo "ssh stream ${tcp_proto} nowait root /usr/sbin/sshd sshd -i -d /etc/bewan/dsskey.bin" >>$conf_file
+  fi
+
+  # Includes the scripts located in /etc/bewan/inetd.d
+  for script in `find /etc/bewan/inetd.d -follow -type f 2>/dev/null | sort`; do
+    . $script
+  done
+
+  if [ -f $conf_file ]; then
+    local cmd="/usr/sbin/inetd -f $conf_file"
+    base_add_daemon $daemon "$cmd"
+  fi
+}
+
+main_inetd() {
+  eval $PUSH_ARG
+
+  local daemon='inetd'
+  local daemon_pid="/var/run/$daemon.pid"
+  local conf_file='/var/bewan/inetd.conf'
+
+  check_inetd
+  base_log "$INITD/inetd $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_inetd
+    ;;
+  start)
+    start_inetd
+    ;;
+  restart)
+    stop_inetd
+    start_inetd
+    ;;
+  esac
+}
+
+main_inetd

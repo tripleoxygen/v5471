@@ -1,0 +1,5 @@
+#!/bin/sh
+# Called from /etc/bewan/rc2
+# Start voip
+
+base_call_initd 'voip'

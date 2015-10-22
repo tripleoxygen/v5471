@@ -1,0 +1,26 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+restart_tr111() {
+  [ ! -d /var/bewan/tr111.d/nat ] && return 0
+
+  local wanid=${WANID:-0}
+  local wanindex=0
+  local i
+
+  # Update the WT-111 DNAT rules used for connection request
+  for i in $(strip $Services_TR069_Interfaces); do
+    [ ! -f "$WAND/$i/ip/ipaddr" ] && continue
+    wanindex=$i
+    break
+  done
+
+  [ "$wanid" != "$wanindex" ] && return 0
+
+  local ARG=restart
+  base_call_initd 'wt111_dnat_rules'
+}
+
+restart_tr111

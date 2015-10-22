@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+# $DEFRTE, set to 1 if WAN is a default route
+# $INET, set to 1 if WAN is an Internet connection
+handle_dhcp43() {
+	# TR069 autoprovisioning through DHCP option 43 (Vendor Encapsulated Options)
+	[ ! -f /var/bewan/wan.d/$WANID/ip/dhcp43 ] && return 0
+	[ "$DHCP43" = '' ] && return 0
+
+	local OLDURL="`echo 'cd _Services_TR069; get ACSUrl' | cli -q`"
+	# Decode ACS url from option 43/1
+	local NEWURL="`dhcp43 $DHCP43`"
+
+	[ "$NEWURL" = "$OLDURL" ] && return 0
+
+	# Daemonize the following to avoid dead lock when launching cli scripts
+	(
+  	# Configure the TR069
+  	cli -s <<EOF
+cd _Services_TR069
+set ACSUrl $NEWURL
+fcommit
+EOF
+	) &
+}
+
+handle_dhcp43

@@ -1,0 +1,68 @@
+#!/bin/sh
+
+[ ${WANAUTOCONF_LIB:-0} = 1 ] && return
+
+WANAUTOCONF_LIB=1
+
+# Included to retrieve phy state and dsl mode
+. /etc/bewan/lib/phy
+. /etc/bewan/lib/libdsl
+
+retrieve_current_mode() {
+  local wanidx=${Layer3Forwarding_DefaultConnectionService:-1}
+  local phyitf_list
+  eval phyitf_list=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_List':-}
+  for phyitfidx in `strip $phyitf_list`
+  do
+    local phyitfen
+    eval phyitfen=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_'$phyitfidx'_Enable':-0}
+    if [ "$phyitfen" = "1" ]; then
+      eval current_mode=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_'$phyitfidx'_Type':-}
+      break
+    fi
+  done
+}
+
+change_wan_mode() {
+  local filename="/var/bewan/autoconf_reconf"
+
+  local wan_count=${WANConnectionDevice_Count:-0}
+  local wanidx=0
+
+  while [ $wanidx -lt $wan_count ]
+  do
+    wanidx=$(($wanidx + 1))
+    # Get the enabled physical interface
+    local phyitf_searchidx=0
+    local phyitftype=''
+    local phyitf_list; eval phyitf_list=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_List':-}
+    for phyitfidx in `strip $phyitf_list`
+    do
+      eval phyitftype=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_'$phyitfidx'_Type':-}
+      if [ "$phyitftype" = "${1:-}" ]; then
+        phyitf_searchidx=$phyitfidx
+        echo "cd _WANConnectionDevice_${wanidx}_PhysicalInterface_${phyitfidx}; set Enable 1;" >> $filename
+      fi
+    done
+    for phyitfidx in `strip $phyitf_list`
+    do
+      eval phyitftype=\${'WANConnectionDevice_'$wanidx'_PhysicalInterface_'$phyitfidx'_Type':-}
+      case "$phyitftype" in
+        ATMEthernetInterface|PTMEthernetInterface|WANEthernetInterface)
+          if [ "$phyitfidx" -ne "$phyitf_searchidx" ]; then
+            echo "cd _WANConnectionDevice_${wanidx}_PhysicalInterface_${phyitfidx}; set Enable 0;" >> $filename
+          fi
+        ;;
+        *)
+        # Do nothing here, we don't want to break other physical interfaces
+        ;;
+      esac
+    done
+  done
+
+  echo "fcommit" >> $filename
+
+  cli -s < $filename
+  rm -f $filename
+}
+

@@ -1,0 +1,51 @@
+#!/bin/sh
+
+# Called on ip-up and ip-down events on a WAN interface
+# $WANID, WAN interface index
+
+restart_led3g() {
+	which ledctl >/dev/null || return 0
+
+	local wanid=${WANID:-0}
+
+	local phyIfaceList; eval phyIfaceList=\${'WANConnectionDevice_'$wanid'_PhysicalInterface_List':-}
+
+	for i in `strip $phyIfaceList`
+	do
+		local phyIfaceType; eval phyIfaceType=\${'WANConnectionDevice_'$wanid'_PhysicalInterface_'$i'_Type'}
+		if [ "$phyIfaceType" = "ModemInterface" ]; then
+			local internet="`cat $WAND/internet 2>/dev/null`"
+			local found=0
+			local idle=0
+			local ip=''
+			local ix
+
+			for ix in `strip $internet`; do
+				[ $ix = $wanid ] && found=1
+				ip=`cat $WAND/$ix/ip/ipaddr 2>/dev/null`
+				[ "$ip" != '' ] && {
+					# clear ppp idle timeout flag
+					rm -f $WAND/$ix/ip/idle
+				}
+				## ppp is down because of idle timeout
+				[ -f $WAND/$ix/ip/idle ] && idle=1
+			done
+
+			[ $found = 0 ] && return 0
+
+			local ifname=`cat $WAND/$wanid/ifname 2>/dev/null`
+
+			if [ "$ip" = '' ]; then
+				ledctl sflag_3g 2>/dev/null
+			else
+				if [ $idle = 0 ]; then
+					ledctl Sflag_3g 2>/dev/null
+				else
+					ledctl sflag_3g 2>/dev/null
+				fi
+			fi
+		fi
+	done
+}
+
+restart_led3g

@@ -1,0 +1,159 @@
+#!/bin/sh
+# /etc/bewan/init.d/qos $1
+# $1 or $ARG = start stop restart
+# $2 or $QUEUEID = QUEUEID
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+. /etc/bewan/lib/qos
+
+
+check_qos() {
+
+#  see  base_check_arg in base_system to understand
+	if ! check_vendor_qos $@ ; then
+		ARG=nothing
+		return
+	fi
+ 
+  
+}
+
+qos_start_queue() {
+ vendor_qos_start_queue $@
+}
+
+qos_stop_queue() {
+  vendor_qos_stop_queue $@
+}
+
+qos_restart_queue() {
+  vendor_qos_stop_queue  $@
+  vendor_qos_start_queue $@
+}
+
+qos_stop_interface() {
+  vendor_qos_stop_interface $@
+}
+
+qos_start_interface() {
+  vendor_qos_start_interface $@
+} 
+
+qos_restart_interface () {
+  vendor_qos_stop_interface $@
+  vendor_qos_start_interface $@
+}
+
+qos_stop_type() {
+  vendor_qos_stop_type $@
+}
+
+qos_start_type() {
+  vendor_qos_start_type $@
+}
+ 
+qos_restart_type () {
+  vendor_qos_stop_type $@
+  vendor_qos_start_type $@
+}
+
+qos_start_full() {
+  base_log "\t\t\t qos_start_full $*" debug
+  #TODO parcourir chaque queue et appeler  qos_start_queue
+}
+
+qos_stop_full() {
+  base_log "\t\t\t qos_stop_full $*" debug
+  #TODO
+}
+
+qos_restart_full() {
+  base_log "\t\t\t qos_restart_full $*" debug
+
+  qos_start_full $@
+  qos_stop_full $@
+
+}
+
+setup_full_qos() {
+
+	local idx type ITF line intfs
+
+	rm -f $QOSD/intfConfigured_unique $QOSD/intfConfigured    
+
+	eval intfs=\${'QueueManagement_Queue_List':-}
+	[ -z "$intfs" ] && return #No queue configured
+	
+	for ITF in `strip $intfs`; do
+		eval type=\${'QueueManagement_Queue_'$ITF'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$ITF'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return 
+		echo "$type $idx" >> $QOSD/intfConfigured
+	done
+    
+	#return only one occurence of each intf & write in $QOSD/intfConfigured_unique
+	cat $QOSD/intfConfigured | sort -u >> $QOSD/intfConfigured_unique
+    
+	while read line ; do   
+		type=`echo $line | grep -o -E [a-zA-Z_]+`
+		idx=`echo $line | grep -o -E [0-9,]+`
+ 
+	if [ "x$idx" = "x" -o "x$type" = "x" ]; then
+		break; # protection against empty args
+	fi;
+
+	case $ARG in
+		stop)
+			qos_stop_interface $type $idx ;;
+		start)
+			qos_start_interface $type $idx ;;
+		restart)
+			qos_restart_interface $type $idx ;;
+	esac
+	done < $QOSD/intfConfigured_unique
+    
+}
+
+
+main_qos() {
+
+	eval $PUSH_ARG
+	local idx type QUEUEID
+
+	QUEUEID=${1:-0}
+
+	mkdir -p $QOSD
+
+	base_log "$INITD/qos $ARG $QUEUEID" debug
+	
+	check_qos $QUEUEID
+	base_log "$INITD/qos $ARG $QUEUEID" debug
+	
+	# We do not have a queueid. So we perform stop/start/restart on all interfaces configured in QueueManagement
+	if [ ${QUEUEID:-0} -eq 0 ] ; then 
+		setup_full_qos
+		return
+	fi
+
+	eval type=\${'QueueManagement_Queue_'$QUEUEID'_InterfaceType':-}
+	eval idx=\${'QueueManagement_Queue_'$QUEUEID'_InterfaceIndex':-}
+	[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return 
+
+	case $ARG in
+		stop)
+			qos_stop_queue $QUEUEID $type $idx 
+		;;
+		start)
+			qos_start_queue $QUEUEID $type $idx 
+		;;
+		restart)
+			qos_restart_queue $QUEUEID $type $idx 
+		;;
+	esac
+    
+}
+
+main_qos ${2:-0}

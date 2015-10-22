@@ -1,0 +1,490 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+<link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+<script type="text/javascript" src="../js/morpheus.min.js"></script>
+<script type="text/javascript" src="../js/menu.js"></script>
+<script type="text/javascript" src="../js/dns.js"></script>
+<script type="text/javascript" src="../js/lite.javascript"></script>
+<script type="text/javascript" src="../js/app.javascript"></script>
+<script type="text/javascript" src="../js/base64.javascript"></script>
+<script type="text/javascript" src="../js/configAccess.javascript"></script>
+<script type="text/javascript" src="../js/firewall_service.javascript"></script>
+<script type="text/javascript" src="../js/port_forwarding_service.javascript"></script>
+<script type="text/javascript" src="../js/dhcp_reservation_service.javascript"></script>
+<script type="text/javascript" src="../js/config_lan.javascript"></script>
+<!--#isAuth level=admin -->
+        <script type="text/javascript">
+            $.event.ready(function() {
+                var util = $.util,
+                    pageData = {
+                    token: util.parseJson('<!--#echo jsonvar="token=LANDevice,WANConnectionDevice,Services_MiniUPnPd,Services_DynDNS,Firewall_Rules"-->'),
+                    
+                    // Port forwarding
+                    wanPortMappingList: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_{Layer3Forwarding_DefaultConnectionService}_PortMapping" -->'),
+                    activeConService: util.parseJson('<!--#echo jsonvar="cli=Layer3Forwarding_ActiveConnectionService"-->'),
+                    defaultConService: util.parseJson('<!--#echo jsonvar="cli=Layer3Forwarding_DefaultConnectionService"-->'),
+                    internetConService: util.parseJson('<!--#echo jsonvar="cli=Layer3Forwarding_InternetConnectionService"-->'),
+                    
+                    // DMZ
+                    wanDmzs: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_*_DMZ"-->'),
+                    wanCount: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice_Count"-->'),
+                    remoteAddress: ('<!--#echo jsvar="REMOTE_ADDR"-->'),
+                    lanHosts: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_Hosts"-->'),
+                    
+                    // UPnP
+                    enableUpnp: util.parseJson('<!--#echo jsonvar="cli=Services_MiniUPnPd_EnableUPnP"-->'),
+                    enableUpnpMain: util.parseJson('<!--#echo jsonvar="cli=Services_MiniUPnPd_Enable"-->'),
+                    
+                    // DynDns
+                    // dynDns: util.parseJson('<!--#echo jsonvar="cli=Services_DynDNS"-->') // JSON.parse fails here because of certificate
+                    dynDns: eval('(<!--#echo jsonvar="cli=Services_DynDNS"-->)'),
+                    
+                    
+                    // DHCP and LAN
+                    LANDevice: {
+                        "1": util.parseJson('<!--#echo jsonvar="cli=LANDevice_1"-->')
+                    }
+                    
+                };
+
+                Page.init(pageData);
+                
+                $("#tab-01").slideUp("normal");
+                $("#menu-configLan li").find("a").addClass("active");
+                $("#menu-configLan").find("a").bind("click", function(){ 
+                    var cur_tab_idx = $("#menu-configLan li a.active").attr("rel");
+                    $("#menu-configLan li a").removeClass("active");
+                    $(this).addClass("active");
+                    $("#tab-" + cur_tab_idx).slideDown("normal", function() {
+                        var i = $("#menu-configLan li a.active").attr("rel");
+                        $("#tab-" + i).slideUp("normal");
+                    });
+                    return false;
+                });
+            });
+        </script>
+<!--#endAuth var=ok-->
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+	<div class="wrap text-right">
+		
+		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+		<img src="../../img/power-box.png" alt="Power Box GVT"/>
+		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+		
+	</div>
+	
+	<div class="clear"></div>
+	
+</div><!--header-gateway-->
+
+
+
+<div id="content">
+
+	<div class="wrap">
+
+		<div id="conteudo-gateway">
+			
+			<div class="col-192 left">
+                <script type="text/javascript">ImportMenu('menu_lan');</script>
+			</div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->            
+			<div class="col-722 left" id="col-722">
+			
+				<h3 class="text-up">Rede Local</h3>
+				
+				<div  id="menu-configLan">
+					<ul>
+						<li><a href="#" rel="01">DHCP</a></li>
+						<li><a href="#" rel="02">Redirecionar Porta</a></li>
+						<li><a href="#" rel="03">DMZ</a></li>
+						<li><a href="#" rel="04">UPNP</a></li>
+						<li><a href="#" rel="05" class="no-border">DDNS</a></li>
+					</ul>
+				</div><!--menu-loc-net-->
+				
+				<div class="clear"></div>
+				
+				<div id="tab-01" class="tab add_table_space">
+					<table class="setupWifiTable">
+						<thead>
+							<tr>
+								<th colspan="2">DHCP</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td colspan="2">Configure como os IPs serão distribuidos automaticamente na sua rede.</td>
+							</tr>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+							<tr>
+							 <td>Servidor DHCP:</td>
+							 <td>
+							 	   <div class="switchButton"  type="switch" id="LANDevice_-lanid-_HostConfig_DHCPServerEnable" state=""></div>
+							 </td>
+							</tr>
+<!--#endCheck var=none -->
+							<tr>
+								<td>Endereço IP do Roteador:</td>
+								<td>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+									<input type="hidden" id="LANDevice_-lanid-_IPInterface_1_IPAddress" />
+									<input id="LANDevice_-lanid-_IPInterface_1_IPAddress0" type="text"  class="tiny" maxlength="3" /> . 
+									<input id="LANDevice_-lanid-_IPInterface_1_IPAddress1" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_IPInterface_1_IPAddress2" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_IPInterface_1_IPAddress3" type="text"  class="tiny" maxlength="3" />
+<!--#endCheck var=none -->
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+									<span id="LANDevice_-lanid-_IPInterface_1_IPAddress" style="font-size:12px"/></span>
+<!--#endCheck var=none -->
+								</td>
+							</tr>
+							<tr>
+								<td>Máscara de Rede:</td>
+								<td>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+									<input id="LANDevice_-lanid-_IPInterface_1_SubnetMask"  type="hidden" />
+									<input id="LANDevice_-lanid-_IPInterface_1_SubnetMask0" type="text"  class="tiny" maxlength="3"  /> . 
+									<input id="LANDevice_-lanid-_IPInterface_1_SubnetMask1" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_IPInterface_1_SubnetMask2" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_IPInterface_1_SubnetMask3" type="text"  class="tiny" maxlength="3" />
+<!--#endCheck var=none -->
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
+									<span id="LANDevice_-lanid-_IPInterface_1_SubnetMask" style="font-size:12px"/></span>
+<!--#endCheck var=none -->
+								</td>
+							</tr>
+							<tr>
+								<td rowspan="2">Faixa de Endereçamento:</td>
+								<td>
+									<input id="LANDevice_-lanid-_HostConfig_MinAddress"  type="hidden" />
+									<input id="LANDevice_-lanid-_HostConfig_MinAddress0" type="text"  class="tiny" maxlength="3"  /> . 
+									<input id="LANDevice_-lanid-_HostConfig_MinAddress1" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_HostConfig_MinAddress2" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_HostConfig_MinAddress3" type="text"  class="tiny" maxlength="3" />
+								</td>
+							</tr>
+							<tr>
+								<td class="second" style="padding-top:0px; padding-bottom:0px">
+									<input id="LANDevice_-lanid-_HostConfig_MaxAddress"  type="hidden" />
+									<input id="LANDevice_-lanid-_HostConfig_MaxAddress0" type="text"  class="tiny" maxlength="3"  /> . 
+									<input id="LANDevice_-lanid-_HostConfig_MaxAddress1" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_HostConfig_MaxAddress2" type="text"  class="tiny" maxlength="3" /> .
+									<input id="LANDevice_-lanid-_HostConfig_MaxAddress3" type="text"  class="tiny" maxlength="3" />
+								</td>
+							</tr>
+							<tr>
+								<td>Servidor DNS Específico:</td>
+								<td>
+									<div class="switchButton" type="switch" id="LANDevice_-lanid-_HostConfig_DNSServers" state="" value=""></div>
+								</td>
+							</tr>
+							<tr id="tr_custom_dns_primary">
+								<td >Servidor DNS Primário:</td>
+								<td>
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers0_0" type="text"  class="tinyDns" maxlength="3"/> . 
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers0_1" type="text"  class="tinyDns" maxlength="3"/> . 
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers0_2" type="text"  class="tinyDns" maxlength="3"/> . 
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers0_3" type="text"  class="tinyDns" maxlength="3"/>
+								</td>
+							</tr>
+						<tr id="tr_custom_dns_secondary">
+								<td >Servidor DNS Secundário:</td>
+								<td>
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers1_0" type="text"  class="tinyDns" maxlength="3"/> .  
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers1_1" type="text"  class="tinyDns" maxlength="3"/> . 
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers1_2" type="text"  class="tinyDns" maxlength="3"/> . 
+									<input id="LANDevice_-lanid-_HostConfig_DNSServers1_3" type="text"  class="tinyDns" maxlength="3"/>
+								</td>
+							</tr>
+							<tr>
+								<td>Período de Concessão do DHCP:</td>
+								<td><input type="text" id="LANDevice_-lanid-_HostConfig_DHCPLeaseTime" class="tinyLease" maxlength="5" /> Segundos</td>
+							</tr>
+							<tr>
+								<td colspan="4" class="cinza">
+									<a id="cancelLanConfig" class="btn-default-orange-small right"><span>Cancelar</span></a>
+									<a id="saveLanConfig" class="btn-default-orange-small right"><span>Salvar</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<table class="setupWifiTable">
+						<thead>
+							<tr>
+								<th colspan="4">CRIAR RESERVA NO DHCP</th>
+							</tr>
+							<tr>
+								<th>NOME DO DISPOSITIVO</th>
+								<th>ENDEREÇO MAC</th>
+								<th>ENDEREÇO IP</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><input type="text" id="reservation_Hostname" /></td>
+								<td><input type="text" id="reservation_MACAddress" /></td>
+								<td>
+									<input id="reservation_IPAddress"  type="hidden" />
+									<input id="reservation_IPAddress0" class="tiny" maxlength="3" /> . 
+									<input id="reservation_IPAddress1" class="tiny" maxlength="3" /> . 
+									<input id="reservation_IPAddress2"  class="tiny" maxlength="3" /> . 
+									<input id="reservation_IPAddress3"  class="tiny" maxlength="3" />
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4" class="cinza">
+									<a id="addReservation" class="btn-default-orange-small right"><span>RESERVAR</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<table id="dhcpReservationTable" class="data-table">
+						<thead>
+							<tr>
+								<th colspan="4">CRIAR RESERVA NO DHCPTABELA DE CONCESSÃO DHCP</th>
+							</tr>
+							<tr class="rounded-top">
+								<th class="wide">NOME DO DISPOSITIVO</th>
+								<th>ENDEREÇO MAC</th>
+								<th>ENDEREÇO IP</th>
+								<th class="actions">Modificar / Remover</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- Existing and new port mappings are added here -->
+						</tbody>
+					</table>
+					<table id="leaseTable" class="setupWifiTable">
+						<thead>
+							<tr>
+								<th colspan="4">TABELA DE CONCESSÃO DHCP</th>
+							</tr>
+							<tr>
+								<th>NOME DO DISPOSITIVO</th>
+								<th>ENDEREÇO MAC</th>
+								<th>ENDEREÇO IP</th>
+								<th>TEMPO RESTANTE</th>
+							</tr>
+						</thead>
+						<tbody id="leaseBody">
+						</tbody>
+					</table>
+				</div><!--tab-01-->
+				
+				<div id="tab-02" class="tab">
+					<table class="setupWifiTable">
+						<thead>
+							<th colspan="4">Redirecionar Porta</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td colspan="4">Configure como as portas do seu Power Box podem ser redirecionadas para os seus dispositivos.</td>
+							</tr>
+							<tr>
+								<td>Nome da Regra:</td>
+								<td><input type="text" id="Description" /></td>
+								<td><strong>Protocolo:</strong></td>
+								<td>
+									<select id="Protocol">
+										<option value="tcp">TCP</option>
+										<option value="udp">UDP</option>
+										<option value="all">TODOS</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td>Porta(s) de Origem:<span>Porta Individual ou Faixa. Ex: 8080:9090</span></td>
+								<td><input type="text" id="ExternalPort" /></td>
+								<td><strong>Porta(s) de Destino:<span>Opcional caso informe faixa na Origem.</strong></span></td>
+								<td><input type="text" id="InternalPort" /></td>
+							</tr>
+							<tr>
+								<td>IP de Origem:</td>
+								<td><input type="text" id="RemoteHost" /></td>
+								<td>IP de Destino:</td>
+								<td><input type="text" id="InternalClient" /></td>
+							</tr>
+							<tr>
+								<td colspan="4">
+									<div class="vmsg_lan error" id="errMsg"></div>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">
+									<a  id="cancelRule" class="btn-default-orange-small right"><span>Apagar</span></a>
+									<a  id="addRule" class="btn-default-orange-small right"><span>Adicionar</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<table id="mappingTable" class="data-table">
+						<thead>
+							<tr>
+								<th colspan="7">TABELA DE REDIRECIONAMENTO</th>
+							</tr>
+							<tr>
+								<th colspan="2">REGRA</th>
+								<th colspan="2">PORTA</th>
+								<th colspan="2">IP</th>
+								<th colspan="2">AÇÃO</th>
+							</tr>
+							<tr class="rounded-top">
+								<th class="wide">NOME</th>
+								<th class="narrow">PROTOCOLO</th>
+								<th>ORIGEM</th>
+								<th>DESTINO</th>
+								<th>ORIGEM</th>
+								<th>DESTINO</th>
+								<th class="actions">Modificar / Remover</th>
+							</tr>
+						</thead>
+						<tbody>
+							<!-- Existing and new port mappings are added here -->
+						</tbody>
+					</table>
+				</div><!--tab-02-->
+				
+				<div id="tab-03" class="tab">
+					<table class="setupWifiTable">
+						<thead>
+							<th colspan="2">DMZ</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td colspan="2">Permita que um dispositivo seja acessivel da Internet.</td>
+							</tr>
+							<tr>
+								<td>Estado do DMZ:</td>
+								<td>
+									<div class="switchButton"  type="switch" id="dmzState" state=""></div>
+								</td>
+							</tr>
+							<tr>
+								<td>Endereço de IP:</td>
+								<td>
+									<select id="dmzHost">
+										<option value="_other_">Outros</option>
+									</select>
+									<input class="hidden" type="text" id="otherDmzHost" />
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
+									<a  id="cancelDmz" class="btn-default-orange-small right"><span>Cancelar</span></a>
+									<a  id="saveDmz" class="btn-default-orange-small right"><span>Salvar</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div><!--tab-03-->
+				
+				<div id="tab-04" class="tab">
+					<table class="setupWifiTable">
+						<thead>
+							<th colspan="2">UPNP</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td colspan="2">
+									Permita que dispositivos com suporte a UPnP conectem e comuniquem com outros dispositivos de sua rede.
+								</td>
+							</tr>
+							<tr>
+								<td>Estado do UPNP:</td>
+								<td style="width:450px">
+									<div class="switchButton" id="upnpState" type="switch"  state=""></div>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
+									<a id="cancelUpnp" class="btn-default-orange-small right"><span>Cancelar</span></a>
+									<a id="saveUpnp" class="btn-default-orange-small right"><span>Salvar</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div><!--tab-04-->
+				
+				<div id="tab-05" class="tab">
+					<table class="setupWifiTable">
+						<thead>
+							<th colspan="2">DDNS</th>
+						</thead>
+						<tbody>
+							<tr>
+							<td colspan="2">
+								Configure uma conta de servidor DNS Dinâmico para apontar para o seu Power Box automaticamente.
+							</td>
+							</tr>
+							<tr>
+								<td>DDNS:</td>
+								<td>
+									<div class="switchButton" id="Services_DynDNS_1_Enable" type="switch"  state=""></div>
+								</td>
+							</tr>
+							<tr>
+								<td>Provedor:</td>
+								<td>                                                
+									<select id="Services_DynDNS_1_Server">
+										<option value="dyndns">DynDNS</option>
+										<option value="no-ip">No-IP</option>
+										<option value="easydns">EasyDNS</option>
+										<option value="dtdns">DtDNS</option>
+									</select></td>
+							</tr>
+							<tr>
+								<td>Usuário:</td>
+								<td><input type="text" name="textfield" id="Services_DynDNS_1_Username"  /></td>
+							</tr>
+							<tr>
+								<td>Senha:</td>
+								<td><input type="text" name="textfield" id="Services_DynDNS_1_Password" /></td>
+							</tr>
+							<tr>
+								<td>Hostname:</td>
+								<td><input type="text" name="textfield" id="Services_DynDNS_1_Host" /></td>
+							</tr>
+							<tr>
+								<td colspan="4">
+									<a id="cancelDynDns" class="btn-default-orange-small right"><span>Cancelar</span></a>
+									<a id="saveDynDns" class="btn-default-orange-small right"><span>Salvar</span></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div><!--tab-05-->
+					
+			</div><!--col-722-->
+<!--#endAuth var=ok-->        
+			<div class="clear"></div>
+			
+			<p>&nbsp;</p>
+			
+		</div><!--conteudo-->
+		
+		<div class="clear"></div>
+		
+	</div><!--wrap-->
+	
+</div><!--content-->
+
+</body>

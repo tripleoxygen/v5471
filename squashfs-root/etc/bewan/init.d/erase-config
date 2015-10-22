@@ -1,0 +1,23 @@
+#!/bin/sh
+# /etc/bewan/init.d/erase-config
+
+. /etc/bewan/lib/base
+. /etc/bewan/lib/config
+. /etc/bewan/scripts/globals
+
+# Acquire the lock that controls access to the flash
+base_enter_critical 'store.lock'
+
+base_log "Restoring Factory Default Profile" debug
+
+NVDIFF='/nvram/bewan/router.diff'
+NVMAGIC='/nvram/bewan/router.magic'
+
+config_mtd_write
+rm -f $NVDIFF $NVMAGIC
+config_mtd_erase
+
+base_call_initd 'bsp-factory-reset'
+
+# Release the lock
+base_exit_critical 'store.lock'

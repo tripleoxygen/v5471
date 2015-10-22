@@ -1,0 +1,97 @@
+#!/bin/sh
+# /etc/bewan/init.d/lanarp $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $LANID = action for lanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+LANID=${LANID:-}
+if [ "$LANID" = '' ]; then
+  LANID=${2:-}
+fi
+
+# Sanity check
+check_lanarp() {
+  if ! which lanarpd >/dev/null; then
+    ARG=nothing
+    return
+  fi
+  local en; eval en=\${'LANDevice_'$LANID'_HostARPKeepAlive':-0}
+
+  local enable="test x$en = x1 -a -f $LAND/$LANID/ip/ipaddr"
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_lanarp() {
+  # Kill lanarpd daemon
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+  # Disable arp config
+  echo 0 >/proc/sys/net/ipv4/conf/$ifname/arp_ignore
+  echo 0 >/proc/sys/net/ipv4/conf/$ifname/arp_accept
+  if [ -f /proc/sys/net/ipv4/conf/$ifname/arp_noisy ]; then
+    echo 0 >/proc/sys/net/ipv4/conf/$ifname/arp_noisy
+  fi
+}
+
+start_lanarp() {
+  # answer for arp requests only from the same subnet
+  echo 2 >/proc/sys/net/ipv4/conf/$ifname/arp_ignore
+  # Accept gratuitous arp requests
+  echo 1 >/proc/sys/net/ipv4/conf/$ifname/arp_accept
+  # Allow to record in arp cache gratuitous arp requests not for us
+  if [ -f /proc/sys/net/ipv4/conf/$ifname/arp_noisy ]; then
+    echo 1 >/proc/sys/net/ipv4/conf/$ifname/arp_noisy
+  fi
+  local refresh_time; eval refresh_time=\${'LANDevice_'$LANID'_Neighbor_ARPRefreshTimer':-30}
+  # Launch lanarpd daemon
+  local cmd="/usr/bin/lanarpd -i $ifname -p $daemon_pid -r $refresh_time"
+  base_add_daemon $daemon "$cmd"
+}
+
+restart_lanarp() {
+  local pid=`cat $daemon_pid`
+  kill -HUP $pid
+}
+
+main_lanarp() {
+  eval $PUSH_ARG
+
+  local ifname=`cat $LAND/$LANID/ifname 2>/dev/null`
+  local daemon="lanarp-$ifname"
+  local daemon_pid="/var/run/$daemon.pid"
+
+  check_lanarp
+  base_log "$INITD/lanarp $ARG $LANID" debug
+
+  case $ARG in
+  stop)
+    stop_lanarp
+    ;;
+  start)
+    start_lanarp
+    ;;
+  restart)
+    stop_lanarp
+    start_lanarp
+    ;;
+  esac
+}
+
+if [ "$LANID" = 'all' ] && ( [ $ARG = start ] || [ $ARG = stop ] ); then
+
+  # Start all lanarp daemons
+  count=${LANDevice_Count:-0}
+  LANID=0; while [ $LANID -lt $count ]; do
+    LANID=$(($LANID + 1))
+    base_call_initd 'lanarp'
+  done
+
+  LANID='all'
+  return
+fi
+
+main_lanarp

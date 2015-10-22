@@ -1,0 +1,738 @@
+#!/bin/sh
+# /etc/bewan/init.d/modem3g $1 $2
+# vim: sw=2 ts=2 et :
+# $1 or $ARG = init, pin_ask,pin_enter,init_network
+# $2 or $MDMID = ModemInterface index
+
+ARG=${ARG:-}
+if [ "$ARG" = '' ]; then
+	. /etc/bewan/scripts/globals
+	. /etc/bewan/lib/base
+	ARG=${1:-0}
+fi
+
+MDMID=${MDMID:-}
+if [ "$MDMID" = '' ]; then
+	MDMID=${2:-0}
+fi
+
+DEBUG="`cat $MODEMD/$MDMID/debug 2>/dev/null`"
+
+# Use only base_log_noconsole intead of base_log else the device of dongle is corrupted with console
+[ "$DEBUG" != 0 ] && base_log_noconsole "Enter modem3G" debug
+
+mkdir -p /var/etc/chatscripts
+CHATFILE=/var/etc/chatscripts/chatfile
+CHATOUT=/var/etc/chatscripts/chatoutput
+STATUS_FILE="/var/tmp/status/modem_3G_status"
+
+DEVICE="`cat $MODEMD/$MDMID/device 2>/dev/null`"
+MANUFACTURER="`cat $MODEMD/$MDMID/manufacturer 2>/dev/null`"
+IFTCL="`cat $MODEMD/$MDMID/iftcl 2>/dev/null`"
+
+
+trap 'clean_modem3g' 15
+
+
+clean_modem3g() {
+	#base_exit_critical 'chat.lock'
+	exit 15
+}
+
+
+# Ask the modem if the SIM card needs a PIN code
+pin_ask() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Pin ask" debug
+
+# Command: AT+CPIN? => Description: Check PIN status => 
+# Response :  READY (Not waiting for PIN ), SIM PIN (Waiting for SIM PIN code), SIM PUK (Waiting for SIM PUK code)
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	AT+CPIN?
+OK	""
+EOF
+	local t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	local sim_ready="`grep "CPIN: READY" $CHATOUT`"
+	local sim_pin="`grep "CPIN: SIM PIN" $CHATOUT`"
+	local sim_puk="`grep "CPIN: SIM PUK" $CHATOUT`"
+	local cme_error="`grep "CME ERROR" $CHATOUT`"
+	if [ "$sim_ready" != "" ]; then
+		# The SIM card doesn't need a PIN code or it has already been entered
+		[ "$DEBUG" != 0 ] && base_log_noconsole "SIM Card ready" debug 
+		return 0
+	elif [ "$sim_pin" != "" ]; then
+		# The SIM card needs a PIN code
+		[ "$DEBUG" != 0 ] && base_log_noconsole "SIM Card needs a PIN code" debug
+		return 1
+	elif [ "$sim_puk" != "" ]; then
+		# The SIM card needs a PUK code
+		[ "$DEBUG" != 0 ] && base_log_noconsole "SIM Card needs a PUK code" debug
+		return 2
+	else
+		# An error has occured. The SIM card might not be present, or it requires a PUK code
+		[ "$DEBUG" != 0 ] && base_log_noconsole "ERROR : SIM Card" debug
+		return 3
+    fi
+}
+
+
+
+
+# Enter the PIN code needed by the SIM card
+pin_enter() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Pin enter" debug
+	local pin="`cat $MODEMD/$MDMID/pincode`"
+	if [ "$pin" = "" ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Pin Code empty!" debug
+		return 1
+	fi
+    
+	# Test if a wrong pin code has already been entered
+	if [ -f "$MODEMD/$MDMID/wrong_pin_code" ]; then
+		local last_pin="`cat $MODEMD/$MDMID/wrong_pin_code`"
+		if [ "$last_pin" = "$pin" ]; then
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Wrong Pin Code!" debug
+			return 1
+		fi
+	fi
+
+	#Command: AT+CPIN=<pin> => Description: Enter/change PIN.
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	"AT+CPIN=$pin"
+OK	""
+EOF
+
+	local t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	local sim_pin_error="`grep "ERROR" $CHATOUT`"
+	local sim_pin_failed="`grep "Failed" $CHATOUT`"
+	if [ "$sim_pin_error" != "" ] || [ "$sim_pin_failed" != "" ]
+	then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Wrong Pin Code!" debug
+		echo "$pin" > $MODEMD/$MDMID/wrong_pin_code
+		return 1
+	else
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Pin enter OK" debug
+		#Sleep few seconds else the Pin code return an error.
+		sleep 3
+		#Check if the Pin code is correctely entered
+		pin_ask
+		local result=$?
+		return $result
+		# selon le resultat a placer dans le fichier de config sur l etet de la carte SIM
+	fi
+	return 0
+}
+
+
+
+
+# Initialization of the network
+init_network() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Init network" debug
+	local cgdcont="`cat $MODEMD/$MDMID/cgdcont`"
+	local apn="`cat $MODEMD/$MDMID/apn`"
+
+# AT+CGDCONT=cid,pdptype,apn  =>  Description: Allows configuration of one or several packet data protocol context which forms the base of a data connection.
+    cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	"AT+CGDCONT=$cgdcont,\"IP\",\"$apn\""
+OK  ""
+EOF
+	local t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	cp $CHATOUT $CHATOUT.init
+	local iserror="`grep 'ERROR' $CHATOUT`"
+	local isfailed="`grep 'Failed' $CHATOUT`"
+	if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : CGDCONT " debug 
+		return 1
+	fi
+
+# Command: AT+CGDCONT? => Description: Check PDP context => 
+# Response :  cid, pdptype, apn, pdpaddr, dcomp, hcomp
+# cid : PDP (Packet Data Protocol) context ID, minimum value is 1
+# pdptype :  String parameter identifying the protocol type : IP, IPV6, PPP 
+# apn :  String that identifies the Access Point Name in the packet data network.
+# pdpaddr :  Requested address, if null (0.0.0.0) an address is requested dynamically.
+# dcomp : PDP data compression control, off by default.
+# hcomp : PDP header compression control, off by default.
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	AT+CGDCONT?
+OK	""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	iserror="`grep 'ERROR' $CHATOUT`"
+	isfailed="`grep 'Failed' $CHATOUT`"
+	if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+		base_log_noconsole "Error : CGDCONT" debug 
+		return 1
+	fi
+
+	# Command: AT+COPS=3,2 => Description: Select the numeric status of.
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	"AT+COPS=3,2"
+OK	""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+
+	# Command: AT+COPS? => Description: Ask for current PLMN
+	# Response: +COPS: mode ,format,oper, AcT
+	# mode: 0 Automatic network selection, 1 Manual network selection, 2 Deregister from network, 3 no registration/deregistration, 4 Manual selection with automatic fall back
+	# format : 0 Long alphanumeric string, 1 Short alphanumeric string, 2 Numeric ID
+	# oper : identifies the operator
+	# AcT : Network access type : 0 GSM, 1 Compact GSM, 2 UTRAN, 3 GSM with EGPRS, 3 UTRAN with HSDPA, 4 UTRAN with HSUPA, 5 UTRAN with HSDPA and HSUPA , NB UTRAN=UMTS
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	AT+COPS?
+OK	""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	iserror="`grep 'ERROR' $CHATOUT`"
+	isfailed="`grep 'Failed' $CHATOUT`"
+	if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : COPS" debug 
+		return 1
+	fi
+
+# Command: AT+CREG? => Description: Get network registration status and controls unsolicited status callback.
+# Response : +CREG : n,stat
+# n : 0 Disable unsolicited status callback,  1 Enable unsolicited status callback, 2 Enable unsolicited status callback
+# stat: 0 Not registered, not searching, 1 Registered to home network, 2 Not registered, searching for network, 3 Registration denied, 5 Registered, roaming
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""  AT+CREG?
+OK	""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	iserror="`grep 'ERROR' $CHATOUT`"
+	isfailed="`grep 'Failed' $CHATOUT`"
+	if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : CREG" debug 
+		return 1
+	fi
+
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Network initialization : OK" debug
+	return 0
+
+}
+
+# Execute commands AT
+#$1: commands to execute
+get_3G_infos_cmd(){
+        cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""  $1
+OK
+EOF
+	value=""
+	res=""
+	data=""
+	echo > $CHATOUT
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	data=$(cat $CHATOUT | tr -s " \n" | tr "\n" ";" | tr -d "\`\)\(\$\'\"")
+	res=$(echo "$data" | cut -f3 -d ";")
+	value=$(echo "$data" | cut -f2 -d ";")
+}
+
+
+# Execute commands AT scripts to get informations from modem to fill ${STATUS_FILE}
+get_3G_infos() {
+	local manufacturer="" product="" version="" identification="" registration="" access="" signal="" simstate="" biterror="" value=""
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Answering modem device $DEVICE" debug
+       
+	if [ ! -d $MODEMD/$MDMID ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Modem not found" debug
+		if [ -f ${STATUS_FILE} ]; then
+			rm -rf ${STATUS_FILE}
+		fi
+		return 1
+	fi
+
+	get_3G_infos_cmd "ATE0V1"
+
+	get_3G_infos_cmd "AT+CGMI"
+	[ "$res" = "OK" ] && manufacturer="$value"
+
+	get_3G_infos_cmd "AT+CGMM"
+	[ "$res" = "OK" ] && product="$value"
+
+	get_3G_infos_cmd "AT+CGMR"
+	[ "$res" = "OK" ] && version="$value"
+
+	get_3G_infos_cmd "AT+CGSN"
+	[ "$res" = "OK" ] && identification="$value"
+
+	get_3G_infos_cmd "AT+CPIN?"
+
+	grep -q "CPIN: READY"   $CHATOUT && value=" SIM card OK"
+	grep -q "CPIN: SIM PIN" $CHATOUT && value=" Waiting for SIM PIN code"
+	grep -q "CPIN: SIM PUK" $CHATOUT && value=" Waiting for SIM PUK code"
+	grep -q "CME ERROR"     $CHATOUT && value=" SIM Card Error"
+	simstate="$value"
+
+	if [ "$simstate" != " SIM card OK" ]; then
+		#base_log_noconsole "SIM nok" debug
+		signal="not known or not detectable"
+		biterror="not known or not detectable"
+		registration="No information"
+		access="No information"
+	else
+		get_3G_infos_cmd "AT+CREG?"
+		if [ "X$value" != "X" ]; then
+			local idx=$(echo $value|cut -f2 -d ",")
+			case $idx in
+				0)      registration="Not registered, not searching";;
+				1)      registration="Registered to home network";;
+				2)      registration="Not registered, searching for network";;
+				3)      registration="Registration denied";;
+				4)      registration="Registered, roaming";;
+				5)      registration="No information";;
+				*)      registration="";;
+			esac
+		fi
+
+		get_3G_infos_cmd "AT+CSQ"
+		if [ "X$value" != "X" ]; then
+			local temp="$(echo $value|cut -f2 -d ' ')"
+			local idx="$(echo $temp|cut -f1 -d ',')"
+			case $idx in
+				0)      signal="-113 dBm or less";;
+				31)     signal="-51 dBm or greater";;
+				99)     signal="not known or not detectable";;
+				*)      signal="$(( $idx * 2 - 113))";;
+			esac
+			idx="$(echo $temp|cut -f2 -d ',')"
+			case $idx in
+				99)     biterror="not known or not detectable";;
+				*)      biterror="$idx";;
+			esac
+		fi
+
+		get_3G_infos_cmd "AT+COPS?"
+		if [ "X$value" != "X" ]; then
+			local idx="$(echo $value|cut -f4 -d ',')"
+			case $idx in
+				0)      access="GSM";;
+				1)      access="Compact GSM";;
+				2)      access="UMTS" ;;
+				3)      access="GSM with EGPRS";;
+				4)      access="UMTS with HSDPA";;
+				5)      access="UMTS with HSUPA";;
+				6)      access="UMTS with HSDPA and HSUPA";;
+				*)      access="";;
+			esac
+		fi
+	fi
+
+	cat > ${STATUS_FILE} <<EOF
+Manufacturer=$manufacturer
+Product=$product
+Version=$version
+Identification=$identification
+SIMState=$simstate
+StrenghtSignal=$signal
+BitErrorRate=$biterror
+Registration=$registration
+Access=$access
+EOF
+}
+
+
+
+
+init() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Initialize network" debug
+	local modepref="`cat $MODEMD/$MDMID/mode_perf`"
+	local login="`cat $MODEMD/$MDMID/login`"
+	local passwd="`cat $MODEMD/$MDMID/passwd`"
+	# Alcatel, anydata
+	local mode="AT"
+	local tmp_var="AT"
+
+# AT&F => Description: Fetch factory configuration
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""  AT&F
+OK	""
+EOF
+	local t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+
+	pin_ask
+	local result=$?
+	if [ "$result" -ge "2" ]; then
+		return 1
+	elif [ "$result" = "1" ]; then
+		pin_enter
+		result=$?
+		if [ "$result" -ge "1" ]; then
+			return 1
+		fi
+	fi
+
+# ATE0 => Characters are not echoed
+# ATV1 => Display the modem configuration in EEPROM
+# AT&D2 => Upon DTR (Data Terminal Ready) switch from ON to OFF, the call is released
+# AT&C1 => DCD (Data Carrier Detect) matches state of the remote modems data carrier
+# ATS0=0 => no automatic answer
+	
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""  AT
+OK "ATE0V1"
+OK  ""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	local t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+	local iserror="`grep 'ERROR' $CHATOUT`"
+	local isfailed="`grep 'Failed' $CHATOUT`"
+	if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Init" debug 
+		return 1
+	fi
+
+	# select the prefered network mode, by default 3Gpref
+	if [ "$MANUFACTURER" = "huawei" ]; then
+		case $modepref in 
+			GPRSonly)mode="AT\^SYSCFG=13,1,3FFFFFFF,2,4";;
+			GPRSpref)mode="AT\^SYSCFG=2,1,3FFFFFFF,2,4";;
+			3Gonly)mode="AT\^SYSCFG=14,2,3FFFFFFF,2,4";;
+			3Gpref|*) mode="AT\^SYSCFG=2,2,3FFFFFFF,2,4";;
+		esac
+		tmp_var="AT\^SYSCFG?"
+
+    elif [ "$MANUFACTURER" = "option" ]; then
+		case $modepref in
+			GPRSonly)mode="AT_OPSYS=0,2";;
+			GPRSpref)mode="AT_OPSYS=2,2";;
+			3Gonly)mode=" AT_OPSYS=1,2";;
+			3Gpref|*) mode="AT_OPSYS=3,2";;
+		esac
+		#if [ "$login" != "" ] && [ "$passwd" != "" ]; then
+			# Command: AT$QCPDPP=cid ,auth_type ,auth_name ,auth_pwd
+			# Description: A Qualcomm command, defines authentication parameters for the PDP context id cid.
+			# auth_type : 0 None, 1 PAP, 2 CHAP
+			#local tmp_var ="AT\\\$QCPDPP=1,1,\"$passwd\",\"$login\""
+		#fi
+
+    elif [ "$MANUFACTURER" = "zte" ]; then
+		case $modepref in
+			3Gonly)mode="AT+ZSNT=2,0,0";;
+			3Gpref)mode="AT+ZSNT=0,0,2";;
+			GPRSonly)mode="AT+ZSNT=1,0,0";;
+			GPRSpref|*) mode="AT+ZSNT=0,0,1";;
+		esac
+		tmp_var="AT+ZSNT?"
+	fi
+
+
+	if [ "$MANUFACTURER" != "alcatel" ]; then
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+"" $mode
+OK ""
+EOF
+		t_in="$(cat $CHATFILE)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+		( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+		t_out="$(cat $CHATOUT)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+		iserror="`grep 'ERROR' $CHATOUT`"
+		isfailed="`grep 'Failed' $CHATOUT`"
+		if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Mode " debug 
+			return 1
+		fi
+
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+"" $tmp_var
+OK ""
+EOF
+		t_in="$(cat $CHATFILE)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+		( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+		t_out="$(cat $CHATOUT)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+		iserror="`grep 'ERROR' $CHATOUT`"
+		isfailed="`grep 'Failed' $CHATOUT`"
+		if [ "$iserror" != '' ] || [ "$isfailed" != '' ]; then
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : Mode " debug 
+			return 1
+		fi
+	fi
+
+
+	# Command: AT+CSQ => Description: This command determines the received signal strength indication rssi and the channel bit error rate ber 
+	# Response: +CSQ: rssi,ber
+	# rssi : 0 -113 dBm or less, 1 -111 dBm, 2 to 30 -109 dBm to -53 dBm, 31 -51dBm or greater, 99 not known or not detectable
+	# ber : in percent 0..7. 99 not known or not detectable
+	cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	AT+CSQ
+OK	""
+EOF
+	t_in="$(cat $CHATFILE)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+	( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+	t_out="$(cat $CHATOUT)"
+	[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+
+	init_network
+	result=$?
+	if [ "$result" = "0" ]; then
+		# If dongle have no control and status ttyUSBx
+		if [ "$IFTCL" = "NO-INFO" ]; then
+			get_3G_infos
+		fi
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Correct init" debug 
+		return 0
+	else
+		[ "$DEBUG" != 0 ] && base_log_noconsole "No correct init" debug 
+		return 1
+	fi
+}
+
+
+
+connect() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Connect" debug
+	local phonenum="`cat $MODEMD/$MDMID/phone_number`"
+   
+	if [ "$MANUFACTURER" = "option" ]; then
+		#Command: AT_OWANCALL=pdp context,enabled,callback enabled
+		#Description: Used to initiate UMTS/HSDPA connections.
+		# pdp context : Existing, valid, PDP context that specifies the intended APN to connect to.
+		# enabled : 1 => Enable connection, 0 => Disable connection (disconnect)
+		# callback enabled : 1 => Asynchronous callback when connection is established, 0 => silent
+		# send connect command
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT	10
+""	"AT_OWANCALL=1,1,0"
+OK	""
+EOF
+		local t_in="$(cat $CHATFILE)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+		( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+		local t_out="$(cat $CHATOUT)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+		local iserror="`grep 'ERROR' $CHATOUT`"
+		local isfailed="`grep 'Failed' $CHATOUT`"
+		if [ "$iserror" != "" ] || [ "$isfailed" != '' ]; then
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : no connected" debug
+			return 1
+		fi
+
+		# Command: AT_OWANDATA=pdp context
+		# Response: _OWANDATA: pdp context, ip address, route?, nameserver 1, nameserver 2, <unknown>, <unknown>, speed
+		# Description: Retrieve IP configuration from an established connection previously created with AT_OWANCALL
+		#receive the ip configuration
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT	10
+""	"AT_OWANDATA=1"
+OK	""
+EOF
+		local ipaddr=""
+		local counter=1
+		while [ -z "$ipaddr" -a "$counter" -le 6 ] # 6 tries to get an IP
+		do
+			[ "$DEBUG" != 0 ] && base_log_noconsole "trying $counter ..." debug
+			sleep 2
+			t_in="$(cat $CHATFILE)"
+			[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+			( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+			t_out="$(cat $CHATOUT)"
+			[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+			iserror="`grep 'ERROR' $CHATOUT`"
+			if [ -z "$iserror" ]; then
+				ipaddr="`grep '_OWANDATA' $CHATOUT | cut -d, -f2`"
+				local new_dns1="`grep '_OWANDATA' $CHATOUT | cut -d, -f4`"
+				local new_dns2="`grep '_OWANDATA' $CHATOUT | cut -d, -f5`"
+			fi
+			counter=`expr $counter + 1`
+		done
+		if [ -z "$ipaddr" ]; then 
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : no connected" debug
+			return 1
+		fi
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Connection : OK" debug
+		echo $ipaddr > $MODEMD/$MDMID/ipaddr
+		echo $new_dns1 $new_dns2 > $MODEMD/$MDMID/dns
+		ifconfig hso0 up
+		return 0
+		
+    else  #Huawei ZTE Alcatel
+
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 30
+"" "ATDT$phonenum"
+CONNECT ""
+EOF
+		local ret=1
+		counter=1
+		while [ "$ret" -ne "0" -a "$counter" -le 4 ]
+		do
+			echo "trying to connect... $counter" > /dev/console
+			#sleep 5
+			t_in="$(cat $CHATFILE)" 
+			[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+			( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+			ret=$?
+			t_out="$(cat $CHATOUT)"
+			[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+			cp $CHATOUT $CHATOUT.connect.$counter
+			counter=`expr $counter + 1`
+		done
+		[ "$DEBUG" != 0 ] && base_log_noconsole "Connection : OK" debug
+		return $ret
+    fi
+}
+
+
+disconnect() {
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Disconnect" debug
+	if [ "$MANUFACTURER" = "option" ]; then
+		ifconfig hso0 down
+		cat > $CHATFILE <<EOF
+ABORT ERROR
+TIMEOUT 10
+""	"AT_OWANCALL=1,0,0"
+OK	""
+EOF
+		local t_in="$(cat $CHATFILE)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "=> $t_in" debug
+		( /sbin/chat -E -s -V -f $CHATFILE <$DEVICE >$DEVICE ) 2> $CHATOUT
+		local t_out="$(cat $CHATOUT)"
+		[ "$DEBUG" != 0 ] && base_log_noconsole "<= $t_out" debug
+		local iserror="`grep 'ERROR' $CHATOUT`"
+		local isfailed="`grep 'Failed' $CHATOUT`"
+		if [ "$iserror" != "" ] || [ "$isfailed" != '' ]; then
+			[ "$DEBUG" != 0 ] && base_log_noconsole "Error : no disconnected" debug
+			return 1
+		fi
+	fi
+	[ "$DEBUG" != 0 ] && base_log_noconsole "Disconnection : OK" debug
+	return 0
+}
+
+
+
+usage() {
+	echo Usage: $0 \(pin_ask\|pin_enter\|init\|infos\|init_network\|connect\|disconnect\|all\)
+}
+
+main_chat() {
+
+	local ret=0
+
+	case $ARG in
+		pin_ask)
+			pin_ask
+			ret=$?
+		;;
+		pin_enter)
+			pin_enter
+			ret=$?
+		;;
+		init_network)
+			init_network
+			ret=$?
+		;;
+		init)
+			init
+			ret=$?
+		;;
+		infos)
+
+			get_3G_infos
+			ret=$?
+		;;
+		connect)
+			connect
+			ret=$?
+		;;
+		disconnect)
+			disconnect
+			ret=$?
+		;;
+		all)
+			init
+			if [ "$?" = "1" ]; then
+				ret=1
+			else
+				connect
+				ret=$?
+			fi
+		;;
+		*)
+			usage
+		;;
+	esac
+	return $ret
+}
+
+# Excute main_chat under exclusive lock
+base_enter_critical 'chat.lock'
+
+main_chat
+RETCODE=$?
+
+[ "$DEBUG" != 0 ] && base_log_noconsole "Exit modem3G RET=$RETCODE" debug
+
+base_exit_critical 'chat.lock'
+exit $RETCODE
+

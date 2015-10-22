@@ -1,0 +1,44 @@
+Using file       : ../images/B14103-GVT-RC2-98509.bin
+Plataform        : V5471 iBoxNG GVT
+Family code      : B14103
+Product code     : B14103
+Filename         : B14103-GVT-RC2-98509.bin
+Date             : 2015-03-04-15:55:18
+Size             : 13889536
+SVN version      : 98509
+Boot status      : will NOT boot
+Boot order       : 0
+Partition Table
+  Part 0 Name    : kernel
+  Part 0 Offset  : 0x00001000
+  Part 0 Size    : 2134016 bytes
+  Part 1 Name    : fs
+  Part 1 Offset  : 0x0020A000
+  Part 1 Size    : 11751424 bytes
+  Part 2 Name    : 
+  Part 2 Offset  : 0x00000000
+  Part 2 Size    : 0 bytes
+  Part 3 Name    : 
+  Part 3 Offset  : 0x00000000
+  Part 3 Size    : 0 bytes
+  Part 4 Name    : 
+  Part 4 Offset  : 0x00000000
+  Part 4 Size    : 0 bytes
+  Part 5 Name    : 
+  Part 5 Offset  : 0x00000000
+  Part 5 Size    : 0 bytes
+  Part 6 Name    : 
+  Part 6 Offset  : 0x00000000
+  Part 6 Size    : 0 bytes
+  Part 7 Name    : 
+  Part 7 Offset  : 0x00000000
+  Part 7 Size    : 0 bytes
+  Part 8 Name    : 
+  Part 8 Offset  : 0x00000000
+  Part 8 Size    : 0 bytes
+  Part 9 Name    : 
+  Part 9 Offset  : 0x00000000
+  Part 9 Size    : 0 bytes
+Checksum in file : d31efcbaa3769d87e535943d016dde2d
+
+Checksum calc    : d31efcbaa3769d87e535943d016dde2d

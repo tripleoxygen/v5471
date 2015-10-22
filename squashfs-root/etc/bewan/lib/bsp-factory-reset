@@ -1,0 +1,16 @@
+#!/bin/sh
+# /etc/bewan/lib/bsp-factory-reset
+
+# implements functions to erase bsp settings
+
+[ ${CONFIG_LIB_BSP_FACTORY:-0} = 1 ] && return
+
+CONFIG_LIB_BSP_FACTORY=1
+
+. /etc/bewan/lib/base
+
+bsp_factory_reset() {
+  # Nothing to do here, if you want to add custom stuff,
+  # overwrite this script in your custom package
+  base_log "Nothing to erase in bsp" debug
+}

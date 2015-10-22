@@ -1,0 +1,33 @@
+#!/bin/sh
+# /etc/bewan/user.d/unix
+
+# called from /etc/bewan/init.d/users
+
+unix_clean_user() {
+	unix_Enable=1
+	[ -f $unix_Password ] && rm $unix_Password
+}
+
+unix_generate_user() {
+	local user="$1" pass="$2" shell=''
+	base_log "$userd/unix: $user" debug
+	if [ "$user" = "root" ]; then
+		shell='/bin/ash'
+		# Disable root password if console is disabled
+		cat /proc/cmdline | grep 'console=' 2>&1 >/dev/null
+		[ $? != 0 ] && pass='invalid'
+		echo "$user:$pass:0:0:$user:/:$shell" >> $unix_Password
+	else
+		shell=$(which cli)
+		unix_uid=$(( $unix_uid + 1 ))
+		echo "$user::$unix_uid:$unix_uid:$user:/:$shell" >> $unix_Password
+		echo $user:$pass | /usr/sbin/chpasswd >/dev/null
+	fi
+	return 0
+}
+
+local unix_Enable=0
+local unix_Password=/var/bewan/passwd
+local unix_uid=1
+
+unix_clean_user

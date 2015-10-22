@@ -1,0 +1,387 @@
+#!/bin/sh
+# /etc/bewan/init.d/ebtables $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+check_ebtables() {
+  if ! which ebtables >/dev/null; then
+    ARG=nothing
+    return
+  fi
+  local enable="test $Layer2Bridging_Enable = 1"
+  local active="test -f $ebtables"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ebtables() {
+  # Ok flush everything
+  ebtables -t filter -F
+  # Remove all previous match rules from dhcpopt kernel module lists
+  ebtables -t filter -A INPUT --dhcpopt-delete -j CONTINUE
+  # Finally, re flush so that the previous rule is not present anymore
+  ebtables -t filter -F
+  ebtables -t filter --init-table
+  rm -f $ebtables
+}
+
+start_ebtables() {
+  # Initialize ebtables atomic file
+  ebtables -t filter --atomic-file $ebtables --atomic-init
+  # Set-up default policy for INPUT chain
+  local policy
+  case "$Layer2Bridging_InputPolicy" in
+  Accept) policy='ACCEPT' ;;
+  Drop) policy='DROP' ;;
+  *) policy='ACCEPT' ;;
+  esac
+  ebtables -t filter --atomic-file $ebtables -P INPUT $policy
+  # Set-up default policy for OUTPUT chain
+  case "$Layer2Bridging_OutputPolicy" in
+  Accept) policy='ACCEPT' ;;
+  Drop) policy='DROP' ;;
+  *) policy='ACCEPT' ;;
+  esac
+  ebtables -t filter --atomic-file $ebtables -P OUTPUT $policy
+  # Set-up default policy for FORWARD chain
+  case "$Layer2Bridging_ForwardPolicy" in
+  Accept) policy='ACCEPT' ;;
+  Drop) policy='DROP' ;;
+  *) policy='ACCEPT' ;;
+  esac
+  ebtables -t filter --atomic-file $ebtables -P FORWARD $policy
+
+  local i
+	# helper to load module
+  local dhcpopt=0 classify=0 igmp=0
+  for i in `strip $Layer2Bridging_Filter_List`; do
+
+    local filter='Layer2Bridging_Filter_'$i
+    local en; eval en=\${$filter'_Enable'}
+    [ "$en" != 1 ] && continue
+
+    # Chain
+    local in=0 out=0 chain
+    local chn; eval chn=\${$filter'_Chain'}
+    case $chn in
+    Input) in=1 chain='-A INPUT' ;;
+    Output) out=1 chain='-A OUTPUT' ;;
+    Forward) in=1 out=1 chain='-A FORWARD' ;;
+    *) chain='' ;;
+    esac
+
+    local bad=0
+    local not inv ix type name vlan vid mac msk pt ip ipp opt lg tgt otgt mark class
+
+    # Input interface
+    local inintf=''
+    if [ $in = 1 ]; then
+      eval ix=\${$filter'_Input'}
+      eval type=\${$filter'_InputType'}
+      if [ "$ix" != '' ] && [ "$type" != '' ]; then
+        eval name=\${$type'_'$ix'_Ifname'}
+        if [ "$name" != '' ]; then
+          # Specified a VLAN interface ?
+          eval vlan=\${$filter'_InputVlanNumber':-}
+          if [ "$vlan" != '' ] && [ "$type" = 'LANEthernetInterface' ]; then
+            eval vid=\${$type'_'$ix'_VLANInterface_'$vlan'_VID'}
+            if [ "$vid" != '' ]; then
+              name="$name.$vid"
+            fi
+          fi
+          # Inverted Match ?
+          eval not=\${$filter'_InputNot'}
+          inv=''; [ "$not" = 1 ] && inv='!'
+          inintf="-i $inv $name"
+        else
+          bad=1
+        fi
+      fi
+    fi
+    # Output interface
+    local outintf=''
+    if [ $out = 1 ]; then
+      eval ix=\${$filter'_Output'}
+      eval type=\${$filter'_OutputType'}
+      if [ "$ix" != '' ] && [ "$type" != '' ]; then
+        eval name=\${$type'_'$ix'_Ifname'}
+        if [ "$name" != '' ]; then
+          # Specified a VLAN interface ?
+          eval vlan=\${$filter'_OutputVlanNumber':-}
+          if [ "$vlan" != '' ] && [ "$type" = 'LANEthernetInterface' ]; then
+            eval vid=\${$type'_'$ix'_VLANInterface_'$vlan'_VID'}
+            if [ "$vid" != '' ]; then
+              name="$name.$vid"
+            fi
+          fi
+          # Inverted Match ?
+          eval not=\${$filter'_OutputNot'}
+          inv=''; [ "$not" = 1 ] && inv='!'
+          outintf="-o $inv $name"
+        else
+          bad=1
+        fi
+      fi
+    fi
+    # Source MAC address
+    local srcmac=''
+    eval mac=\${$filter'_SrcMac'}
+    if [ "$mac" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_SrcNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      srcmac="-s $inv $mac"
+      # Mask
+      eval msk=\${$filter'_SrcMask'}
+      [ "$msk" != '' ] && srcmac="$srcmac/$msk"
+    fi
+    # Destination MAC address
+    local dstmac=''
+    eval mac=\${$filter'_DstMac'}
+    if [ "$mac" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_DstNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      dstmac="-d $inv $mac"
+      # Mask
+      eval msk=\${$filter'_DstMask'}
+      [ "$msk" != '' ] && dstmac="$dstmac/$msk"
+    fi
+    # Protocol (ethertype)
+    local proto; eval pt=\${$filter'_Proto'}
+    # Inverted Match ?
+    eval not=\${$filter'_ProtoNot'}
+    inv=''; [ "$not" = 1 ] && inv='!'
+    case $pt in
+    ARP) proto="-p $inv 0x0806" ;;
+    IPv4) proto="-p $inv 0x0800" ;;
+    802_1Q) proto="-p $inv 0x8100" ;;
+    PPP_SES) proto="-p $inv 0x8864" ;;
+    PPP_DISC) proto="-p $inv 0x8863" ;;
+    LENGTH) proto="-p $inv LENGTH" ;;
+    *) proto='' ;;
+    esac
+    # Source IP address
+    local srcip=''
+    eval ip=\${$filter'_SrcIP'}
+    if [ "$ip" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_SrcIPNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      srcip="--ip-src $inv $ip"
+      # Mask
+      eval msk=\${$filter'_SrcIPMask'}
+      [ "$msk" != '' ] && srcip="$srcip/$msk"
+      proto='-p 0x0800'
+    fi
+    # Destination IP address
+    local dstip=''
+    eval ip=\${$filter'_DstIP'}
+    if [ "$ip" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_DstIPNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      dstip="--ip-dst $inv $ip"
+      # Mask
+      eval msk=\${$filter'_DstIPMask'}
+      [ "$msk" != '' ] && dstip="$dstip/$msk"
+      proto='-p 0x0800'
+    fi
+    # IP protocol
+    local ipproto=''
+    eval ipp=\${$filter'_IPProto'}
+    if [ "$ipp" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_IPProtoNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      case $ipp in
+      igmp) ipproto="--ip-proto $inv 2" ;;
+      tcp) ipproto="--ip-proto $inv 6" ;;
+      udp) ipproto="--ip-proto $inv 17" ;;
+      esac
+      [ "$ipproto" != '' ] && proto='-p 0x0800'
+    fi
+    # DHCP option to source MAC address
+    local srcopt=''
+    eval opt=\${$filter'_SrcOpt'}
+    if [ "$opt" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_SrcOptNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      # DHCP option type
+      eval type=\${$filter'_SrcOptType'}
+      case "$type" in
+      VC) srcopt="--dhcpopt-src-vc $inv $opt" ;;
+      UC) srcopt="--dhcpopt-src-uc $inv $opt" ;;
+      124) srcopt="--dhcpopt-src-124 $inv $opt" ;;
+      125) srcopt="--dhcpopt-src-125 $inv $opt" ;;
+      *) srcopt='' ;;
+      esac
+    fi
+    # DHCP option to destination MAC address
+    local dstopt=''
+    eval opt=\${$filter'_DstOpt'}
+    if [ "$opt" != '' ]; then
+      # Inverted Match ?
+      eval not=\${$filter'_DstOptNot'}
+      inv=''; [ "$not" = 1 ] && inv='!'
+      # DHCP option type
+      eval type=\${$filter'_DstOptType'}
+      case "$type" in
+      VC) dstopt="--dhcpopt-dst-vc $inv $opt"; ;;
+      UC) dstopt="--dhcpopt-dst-uc $inv $opt" ;;
+      124) dstopt="--dhcpopt-dst-124 $inv $opt" ;;
+      125) dstopt="--dhcpopt-dst-125 $inv $opt" ;;
+      *) dstopt='' ;;
+      esac
+    fi
+    if [ "$srcopt" != '' ] || [ "$dstopt" != '' ]; then
+      dhcpopt=1
+    fi
+
+    # Additional matches
+    local addmatch=''
+    eval addmatch=\${$filter'_AddMatch'}
+
+    # Log (debug)
+    local log=''
+    eval lg=\${$filter'_Log'}
+    [ "$lg" = 1 ] && log='--log'
+
+    # Target
+    local target=''
+    eval tgt=\${$filter'_Target'}
+    eval otgt=\${$filter'_OtherTarget'}
+    case "$tgt" in
+    Drop) target="DROP" ;;
+    Accept) target='ACCEPT' ;;
+    Continue) target='CONTINUE' ;;
+    Other) target="$otgt" ;;
+    *) target='' ;;
+    esac
+
+    # SetMark Target
+    eval mark=\${$filter'_SetMark'}
+    if [ "$target" != '' ] && [ "$mark" != '' ]; then
+      target="mark --mark-set $mark --mark-target $target"
+    fi
+
+    # SetClass Target
+    eval class=\${$filter'_SetClass'}
+    if [ "$mark" = '' ] && [ "$target" != '' ] && [ "$class" != '' ] && [ "$class" -lt 16 ]; then
+      case "$class" in
+      10) class='a';;
+      11) class='b';;
+      12) class='c';;
+      13) class='d';;
+      14) class='e';;
+      15) class='f';;
+      esac
+			classify=1
+      target="classify --set-class 0:$class --classify-target $target"
+    fi
+
+    # Finalyze target
+    if [ "$target" != '' ]; then
+      target="-j $target"
+    fi
+
+    # Add filter to ebtables atomic file
+    if [ "$bad" = 0 ] && [ "$chain" != '' ] && [ "$target" != '' ]; then
+
+      local cmd="$chain $inintf $outintf $srcmac $dstmac $proto $srcip $dstip $ipproto $srcopt $dstopt $addmatch $log $target"
+      #echo ebtables -t filter $cmd | base_log - debug
+      ebtables -t filter --atomic-file $ebtables $cmd 2>&1 | base_log - debug
+    fi
+  done
+
+  # Insert the IGMP snooping filters
+  if [ "${Layer2Bridging_IGMPSnooping_Enable:-0}" = 1 ]; then
+
+    local out='' ex=''
+    local i ix type name opt
+		igmp=1
+
+    # Build output interface list
+    for i in `strip $Layer2Bridging_IGMPSnooping_Output_List`; do
+      eval type=\${'Layer2Bridging_IGMPSnooping_Output_'$i'_Type'}
+      eval ix=\${'Layer2Bridging_IGMPSnooping_Output_'$i'_Index'}
+      if [ "$type" = 'Local' ]; then
+        name='lo'
+      else
+        eval name=\${$type'_'$ix'_Ifname'}
+      fi
+      [ "$name" = '' ] && continue
+      if [ "$out" != '' ]; then
+        out="$out,$name"
+      else
+        out=$name
+      fi
+    done
+    [ "$out" != '' ] && out="--igmp-output $out"
+
+    # Build exclude interface list
+    for i in `strip $Layer2Bridging_IGMPSnooping_Exclude_List`; do
+      eval type=\${'Layer2Bridging_IGMPSnooping_Exclude_'$i'_Type'}
+      eval ix=\${'Layer2Bridging_IGMPSnooping_Exclude_'$i'_Index'}
+      eval name=\${$type'_'$ix'_Ifname'}
+      [ "$name" = '' ] && continue
+      if [ "$ex" != '' ]; then
+        ex="$ex,$name"
+      else
+        ex=$name
+      fi
+    done
+    [ "$ex" != '' ] && ex="--igmp-exclude $ex"
+
+    opt="--igmp-snooping $out $ex"
+    ebtables -t filter --atomic-file $ebtables -I INPUT $opt -j DROP
+    ebtables -t filter --atomic-file $ebtables -I OUTPUT $opt -j DROP
+    ebtables -t filter --atomic-file $ebtables -I FORWARD $opt -j DROP
+  fi
+
+  # Insert the DHCP option MAC address recorder
+  if [ $dhcpopt = 1 ]; then
+		modprobe -q ebt_dhcpopt
+    ebtables -t filter --atomic-file $ebtables -I INPUT --dhcpopt-detect
+  fi
+  if [ $classify = 1 ]; then
+		modprobe -q ebt_classify
+	fi
+  if [ $igmp = 1 ]; then
+		modprobe -q ebt_igmp
+  else
+	modprobe -r ebt_igmp
+  fi
+  # Reload ebtables
+  ebtables -t filter --atomic-file $ebtables --atomic-commit 2>&1 | base_log - debug
+
+  local ARG=restart
+  base_call_initd 'igmp'
+}
+
+main_ebtables() {
+  eval $PUSH_ARG
+
+  local ebtables='/var/bewan/ebtables'
+
+  check_ebtables
+  base_log "$INITD/ebtables $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_ebtables
+    ;;
+  start)
+    start_ebtables
+    ;;
+  restart)
+    stop_ebtables
+    start_ebtables
+    ;;
+  esac
+}
+
+main_ebtables

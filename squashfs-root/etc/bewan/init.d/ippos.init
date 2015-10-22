@@ -1,0 +1,73 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/init.d/ippos $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+	. /etc/bewan/init.d/setparam
+fi
+
+. /etc/bewan/lib/process
+
+# check
+check_ippos()
+{
+	if [ ! -e /bin/ippos ]; then
+		ARG=nothing
+		return;
+	fi
+	local enable="test x$Services_Ippos_Enable = x1"
+	local active="base_exist_daemon ${daemon}"
+	base_check_arg "${enable}" "${active}"
+}
+
+stop_ippos()
+{
+# Ippos has 300 seconds to complete its soft kill
+	process_stop ${daemon} 300 ${daemon_pid}
+}
+
+# start
+start_ippos()
+{
+	local cmd="/bin/ippos -P ${daemon_pid}"
+	base_add_daemon ${daemon} "${cmd}"
+}
+
+#restart
+restart_ippos()
+{
+	process_restart ${daemon_pid}
+}
+
+main_ippos()
+{
+	eval ${PUSH_ARG}
+
+	local daemon="ippos"
+	local daemon_pid="/var/run/ippos.pid"
+
+	check_ippos
+
+	base_log "${INITD}/ippos.init ${ARG}" debug
+
+	case "${ARG}" in
+		stop)
+			stop_ippos
+			;;
+		start)
+			start_ippos
+			;;
+		restart)
+ 			restart_ippos
+			;;
+		*)
+			echo "Do nothing"
+			;;
+	esac
+}
+
+main_ippos
+
+
+

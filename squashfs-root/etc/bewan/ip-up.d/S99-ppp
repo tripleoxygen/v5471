@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Called by ip-up event on a WAN interface
+# $WANID, WAN connection index
+
+save_pppsession() {
+	# PPPoE TermReq feature ?
+	local WANID=${WANID:-0}
+	local ifname=`cat /var/bewan/wan.d/$WANID/ifname 2>/dev/null`
+	if [ -f /tmp/$ifname-ppp-session ]; then
+		# need to save PPPoE session info in config to retrieve it after next reboot
+		local sessinfo=`cat /tmp/$ifname-ppp-session 2>/dev/null`
+		# CLI script in background to avoid deadlocks
+		(
+		cli -s <<EOF
+cd _WANConnectionDevice_${WANID}_WANPPPConnection
+set SessionInfo $sessinfo
+fcommit
+EOF
+		) &
+	fi
+}
+
+save_pppsession

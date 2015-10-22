@@ -1,0 +1,44 @@
+#!/bin/sh
+# /etc/bewan/init.d/wificom $1
+# $1 or $ARG = restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+. /etc/bewan/lib/wifi
+
+check_wificom() {
+  if [ "$ARG" != restart ]; then
+    ARG=nothing
+    return
+  fi
+
+  local no_wifi=1 i en
+  i=0; while [ $i -lt "$WLANInterface_Count" ]; do
+    i=`expr $i + 1`
+    eval en=\${'WLANInterface_'$i'_Enable'}
+    [ "$en" = 1 ] && no_wifi=0 && break
+  done
+  [ "$no_wifi" = 1 ] && ARG=nothing
+  [ "$WLANConfig_Enable" = 0 ] && ARG=nothing
+}
+
+restart_wificom() {
+  restart_vendor_wificom
+}
+
+main_wificom() {
+  eval $PUSH_ARG
+
+  check_wificom
+  base_log "$INITD/wificom $ARG" debug
+
+  case $ARG in
+  restart)
+    restart_wificom
+    ;;
+  esac
+}
+
+main_wificom

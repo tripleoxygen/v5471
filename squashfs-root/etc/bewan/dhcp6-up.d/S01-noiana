@@ -1,0 +1,38 @@
+#!/bin/sh
+
+compute_address_from_iapd() {
+  # If we received a IA NA, then we can stop here.
+  [ "${IANA:-}" != '' ] && {
+    return
+  }
+
+  local dosomething; eval dosomething=\${'WANConnectionDevice_'$WANID'_WANIP6Connection_DHCPv6_AddressFromIAPD':-1}
+  [ "$dosomething" != 1 ] && return
+
+  [ "$DPREFIX" = '' ] && {
+    base_log "$DHCP6UPD/S01-noiana no IANA received and no prefix delegated on ${IFNAME}, nothing to do" debug
+    return
+  }
+
+  local lladdr; lladdr='::/64'
+  [ -f $WAND/$WANID/ip6/lladdr ] && lladdr=`cat $WAND/$WANID/ip6/lladdr`
+
+  local over; eval over=\${'WANConnectionDevice_'$WANID'_WANIP6Connection_Override_LocalAddr':-}
+  local localaddr
+  [ "$over" != '' ] && localaddr=$over || localaddr="$(getlocalpart ${lladdr%%/*} ${lladdr##*/})"
+
+  local prefix; prefix=${DPREFIX%%/*}
+  local prefixoff; eval prefixoff=\${'WANConnectionDevice_'$WANID'_WANIP6Connection_Override_PrefixOffset':-}
+  [ "$prefixoff" != '' ] && {
+    prefix=`addipv6addr $prefix $prefixoff`
+  }
+  local prefixlen; eval prefixlen=\${'WANConnectionDevice_'$WANID'_WANIP6Connection_Override_PrefixLen':-}
+  [ "$prefixlen" = '' ] && prefixlen=128
+
+  local ipaddr; ipaddr=`addipv6addr $prefix $localaddr`
+
+  ip -6 addr add $ipaddr/$prefixlen dev $IFNAME
+  echo $ipaddr/$prefixlen > $WAND/$WANID/ip6/noiana
+}
+
+compute_address_from_iapd

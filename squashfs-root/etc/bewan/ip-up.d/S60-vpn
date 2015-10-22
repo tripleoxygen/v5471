@@ -1,0 +1,31 @@
+#!/bin/sh
+# Start daemons for VPN tunnels going through this wan interface
+
+start_vpn_daemons() {
+  local wanid=${WANID:-0}
+
+  # Search for VPN interfaces
+  for vpnid in `ls $INTFD/vpn*/vpnid`; do
+    local VPNID=`cat $vpnid`
+    local vpndir=${vpnid%%/vpnid}
+    # Search for output network interfaces of VPN
+    local wanids=`cat $vpndir/depends`
+    local wid
+    for wid in `strip $wanids`; do
+      [ "$wid" != "$wanid" ] && continue
+
+      local vpntype=`cat $vpndir/vpntype 2>/dev/null`
+      case "$vpntype" in
+      L2TP)
+        # Skip manual mode
+        [ -f $vpndir/manual ] && continue
+
+        local ARG=start
+        base_call_initd 'l2tpd'
+      ;;
+      esac
+    done
+  done
+}
+
+start_vpn_daemons

@@ -1,0 +1,156 @@
+#!/bin/sh
+# /etc/bewan/scripts/update-routes6 $1
+
+# Brings up a default route to the wan interface for source IP of the interface
+# Brings up the main default route to the specified wan interface
+# Brings up a route to the DHCP server if wan interface is not the default route
+# Brings up static routes to the specified wan interface
+
+# This script is called from /etc/bewan/scripts/ip-up6
+# This script is called from /etc/bewan/scripts/ip-down6
+# This script is call directly by pppd when pppx interface is created in ON DEMAND mode
+
+# Environment variables:
+
+#  WANID or $1:    WAN interface index
+
+# Others variables come from setparam
+if [ "${WANID:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+  WANID=${1:-0}
+fi
+
+update_routes6() {
+  local ifname=`cat $WAND/$WANID/ip6/ifname 2>/dev/null`
+  local ipaddr=`cat $WAND/$WANID/ip6/ipaddr 2>/dev/null`
+  local fakeip=`cat $WAND/$WANID/ip6/fakeip 2>/dev/null`
+  local routers=`cat $WAND/$WANID/ip6/routers 2>/dev/null`
+  local dhcpsrv=`cat $WAND/$WANID/ip6/dhcpsrv 2>/dev/null`
+  local defroute=`cat $WAND/defroute6 2>/dev/null`
+
+  local srule route router server num slaac=0
+
+  if [ -f $WAND/$WANID/ip6/slaac ]; then slaac=1; fi
+
+  # Remove previous source route first
+  srule=`cat $WAND/$WANID/ip6/srule 2>/dev/null`
+  if [ "$srule" != '' ]; then
+    ip -6 rule del $srule 2>/dev/null
+    rm $WAND/$WANID/ip6/srule
+  fi
+  num=$((60 + $WANID))
+  ip -6 route flush table $num 2>/dev/null
+
+#  # Remove previous routes to the DHCP server
+#  for route in `find $WAND/$WANID/ip6 -name dhcprt* -type f`; do
+#    ip -6 route del `cat $route` 2>/dev/null
+#    rm $route
+#  done
+
+  # IP is down or interface was removed
+  if [ "$ifname" = '' ] || ( [ "$ipaddr" = '' ] && [ "$fakeip" = '' ] ); then
+    # Set status of static routes to WANID in Error
+    if [ -d "$ROUTE6D/wan$WANID" ]; then
+      local tbl
+      for tbl in `ls $ROUTE6D/wan$WANID`; do
+        local idx=`cat $ROUTE6D/wan$WANID/$tbl/idx 2>/dev/null`
+        echo "Disabled" >$ROUTE6D/status/$idx
+      done
+    fi
+    return
+  fi
+
+  # IP is up
+
+  # Add a default route for packets with source IP of the interface, so that...
+  # DNS queries will be forwarded to the correct associated interface and...
+  # Ping replies will return through the same interface as remote ping requests
+
+  # Add a new rule
+  srule="from $ipaddr/128 pref $num lookup $num"
+  echo $srule >$WAND/$WANID/ip6/srule
+  ip -6 rule add $srule 2>&1 | base_log - debug
+  # Add a new route
+  if [ "$routers" != '' ]; then
+    for router in $routers; do
+      ip -6 route add default via $router dev $ifname table $num 2>&1 | base_log - debug
+    done
+  else
+    ip -6 route add default dev $ifname table $num 2>&1 | base_log - debug
+  fi
+
+  # Brings-up the main default route to WAN if we are not in SLAAC mode
+  if [ "$defroute" = "$WANID" -a "$slaac" != 1 ]; then
+    if [ "$routers" != '' ]; then
+      for router in $routers; do
+        ip -6 route add default via $router dev $ifname table default 2>&1 | base_log - debug
+      done
+    else
+      ip -6 route add default dev $ifname table default 2>&1 | base_log - debug
+    fi
+  fi
+
+#  # Create a route to the DHCP server
+#  # if the wan is not the default route
+#  # if not a TI dhcp client
+#  if [ "$dhcpsrv" != '' ] && [ "$WANID" != "$defroute" ] && [ ! -f $WAND/$WANID/docsis ]; then
+#    num=1
+#    for server in $dhcpsrv; do
+#      for router in $routers; do
+#        route="$server/128 via $router dev $ifname"
+#        echo $route >$WAND/$WANID/ip6/dhcprt$num
+#        ip -6 route add $route 2>&1 | base_log - debug
+#        num=$(($num + 1))
+#      done
+#    done
+#  fi
+
+  # Brings-up static routes to WAN
+  if [ -d "$ROUTE6D/wan$WANID" ]; then
+    local tbl
+    for tbl in `ls $ROUTE6D/wan$WANID`; do
+      local res=0
+      local idx=`cat $ROUTE6D/wan$WANID/$tbl/idx 2>/dev/null`
+      local dest="`cat $ROUTE6D/wan$WANID/$tbl/dest 2>/dev/null`"
+      local gateway=`cat $ROUTE6D/wan$WANID/$tbl/gate 2>/dev/null`
+      [ "$dest" = '' ] && continue
+      # Gateway statically specified
+      if [ "$gateway" != '' ]; then
+        local ret_log
+        ret_log="$(ip -6 route add $dest via $gateway dev $ifname table $tbl 2>&1)"
+        res=$?
+        [ "$ret_log" != '' ] && base_log "$ret_log" debug
+      # Routers given through dhcp
+      elif [ "$routers" != '' ]; then
+        for router in $routers; do
+          local ret_log
+          ret_log="$(ip -6 route add $dest via $router dev $ifname table $tbl 2>&1)"
+          res=$?
+          [ "$ret_log" != '' ] && base_log "$ret_log" debug
+          [ $res != 0 ] && break
+        done
+      # No gateway found (ppp interface)
+      else
+        local ret_log
+        ret_log="$(ip -6 route add $dest dev $ifname table $tbl 2>&1)"
+        res=$?
+        [ "$ret_log" != '' ] && base_log "$ret_log" debug
+      fi
+      # Update status
+      if [ $res = 0 ]; then
+        # Success
+        echo 'Enabled' >$ROUTE6D/status/$idx
+      else
+        # Error in ip route add...
+        echo 'Error' >$ROUTE6D/status/$idx
+      fi
+    done
+  fi
+}
+
+base_log "$SCRIPTD/update-routes6 $WANID" debug
+
+update_routes6
+
+# Optional dynamic routes to set-up
+base_call_scripts 'update-dynamic-routes6'

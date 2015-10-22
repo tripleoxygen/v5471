@@ -1,0 +1,133 @@
+#!/bin/sh
+# IPv6 wan functions, included by /etc/bewan/init.d/wannet
+# This file is largely shared by what's in ipv4_wan_functions.
+# So when you fix something here, please take a look at the other.
+
+[ ${IPV6_WAN_LIB:-0} = 1 ] && return
+IPV6_WAN_LIB=1
+
+# Sanity check
+check_wannet_ipv6() {
+  if [ "$ifname" = '' ]; then
+    ARG=nothing
+    return
+  fi
+  local enable='/bin/true'
+  local active="test -d $WAND/$WANID/ip6"
+  base_check_arg "$enable" "$active"
+}
+
+stop_wannet_ipv6() {
+  # Shutdown IP interface
+  ARG=stop
+  base_call_initd 'wanip6'
+
+  if [ $DONT_TOUCH_PPP = 0 ]; then
+    if [ $wan_ppp_stopped = 0 ]; then
+      ARG=stop
+      wan_ppp_stopped=1
+      base_call_initd 'wanppp'
+    fi
+  fi
+
+  # Shutdown firewall
+  if [ "$NOFWL" != 1 ]; then
+    local IPPROTO='ipv6'
+    base_call_initd 'firewall'
+  fi
+
+  rm -rf $WAND/$WANID/ip6
+
+  # Remove default ipv6 route info
+  local defroute6=`cat $WAND/defroute6 2>/dev/null`
+  if [ "$defroute6" = "$WANID" ]; then
+    rm -f $WAND/defroute6
+  fi
+}
+
+start_wannet_ipv6() {
+
+  # Set flag FirstInternetConnection
+  if [ "${Device_FirstInternetConnection:-0}" = 1 ]; then
+    touch "$WAND/firstconnection"
+  fi
+
+  ARG=start
+  mkdir $WAND/$WANID/ip6
+
+  # Set up Default Route info
+  if [ ! -f $WAND/defroute6 ]; then
+    local defroute6="${Layer3Forwarding_DefaultConnectionService6:-0}"
+    if [ "$defroute6" = "$WANID" ]; then
+      echo $WANID >$WAND/defroute6
+    fi
+  fi
+
+  # DNS configuration
+  local wandev='WANConnectionDevice_'$WANID
+  local dnsen; eval dnsen=\${$wandev'_DNSEnable'}
+  local dnsovr; eval dnsovr=\${$wandev'_DNSOverrideAllowed'}
+  local dnssrv; eval dnssrv=\${$wandev'_DNSServers'}
+  local privdnssrv; eval privdnssrv=\${$wandev'_PrivateDNSServers'}
+  local altdns; eval altdns=\${$wandev'_AltDNSForwarder'}
+
+  [ "$dnsen" = 1 ] && touch $WAND/$WANID/ip6/enabledns
+  [ "$dnsovr" = 1 ]  && touch $WAND/$WANID/ip6/dnsover
+  [ "$altdns" != '' ] && echo $altdns >$WAND/$WANID/ip6/altdns
+  # Static DNS configuration
+  if [ "$dnssrv" != '' ] || [ "$privdnssrv" != '' ]; then
+    if [ "$privdnssrv" != '' ]; then
+      if [ "$dnssrv" != '' ]; then
+        dnssrv=$dnssrv,$privdnssrv
+      else
+       dnssrv=$privdnssrv
+      fi
+    fi
+    dnssrv=`strip $dnssrv`
+    echo $dnssrv >$WAND/$WANID/ip6/staticdns
+  fi
+  # DNS Domain Configuration
+  # dnsdomainlist will hold list of domain names which should get
+  # resolved via this WANConnectionDevice i.e. $dir
+  # dnsdomainlist will be written to each WANConnectionDevice's files.
+  # For e.g. For WANConnectionDevice 3 it will be written to
+  # $WAND/$WANID/3/ip/dnsdomains
+  local dnsdomainlist; eval dnsdomainlist=\${$wandev'_DNSDomains'}
+  if [ "$dnsdomainlist" != '' ]; then
+    dnsdomainlist=`strip $dnsdomainlist`
+    echo $dnsdomainlist > $WAND/$WANID/ip6/dnsdomains
+  fi
+
+  # Maximum Transfer Unit
+  local mtu=1500 maxmtu=1500
+  # PPPoE force MTU lower than 1492
+  if [ ! -f $WAND/$WANID/pppoa ]; then
+    local pppen; eval pppen=\${$wandev'_WANPPPConnection_Enable':-0}
+    [ "$pppen" = 0 ] && [ -f "$WAND/$WANID/ppp_en" ] && pppen=1
+    [ "$pppen" = 1 ] && mtu=1492
+    eval maxmtu=\${$wandev'_MaxMTUSize'}
+    [ "$maxmtu" = '' ] && maxmtu=$mtu
+  fi
+  # Takes lower from mtu and maxmtu
+  if [ "$maxmtu" -gt "$mtu" ]; then
+    maxmtu=$mtu
+  fi
+  echo $maxmtu >$WAND/$WANID/ip6/mtu
+
+  if [ $DONT_TOUCH_PPP = 0 ]; then
+    if [ $wan_ppp_started = 0 ]; then
+      ARG=start
+      wan_ppp_started=1
+      base_call_initd 'wanppp'
+    fi
+  fi
+
+  # Start IP interface
+  base_call_initd 'wanip6'
+
+  # Set-up input firewall
+  if [ "$NOFWL" != 1 ]; then
+    local IPPROTO='ipv6'
+    base_call_initd 'firewall'
+  fi
+}

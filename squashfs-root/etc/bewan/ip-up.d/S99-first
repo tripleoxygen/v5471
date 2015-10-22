@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+# $DEFRTE, set to 1 if WAN is a default route
+# $INET, set to 1 if WAN is an Internet connection
+
+firstconnection() {
+	# Reset FirstInternetConnection flag (in background)
+	[ "$INET" = 1 ] && [ -f "$WAND/firstconnection" ] && {
+		(
+		base_log "Reset FirstInternetConnection" debug
+		rm -f "$WAND/firstconnection"
+		cli -s <<EOF
+cd _Device
+set FirstInternetConnection 0
+fcommit
+EOF
+		base_log "Reset FirstInternetConnection done" debug
+		) &
+	}
+}
+
+firstconnection

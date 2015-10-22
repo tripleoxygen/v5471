@@ -1,0 +1,4 @@
+#!/bin/sh
+# Called by rc script
+
+mkdir -p $WANETHD

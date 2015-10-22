@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set_accessclass_gvt() {
+  # Set INFACTORY, so that gvt script won't fcommit
+  local INFACTORY=1
+
+  [ ! -f /nvram/gvt/accessclass ] && {
+    mkdir -p /nvram/gvt
+    # The default value is also set in action library
+    # If you change it here, please check src directory
+    echo -n 2 > /nvram/gvt/accessclass
+  }
+  base_call_scripts 'gvt-access-class'
+}
+
+set_accessclass_gvt

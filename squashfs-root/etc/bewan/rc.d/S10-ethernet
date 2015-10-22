@@ -1,0 +1,8 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start Ethernet Interfaces
+
+mkdir -p $INTFD
+
+ETHID='all'
+base_call_initd 'ethernet ethled'

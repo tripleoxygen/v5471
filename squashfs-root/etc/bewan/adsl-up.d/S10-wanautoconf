@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Called by adsl-up
+# $1 : up
+
+. /etc/bewan/lib/wanautoconf
+
+trigger_autoconf() {
+	if [ ${Services_WANAutoConfig_Enable:-0} -ne 1 ]; then
+		return
+	fi
+
+	base_enter_critical 'wanautoconf'
+
+	base_log "S10-wanautoconf (adsl-up) ${1:-}" debug
+
+	local xdsl_mode=''
+	retrieve_xdsl_mode
+
+	# Actions when xDSL synchronisation is detected
+	local phy_state
+	retrieve_phy_state WANEthernetInterface 1
+	if [ "$xdsl_mode" = "vdsl" ]; then
+		change_wan_mode PTMEthernetInterface
+	else
+		change_wan_mode ATMEthernetInterface
+	fi
+
+	base_exit_critical 'wanautoconf'
+}
+
+trigger_autoconf $@

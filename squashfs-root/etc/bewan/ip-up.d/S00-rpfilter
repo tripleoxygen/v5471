@@ -1,0 +1,12 @@
+#!/bin/sh
+
+configure_rpfilter()
+{
+	local wanid=${WANID:-0}
+	local rpfilter; eval rpfilter=\${'WANConnectionDevice_'$wanid'_RPFilter':-2}
+	local name=`cat $WAND/$WANID/ip/ifname 2>/dev/null`
+	[ -z "$name" ] && return
+	sysctl -w net.ipv4.conf.$name.rp_filter=$rpfilter >/dev/null 2>/dev/null
+}
+
+configure_rpfilter

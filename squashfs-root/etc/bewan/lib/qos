@@ -1,0 +1,826 @@
+#!/bin/sh
+# /etc/bewan/lib/qos
+
+# specific vendor functions used by qos scripts
+# setparam must be included
+
+# Working variables
+# $type:  ATMEthernetInterface or LANEthernetInterface
+# $ifname: name of network interface
+# $algo: WFQ or PQ
+local LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+setIfname() {
+	local type=$1 idx ifname
+	
+	case $type in
+		LANEthernetInterface|ATMEthernetInterface|PTMEthernetInterface|WANEthernetInterface)
+			idx=`echo $idx | cut -d "," -f 1`
+			eval ifname=\${$type'_'$idx'_Ifname':-NoIfname}
+			echo -n "$ifname" 
+		;;
+		IMQ_ATMEthernetInterface)
+			# so it is imq0 (hardcoded)
+			ifname="imq0"
+			echo -n "$ifname"
+		;;
+	*)
+		base_log "\"$type\" Interface Type Not Supported"
+		echo -n "NoIfname"
+	;;
+	esac
+}
+
+add_idx_to_imq() {
+	local idx=$1 ip_or_ppp_ifname start_fwdynamic=0 index i ifname
+	for index in `strip $idx`; do
+		ifname=$(setIfname ATMEthernetInterface $index) # we want the nas1 or nas2
+		# find on wich WANConnectionDevice is attached nas interface.   
+		for i in `ls $WAND | grep -E ^[0-9]+ ` ; do
+			[  `ls $WAND/$i/intfs/* | grep $ifname -c` -gt 0 ] && {
+				#here we have indentified a WANConnectionDevice on nas
+				ip_or_ppp_ifname=`cat $WAND/$i/ipname $WAND/$i/pppname 2>/dev/null`
+
+				[ "x$ip_or_ppp_ifname" != "x" ] && {
+					#execute "iptables -t mangle -A POSTROUTING -o $ip_or_ppp_ifname -j IMQ --todev 0" #--todev 0 refers to imq0 (hardcoded)
+					# add a dynamic rule
+					mkdir -p /var/bewan/nf.d/dynamic/mangle/postrouting
+					[ `grep "o $ip_or_ppp_ifname -j IMQ --todev 0" $NFD/dynamic/mangle/postrouting/imq_$ip_or_ppp_ifname 2>/dev/null |wc -l` -eq 0 ] && {
+						echo "-o $ip_or_ppp_ifname -j IMQ --todev 0" > $NFD/dynamic/mangle/postrouting/imq_$ip_or_ppp_ifname
+						start_fwdynamic=1
+					}
+				}
+			}
+		done
+	done
+	[ $start_fwdynamic -gt 0 ] && base_call_initd "fwdynamic" && base_log "Qos has restarted fwdynamic" debug 
+}
+
+del_idx_to_imq() {
+	local idx=$1 ip_or_ppp_ifname start_fwdynamic=0 index i ifname
+	for index in `strip $idx`; do
+		ifname=$(setIfname ATMEthernetInterface $index) # we want the nas1 or nas2
+		# find on wich WANConnectionDevice is attached nas interface.   
+		for i in `ls $WAND | grep -E ^[0-9]+ ` ; do
+			[  `ls $WAND/$i/intfs/* | grep $ifname -c` -gt 0 ] && {
+				#here we have indentified a WANConnectionDevice on nas
+				ip_or_ppp_ifname=`cat $WAND/$i/ipname $WAND/$i/pppname 2>/dev/null`
+
+				[ "x$ip_or_ppp_ifname" != "x" ] && {
+					rm -f `fgrep -rl "o $ip_or_ppp_ifname -j IMQ --todev 0" $NFD/dynamic/mangle/postrouting` #--todev 0 refers to imq0 (hardcoded)
+					start_fwdynamic=1
+				}
+			}
+		done
+	done
+	[ $start_fwdynamic -gt 0 ] && base_call_initd "fwdynamic" && base_log "Qos has restarted fwdynamic" debug
+}
+
+xtmctl_addq(){
+#$1 : ptmpri or vc if PTM or ATM
+#$2 : QSize
+#$3 : Prio
+#$4 : QId [mandatory but not used in version 2.0 and 1.0]
+#$5 : WFQ Weight [optional]
+
+	local channel=$1 QSize=$2 prio=$3 QId weight="" arg_list res=1 xtmctl_version identifiedQueue
+
+	xtmctl_version=$(xtmctl --version 2>&1 | cut -f3,4 -d " ")
+
+	[ $# -lt 4 -o $# -gt 5 ] && return 1 #error
+	[ $# -eq 5 ] &&  weight="$5" ||  weight="wfq 100" 
+
+	case $xtmctl_version in
+	"2.0"|"1.0")
+		QId="" # in these version Qid is not supported. So i reset it.
+	;;
+	"2.0.1")
+		QId="" # in these version Qid is not supported. So i reset it.
+	;;
+	"2.0 PACE")
+		QId=$4
+	;;
+	"2.0.1 PACE")
+		QId=$4
+	;;
+	*)
+		base_log "xtmctl version unknown $xtmctl_version" debug
+		return 1
+	;;
+	esac
+	arg_list="$channel $QSize $prio $QId $weight"
+	execute "xtmctl operate conn --addq $arg_list"
+	res=$?
+
+ 	if [ $res -eq 0 ] ; then
+ 		case $xtmctl_version in
+ 		"2.0 PACE"|"2.0.1 PACE")
+ 			echo "$QId;$channel;$QSize;$prio" > "$QOSD/queues/$ifname/$queue"
+		;;
+ 		"2.0"|"1.0"|"2.0.1")
+ 			identifiedQueue=`xtmctl operate conn --show 1.$vc | grep -m1 -o -E "[0-9]+[ ]+[0-9]+[ ]+$QSize [ ]*$prio [ ]*" | cut -d " " -f0`
+ 			echo "$identifiedQueue;$channel;$QSize;$prio" > "$QOSD/queues/$ifname/$queue"
+ 		;;
+ 		esac
+#  		base_log "QOS: Add $algo queue $queue on $type $idx" debug
+ 	fi
+	return $res
+}
+
+xtmctl_delq() {
+
+#version xtmctl  2.0*
+#$1 : ptmpri or vc if PTM or ATM
+#$2 : QId
+
+#version xtmctl 1.0
+#$1 : ptmpri or vc if PTM or ATM
+#$2 : QId
+#$3 : QSize
+#$4 : Prio
+
+	local channel=$1 QSize="" prio="" QId="" arg_list xtmctl_version res
+
+	xtmctl_version=$(xtmctl --version 2>&1 | cut -f3,4 -d " ")
+
+	! [ $# -eq 4 -o $# -eq 3 ] && return 1 #error
+
+	case $xtmctl_version in
+	"2.0 PACE"|"2.0.1 PACE"|"2.0")
+		QId=$2
+		arg_list="$channel $QId"
+	;;
+	"1.0")
+		QSize=$3
+		prio=$4
+		arg_list="$channel $QSize $prio"
+	;;
+	*)
+		base_log "xtmctl version unknown $xtmctl_version" debug
+		return 1
+	;;
+	esac
+
+	execute "xtmctl operate conn --deleteq $arg_list"
+	res=$?
+	return $res
+
+}
+
+# run the command given as parameter
+execute() {
+  local res
+  eval $1
+  res=$?
+  debug_log "$1" "$res"
+  return $res
+}
+
+debug_log() {
+  local dbg;eval dbg=\${'QueueManagement_Debug':-}
+  local message="Successful"
+  [ $2 -ne 0 ] &&  message="Fail ret=$2"
+  [ "x$dbg" = "x1" ] && base_log "QOS: \t[$1] [$message]" debug
+}
+
+check_vendor_qos() {
+  
+  which xtmctl >/dev/null
+  if [ $? -eq 1 ] ; then
+  return $?
+  fi
+  
+  local en idx type intfs intfen en_qos i
+    
+  eval en_qos=\${'QueueManagement_Enable':-}
+  if [ "x$1" = "x0" -o "x$1" = "x" ] ; then
+    eval intfs=\${'QueueManagement_Queue_List':-}
+    local enable="test x$en_qos = x1"
+    local active="test `find /var/bewan/qos.d/ | grep -E /[0-9]+ -c` -gt 0"
+    base_check_arg "$enable" "$active"
+  
+  else
+    eval en=\${'QueueManagement_Queue_'$1'_Enable':-}
+    eval type=\${'QueueManagement_Queue_'$1'_InterfaceType':-}
+    eval idx=\${'QueueManagement_Queue_'$1'_InterfaceIndex':-}
+    [ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return 
+
+    for i in `strip $idx` ; do
+        eval intfen=\${$type'_'$i'_Enable':-1}
+        [ $intfen -eq 0 ] && break
+    done
+
+    local enable="test x$en = x1 -a x$en_qos = x1 -a x$intfen = x1"
+    local active="test `find $QOSD -name $1`"
+    base_check_arg "$enable" "$active"
+  fi
+  
+  
+}
+
+vendor_qos_add_default_queue () {
+#$1 channel (vc for atm ptmpri for ptm
+#$2 ifname
+	local res queue
+	
+	if [ ! -f $QOSD/queues/$2/default -a $( find $QOSD/queues/$2/ | grep -E /[0-9]+ -c ) -le 0  ] ; then
+		queue="default"
+		mkdir -p $QOSD/queues/$2
+		xtmctl_addq 1.$1 200 0 0
+		res=$?
+	else
+		res=1
+		base_log "QOS: default queue already exist" debug
+	fi
+
+	[ $res -eq 0 ] && base_log "QOS: Add the default queue on $2" debug
+
+	return $res
+}
+
+vendor_qos_del_default_queue () {
+#$1 ifname
+
+	local res queue_file channel Qsize prio identifiedQueue
+	#we delete the default queue only when a queue already exist
+	# if there is a default queue, delete it
+    if [ -f $QOSD/queues/$1/default ] ; then
+		res=-1
+		queue_file="$QOSD/queues/$1/default"
+		channel=`cat $queue_file | cut -d ";" -f2`
+		Qsize=`cat $queue_file | cut -d ";" -f3`
+		prio=`cat $queue_file | cut -d ";" -f4`
+		identifiedQueue=`cat $queue_file | cut -d ";" -f1`
+
+		xtmctl_delq $channel $identifiedQueue $Qsize $prio
+		res=$?
+	else
+		res=1
+	fi
+	
+	[ $res -eq 0 ] && base_log "QOS: Del the default queue on $1" debug &&	rm $QOSD/queues/$1/default 
+
+	return $res
+}
+
+
+retrieve_current_type() {
+  local phyitf_list=${WANConnectionDevice_1_PhysicalInterface_List:-0}
+  local current_type="none" phyitfidx
+  for phyitfidx in `strip $phyitf_list`
+  do
+    local phyitfen
+    eval phyitfen=\${'WANConnectionDevice_1_PhysicalInterface_'$phyitfidx'_Enable':-0}
+    if [ "$phyitfen" = "1" ]; then
+      eval current_type=\${'WANConnectionDevice_1_PhysicalInterface_'$phyitfidx'_Type':-NoType}
+      break
+    fi
+  done
+}
+
+get_eth_speed() {
+	local switchid=0 found=0 portlistid
+	while [ $switchid -lt ${Switch_Count:-0} -a $found -lt 1 ]
+	do
+		switchid=$(($switchid + 1))
+		eval portlist=\${'Switch_'$switchid'_Port_List':-}
+		for portlistid in `strip $portlist`; do
+			local port_en; eval port_en=\${'Switch_'$switchid'_Port_'$portlistid'_Enable':-0}
+			[ $port_en != 1 ] && continue
+
+			local WANIdx; eval WANIdx=\${'Switch_'$switchid'_Port_'$portlistid'_WANEthernetInterfaceIdx':-'NotWan'}
+			local status='Switch_'$switchid'_Port_'$portlistid'_Status'
+			local LinkMode=$(echo "cd $status; get LinkMode" | cli -q)
+			if [ "$WANIdx" = "$idx" ]; then # this is the one
+				local speed=$(echo $LinkMode |grep -o -E "[0-9]+")
+				return $speed;
+			fi
+		done
+	done
+	return 0;
+}
+
+vendor_qos_start_queue () { 
+
+# $1 Queueid 
+# $2 ATMEthernetInterface or LANEthernetInterface
+# $3 interface index
+# $4 rate [optional] 
+
+	local vc prio i en type=$2 idx=$3 queue=$1 bitrate en_qos QId QSize algo res ptmpri ifname
+	eval bitrate=${4:-0}
+
+	# 3 args are expected
+	if [ $# -lt 3 ]; then 
+		return 0
+	fi
+
+	eval en_qos=\${'QueueManagement_Enable':-0}
+	eval en=\${'QueueManagement_Queue_'$queue'_Enable':-0}
+	[ "$en" != "1" -o "$en_qos" != "1" ] && return
+
+	ifname=$(setIfname $type $idx)
+	[ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+
+	#just in case del the default queue if any
+	vendor_qos_del_default_queue $ifname
+
+	eval algo=\${'QueueManagement_Queue_'$queue'_SchedulerAlgorithm':-}
+
+	case $type in
+	ATMEthernetInterface)
+		eval vc=\${$type'_'$idx'_ATMLinkConfig_VC':-}
+		local QSize ; eval QSize=\${'QueueManagement_Queue_'$queue'_QueueBufferLength':-100}
+		eval prio=\${'QueueManagement_Queue_'$queue'_Priority':-}
+		eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-}
+		vc=`echo $vc | sed -e "s~/~.~"`
+
+		if [ $prio -ge 8 ]; then
+			base_log "Prio $prio is > 7. Set it to 7"
+			prio=7
+		fi;
+		res=-1
+		case $algo in
+		PQ)
+			#execute "xtmctl operate conn --addq 1.$vc $QSize $prio $QId"
+			xtmctl_addq 1.$vc $QSize $prio $QId
+			res=$?
+		;;
+	  
+		WFQ)
+			local weight ; eval weight=\${'QueueManagement_Queue_'$queue'_QueueWeight':-100}
+			#execute "xtmctl operate conn --addq 1.$vc $QSize $prio $QId wfq $weight"
+			xtmctl_addq 1.$vc $QSize $prio $QId "wfq $weight"
+			res=$?
+		;;
+		*)
+			base_log "unknow algorithm :$algo"
+			return 0
+		;;
+		esac
+			
+ 		[ $res -eq 0 ] && base_log "QOS: Add $algo queue $queue on $type $idx" debug
+	;;
+	PTMEthernetInterface)
+
+		local QSize ; eval QSize=\${'QueueManagement_Queue_'$queue'_QueueBufferLength':-100}
+		eval prio=\${'QueueManagement_Queue_'$queue'_Priority':-}
+		eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-}
+		if [ $prio -ge 8 ]; then
+			base_log "Prio $prio is > 7. Set it to 7"
+			prio=7
+		fi;
+
+		ptmpri=1
+		res=-1
+		case $algo in
+		PQ)
+			#execute "xtmctl operate conn --addq 1.$ptmpri $QSize $prio $QId"
+			xtmctl_addq 1.$ptmpri $QSize $prio $QId
+			res=$?
+		;;
+
+		WFQ)
+			local weight ; eval weight=\${'QueueManagement_Queue_'$queue'_QueueWeight':-100}
+			#execute "xtmctl operate conn --addq 1.$ptmpri $QSize $prio $QId wfq $weight"
+			xtmctl_addq 1.$ptmpri $QSize $prio $QId "wfq $weight"
+			res=$?
+		;;
+		*)
+			base_log "unknow algorithm :$algo"
+			return 0
+		;;
+		esac
+
+		[ $res -eq 0 ] && base_log "QOS: Add $algo queue $queue on $type $idx" debug
+	;;
+	IMQ_ATMEthernetInterface)
+		which tc >/dev/null
+		if [ $? -eq 1 ] ; then
+			base_log "No tc found" debug
+			return $?
+		fi
+		case $algo in
+		PQ)
+			base_log "QOS: IMQ for PQ is not yet implemented" debug
+		;;
+		WFQ)
+			local weight ; eval weight=\${'QueueManagement_Queue_'$queue'_QueueWeight':-100}
+			local QId ; eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-}
+			local prio; eval prio=\${'QueueManagement_Queue_'$queue'_Priority':-5}
+			local overhead="overhead 26"
+			local lla="linklayer atm"
+			local shapingRate ; eval shapingRate=\${'QueueManagement_Queue_'$queue'_ShapingRate':-}
+			if [ $bitrate -eq 0 ]; then
+				bitrate=`adslinfo | grep "up actual rate" | grep -E -o [0-9]+`
+				bitrate=${bitrate:-0} # if bitrate is empty set it to 0
+				bitrate=`expr $bitrate \* 1024 `
+				[ $bitrate -eq 0 ] && return 0 # bitrate is still 0. Issue => return
+			fi
+
+			# redirect to imq; should be done by a static firewall rules.
+			add_idx_to_imq $idx
+
+			# re-set the new ifname
+			ifname=$(setIfname $type $idx)
+			
+			rate=`expr $bitrate \* 82 \/ 100 \/ 1024 ` # 48/53 * 90% it convert atm bitrate to ip. The 90% is a margin because an atm packet may not be full
+			[ `tc -s class list dev $ifname | wc -l` -eq 0 ] && {
+				execute "ifconfig $ifname up"
+				execute "tc qdisc add dev $ifname root handle 1: htb default 40 r2q 1"
+				execute "tc class add dev $ifname parent 1: classid 1:100 htb rate ${rate:-}Kbit burst 15k"
+				execute "tc class add dev $ifname parent 1:100 classid 1:40 htb rate 8Kbit  ceil `expr $bitrate \* 90 \/ 100 \/ 1024 `Kbit burst 15k prio 8 $overhead $lla"
+			}
+
+			execute "tc class add dev $ifname parent 1:100 classid 1:$QId htb rate `expr $rate \* $weight \/ 100`Kbit ceil ${shapingRate:-$rate}Kbit burst 15k prio $prio $overhead $lla"
+			execute "tc qdisc add dev $ifname parent 1:$QId handle `expr $QId`0 sfq perturb 10"
+
+			touch "$QOSD/queues/$ifname/$queue"
+			;;
+			*)
+				base_log "unknow algorithm :$algo"
+			;;
+		esac
+	;;
+	WANEthernetInterface|LANEthernetInterface)
+		local QId ; eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-0}
+		local prio; eval prio=\${'QueueManagement_Queue_'$queue'_Priority':-0}
+		local weight ; eval weight=\${'QueueManagement_Queue_'$queue'_QueueWeight':-100}
+		local shapingRate ; eval shapingRate=\${'QueueManagement_Queue_'$queue'_ShapingRate':-NOSHAPE}
+		
+#  		[ "$type" = "LANEthernetInterface" ] && get_eth_speed && shapingRate=$?'000'
+
+		case $algo in
+			PQ)
+				#Nothing to do so far
+				#shapping is possible on queue
+				[ "$shapingRate" != "NOSHAPE" ] && execute "fapctl tm --queuecfg --if $ifname --manual --queue $QId --max --kbps $shapingRate --mbs 2000"
+				execute "fapctl tm --arbitercfg --if $ifname --manual --sp"
+				execute "fap tm --mode --if $ifname --manual"
+				execute "fapctl tm --apply --if $ifname --enable"
+
+				;;
+			WFQ)
+				#Nothing to do so far
+				[ "$shapingRate" != "NOSHAPE" ] && execute "fapctl tm --queuecfg --if $ifname --manual --queue $QId --max --kbps $shapingRate --mbs 2000"
+				execute "fapctl tm --arbitercfg --if $ifname --manual --wfq"
+				execute "fapctl tm --queueweight --if $ifname --manual --queue $QId --weight $weight"
+				execute "fap tm --mode --if $ifname --manual"
+				execute "fapctl tm --apply --if $ifname --enable"
+				;;
+			*)
+				base_log "Algorithm $algo not supported for WANEthernetInterface"
+				;;
+		esac
+	;;
+	*)
+		base_log "QOS: $type is unknown" debug
+		return 0
+	;;
+	esac
+
+}
+
+vendor_qos_stop_queue () { 
+# $1 Queueid
+# $2 ATMEthernetInterface or LANEthernetInterface
+# $3 interface index
+
+	local vc prio i type=$2 idx=$3 queue=$1 identifiedQueue queue_file res Qsize channel algo ifname
+
+	# 3 args are expected
+	if [ $# -ne 3 ]; then 
+		return 0
+	fi
+
+	ifname=$(setIfname $type $idx)
+
+	if ! [ -e $QOSD/queues/$ifname/$queue ]; then
+		# No qos on that queue so far
+		return 
+	fi
+	eval algo=\${'QueueManagement_Queue_'$queue'_SchedulerAlgorithm':-}
+	
+	case $type in
+		ATMEthernetInterface)
+			res=-1
+			queue_file=`find $QOSD/queues | grep /$queue$`
+			channel=`cat $queue_file | cut -d ";" -f2`
+			Qsize=`cat $queue_file | cut -d ";" -f3`
+			prio=`cat $queue_file | cut -d ";" -f4`
+			identifiedQueue=`cat $queue_file | cut -d ";" -f1`
+
+			xtmctl_delq $channel $identifiedQueue $Qsize $prio
+			res=$?
+
+			if [ $res -eq 0 ] ; then
+				rm -f $QOSD/queues/$ifname/$queue
+				base_log "QOS: Delete PQ queue $queue on $type $idx" debug
+			else
+				base_log "QOS: Can't delete PQ queue $queue" debug 
+			fi
+		;;
+		PTMEthernetInterface)
+			res=-1
+			queue_file=`find $QOSD/queues | grep /$queue$`
+			channel=`cat $queue_file | cut -d ";" -f2`
+			Qsize=`cat $queue_file | cut -d ";" -f3`
+			prio=`cat $queue_file | cut -d ";" -f4`
+			identifiedQueue=`cat $queue_file | cut -d ";" -f1`
+
+			xtmctl_delq $channel $identifiedQueue $Qsize $prio
+			res=$?
+
+			if [ $res -eq 0 ] ; then
+				rm -f $QOSD/queues/$ifname/$queue
+				base_log "QOS: Delete PQ queue $queue on $type $idx" debug
+			else
+				base_log "QOS: Can't delete PQ queue $queue" debug 
+			fi
+		;;
+		IMQ_ATMEthernetInterface)
+			which tc >/dev/null
+			if [ $? -eq 1 ] ; then
+				base_log "No tc found" debug
+				return $?
+			fi
+			case $algo in
+				WFQ)
+					local QId ; eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-}
+					ifname=$(setIfname $type $idx)
+
+					# I have hardcoded a fake bitrate. This is stupid but in order to delete the queue
+					# we need to give a bitrate ...
+					execute "tc class del dev $ifname parent 1:100 classid 1:$QId htb rate 100Kbit"
+					# In case this is the last queue delete everything
+					if [ `ls $QOSD/queues/$ifname | grep -E [0-9]+ -c` -eq 1 ]; then
+						execute "tc qdisc del dev $ifname root"
+						#get the interfaces to del in imq
+						del_idx_to_imq $idx
+					fi
+					ifname=$(setIfname $type $idx)
+				;;
+				*)
+				base_log "unknow algorithm :$algo"
+			;;
+			esac
+			rm -f $QOSD/queues/$ifname/$queue
+			base_log "QOS: Delete PQ queue $queue on $type $idx" debug
+		;;
+		LANEthernetInterface)
+			case $algo in
+			PQ | WFQ)
+				local QId ; eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-} 
+
+				execute "echo TODO"
+				rm -f $QOSD/queues/$ifname/$queue
+# 				base_log "QOS: Delete $algo queue $queue on $type $idx" debug
+				;;
+			*)
+				base_log "unknow algorithm :$algo"
+			;;
+			esac
+		;;
+		WANEthernetInterface)
+			local QId ; eval QId=\${'QueueManagement_Queue_'$queue'_QueueId':-0}
+			local prio; eval prio=\${'QueueManagement_Queue_'$queue'_Priority':-0}
+			
+			case $algo in
+				PQ)
+					#Nothing to do so far
+					;;
+				*)
+					base_log "Algorithm $algo not supported for WANEthernetInterface"
+					;;
+			esac
+		;;
+		*)
+			base_log "QOS: $type is unknown" debug
+			return 0
+	;;
+	esac
+	if [ $( find $QOSD/queues/$ifname/ | grep -E /[0-9]+ -c ) -le 0  ] ; then
+		case $type in
+		ATMEthernetInterface)
+			eval vc=\${$type'_'$idx'_ATMLinkConfig_VC':-}
+			channel=`echo $vc | sed -e "s~/~.~"`
+		;;
+		PTMEthernetInterface)
+			channel=1
+		;;
+		*)
+			return 
+		;;
+		esac
+		vendor_qos_add_default_queue $channel $ifname
+	fi
+}
+
+vendor_qos_restart_queue () { 
+
+vendor_qos_stop_queue $@
+vendor_qos_start_queue $@
+
+}
+
+vendor_qos_start_ifname () { 
+# $1 $ifname
+
+	local en prio i type idx QID queueId ifname
+
+	if [ $# -lt 1 ]; then 
+		return 0
+	fi
+  
+	eval queueId=\${'QueueManagement_Queue_List':-}
+	for QID in `strip $queueId`; do
+		eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+		[ "$en" != "1" ] && continue
+		eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+		ifname=$(setIfname $type $idx)
+		if [ "x$ifname" = "x$1" ]; then
+		  [ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+		  vendor_qos_start_queue $QID $type $idx 
+		fi
+	done
+}
+
+vendor_qos_stop_ifname () { 
+# $1 ifname
+
+	local en prio i type idx intfs QID ifname
+  
+	# 2 args are expected
+	if [ $# -lt 1 ]; then 
+		return 0
+	fi
+  
+	eval intfs=\${'QueueManagement_Queue_List':-}
+	for QID in `strip $intfs`; do
+		eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+		[ "$en" != "1" ] && continue
+		eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+		ifname=$(setIfname $type $idx)
+		if [ "x$ifname" = "x$1" ];then
+		  [ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+		  vendor_qos_stop_queue $QID $type $idx 
+		fi
+	done
+}
+
+
+vendor_qos_start_interface () { 
+# $1 InterfaceType
+# $2 InterfaceIndex
+
+	local en prio i type idx QID queueId ifname
+
+	# 2 or 3 args are expected
+	if [ $# -lt 2 ]; then 
+		return 0
+	fi
+  
+	eval queueId=\${'QueueManagement_Queue_List':-}
+	for QID in `strip $queueId`; do
+		eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+		[ "$en" != "1" ] && continue
+		eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+		if [ "$type" = "$1" -a "$idx" = "$2" ]; then
+			ifname=$(setIfname $type $idx)
+			[ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+			vendor_qos_start_queue $QID $@ 
+		fi
+	done
+}
+
+vendor_qos_stop_interface () { 
+# $1 ATMEthernetInterface or LANEthernetInterface
+# $2 interface index
+
+	local en prio i algo type idx intfs QID ifname
+  
+	# 2 args are expected
+	if [ $# -ne 2 ]; then 
+		return 0
+	fi
+  
+	eval intfs=\${'QueueManagement_Queue_List':-}
+	for QID in `strip $intfs`; do
+		eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+		[ "$en" != "1" ] && continue
+		eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+		if [ "$type" = "$1" -a "$idx" = "$2" ]; then #we have found a queue on the right interface ($1+$2) 
+			eval algo=\${'QueueManagement_Queue_'$QID'_SchedulerAlgorithm':-}
+			ifname=$(setIfname $type $idx)
+			[ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+			vendor_qos_stop_queue $QID $@ 
+		fi
+	done
+}
+
+vendor_qos_stop_type () { 
+# $1 ATMEthernetInterface or LANEthernetInterface
+
+  local en type idx intfs QID ifname
+  
+  # 1 args are expected
+  if [ $# -ne 1 ]; then 
+    return 0
+  fi
+  
+  local QosOn;eval QosOn=\${'QueueManagement_Enable':-}
+  [ $QosOn -eq 0 ] && return 0;
+  
+  rm -f $QOSD/intfConfigured $QOSD/intfConfigured_unique
+
+   eval intfs=\${'QueueManagement_Queue_List':-}
+   for QID in `strip $intfs`; do
+        eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+        [ "$en" != "1" ] && continue
+        eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+        eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+        if [ "$type" = "$1" ]; then #we have found a queue on the right type add its interface 
+	    ifname=$(setIfname $type $idx)
+	    [ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+	    echo $type $idx >> $QOSD/intfConfigured
+	fi
+   done
+
+   #return only one occurence of each intf & write in $QOSD/intfConfigured_unique
+   if [ -f $QOSD/intfConfigured ]; then
+      cat $QOSD/intfConfigured | sort -u >> $QOSD/intfConfigured_unique
+      
+      while read line ; do   
+	type=`echo $line | grep -o -E [a-zA-Z_]+`
+	idx=`echo $line | grep -o -E [0-9,]+`
+	if [ "x$idx" = "x" -o "x$type" = "x" ]; then
+	  break; # protection against empty args
+	fi;
+
+	vendor_qos_stop_interface $type $idx
+
+      done < $QOSD/intfConfigured_unique
+  fi
+}
+
+vendor_qos_start_type () { 
+# $1 ATMEthernetInterface or LANEthernetInterface
+# $2 [optional] bitrate
+
+	local en type idx intfs QID ifname
+  
+	# 2 args are expected
+	if [ $# -lt 1 ]; then 
+		return 0
+	fi
+
+	local QosOn;eval QosOn=\${'QueueManagement_Enable':-}
+	[ $QosOn -eq 0 ] && return 0;
+  
+	rm -f $QOSD/intfConfigured $QOSD/intfConfigured_unique
+
+	eval intfs=\${'QueueManagement_Queue_List':-}
+	for QID in `strip $intfs`; do
+		eval en=\${'QueueManagement_Queue_'$QID'_Enable':-}
+		[ "$en" != "1" ] && continue
+		eval type=\${'QueueManagement_Queue_'$QID'_InterfaceType':-}
+		eval idx=\${'QueueManagement_Queue_'$QID'_InterfaceIndex':-}
+		[ "x$type" = "x" -o "x$idx" = "x" ] && base_log "Error: bad value in QueueManagement" && return
+		if [ "$type" = "$1" ]; then #we have found a queue on the right type add its interface 
+			ifname=$(setIfname $type $idx)
+			[ -d $QOSD/queues/$ifname ] || mkdir -p "$QOSD/queues/$ifname"
+			echo $type $idx >> $QOSD/intfConfigured
+		fi
+	done
+
+	#return only one occurence of each intf & write in $QOSD/intfConfigured_unique
+	if [ -f $QOSD/intfConfigured ]; then
+		cat $QOSD/intfConfigured | sort -u >> $QOSD/intfConfigured_unique
+		
+		while read line ; do   
+			type=`echo $line | grep -o -E [a-zA-Z_]+`
+			idx=`echo $line | grep -o -E [0-9,]+`
+			if [ "x$idx" = "x" -o "x$type" = "x" ]; then
+				break; # protection against empty args
+			fi;
+			vendor_qos_start_interface $type $idx ${2:-0}
+		done < $QOSD/intfConfigured_unique
+	fi
+}
+
+vendor_qos_restart_interface () { 
+
+	vendor_qos_stop_interface $@
+	vendor_qos_start_interface $@
+
+}

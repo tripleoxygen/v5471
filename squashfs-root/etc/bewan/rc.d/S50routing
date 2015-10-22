@@ -1,0 +1,20 @@
+#!/bin/sh
+# Called from /etc/bewan/rc
+# Start static routing rules
+
+# Enable routing
+echo 1 >/proc/sys/net/ipv4/ip_forward
+
+[ -d /proc/sys/net/ipv6 ] && {
+  for dir in $(find /proc/sys/net/ipv6/conf/ -type d); do
+    [ ! -f ${dir}/accept_ra ] && continue
+    local name=$(basename $dir)
+    echo "${Device_IPv6SkipInterfaces:-}" | grep -qE "(^|,)$name(,|$)" && continue
+    echo 1 > ${dir}/forwarding
+  done
+}
+
+# Set Internet interface
+echo ${Layer3Forwarding_InternetConnectionService:-} > $WAND/internet
+
+base_call_initd 'routes'

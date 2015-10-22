@@ -1,0 +1,51 @@
+#!/bin/sh
+# /bin/igmpctl $1
+# $1 or $ARG = del or add
+
+SWITCHNAME=${1:-}
+ACCESSTYPE=${2:-}
+ACTION=${3:-}
+PORTS=${4:-}
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+NAME="bcm53125_portbasedvlanctl"
+
+DEFAULTPORTMAP=0x1FF
+CPUPORT=8
+local port
+
+case "$ACTION" in 
+  del)
+    base_log "${NAME} : restoring default port-based vlan map for all ports" debug
+    for port in 0 1 2 3 4
+    do
+      switchctl $SWITCHNAME $ACCESSTYPE -S P${port}_VLAN_FORWARD_MASK=$DEFAULTPORTMAP
+    done
+    ;;
+
+  add)
+    base_log "${NAME} : new port-based VLAN with ports $PORTS" debug
+    # Compute portmap
+    local portmask=0
+    for port in `strip $PORTS`
+    do
+      portmask=$(($portmask + (1 << $port)))
+    done
+    # Add CPU port
+    portmask=$(($portmask + (1 << $CPUPORT)))
+
+    # Write new portmap in register
+    for port in `strip $PORTS`
+    do
+      switchctl $SWITCHNAME $ACCESSTYPE -S P${port}_VLAN_FORWARD_MASK=$portmask           
+    done
+    ;;
+
+  *)
+    base_log "${NAME} : undefined action!" debug
+    ;;
+esac
+

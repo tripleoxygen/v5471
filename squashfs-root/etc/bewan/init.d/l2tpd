@@ -1,0 +1,76 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/init.d/l2tpd
+# $1 or $ARG = start stop restart
+# $2 or $VPNID = VPNInterface object index
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+VPNID=${VPNID:-}
+if [ "$VPNID" = '' ]; then
+  VPNID=${2:-}
+fi
+
+# Sanity check
+check_l2tpd() {
+
+  # Test if network interface is up
+  local wids=`cat $vpndir/depends 2>/dev/null`
+  local wid=0; for wid in `strip $wids`; do
+    [ -f $WAND/$wid/ip/ipaddr ] && break
+  done
+
+  # Enable if command exists and network interface is up
+  local enable="test -f $l2tpcmd -a -f $WAND/$wid/ip/ipaddr"
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_l2tpd() {
+
+  local pid="`cat /var/run/$daemon.pid 2>/dev/null`"
+  base_kill_daemon "$daemon" "$pid"
+
+  # Kill l2tpd now
+  if [ "$pid" != '' ]; then
+    base_call_initd 'inittab'
+    # Wait l2tpd exit
+    while kill -0 $pid; do
+      sleep 1
+    done
+  fi
+}
+
+start_l2tpd() {
+
+  local cmd="`cat $l2tpcmd`"
+  base_add_daemon "$daemon" "$cmd"
+}
+
+main_l2tpd() {
+  eval $PUSH_ARG
+
+  local vpndir="$INTFD/vpn$VPNID"
+  local l2tpcmd="$vpndir/l2tp.cmd"
+  local daemon="openl2tpd-$VPNID"
+
+  check_l2tpd
+  base_log "$INITD/l2tpd $ARG $VPNID" debug
+
+  case $ARG in
+  stop)
+    stop_l2tpd
+    ;;
+  start)
+    start_l2tpd
+    ;;
+  restart)
+    stop_l2tpd
+    start_l2tpd
+    ;;
+  esac
+}
+
+main_l2tpd

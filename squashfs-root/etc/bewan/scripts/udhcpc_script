@@ -1,0 +1,67 @@
+#!/bin/sh
+
+. /etc/bewan/scripts/globals
+. /etc/bewan/lib/base
+
+base_log "/etc/bewan/scripts/udhcpc_script reason=$1 interface=$interface" debug
+
+case $1 in
+	deconfig)
+		if [ -f "$INTFD/$interface/dhcp-up" ]; then
+			# Take wan-up-down mutex
+			base_enter_critical 'wan-up-down'
+			# Get config parameters after taking lock
+			base_call_initd 'setparam'
+			IFNAME=$interface
+			base_call_scripts 'ip-down-dhcp'
+			ifconfig $interface 0.0.0.0
+			# Release wan-up-down mutex
+			base_exit_critical 'wan-up-down'
+		fi
+	;;
+	leasefail)
+		# Take wan-up-down mutex
+		base_enter_critical 'wan-up-down'
+		# Get config parameters after taking lock
+		base_call_initd 'setparam'
+		IFNAME=$interface
+		base_call_scripts 'ip-fail-dhcp'
+
+		if [ -f "$INTFD/$interface/zeroconf" ]; then
+			#Switch to zeroconf
+			IFNAME=$interface
+			base_call_scripts 'zeroconf-dhcp'
+		fi
+		# Release wan-up-down mutex
+		base_exit_critical 'wan-up-down'
+	;;
+	renew|bound)
+		if [ ! -f "$INTFD/$interface/dhcp-up" ]; then
+			# Take wan-up-down mutex
+			base_enter_critical 'wan-up-down'
+			# Get config parameters after taking lock
+			base_call_initd 'setparam'
+
+			IFNAME=${interface:-}
+			IPADDR=${ip:-}
+			SMASK=${subnet:-}
+			BCAST=${broadcast:-}
+			ROUTERS="${router:-}"
+			SERVERS="${dns:-}"
+			DHCPSRV="${serverid:-}"
+			DOMAIN="${domain:-}"
+			DHCP43="${vendorspecific:-}"
+			DHCP121="${staticroutes:-}"
+			DHCP100="${ieee10031:-}"
+			DHCP101="${tcode:-}"
+			DHCP125="${vivendorspec:-}"
+
+			base_call_scripts 'ip-up-dhcp'
+
+			# Release wan-up-down mutex
+			base_exit_critical 'wan-up-down'
+		fi
+	;;
+esac
+
+exit 0

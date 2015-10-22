@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="" />
+<meta name="keywords" content="" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+<link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+<script type="text/javascript" src="../js/morpheus.min.js"></script>
+<script type="text/javascript" src="../js/menu.js"></script>
+<script type="text/javascript" src="../js/dns.js"></script>
+<script type="text/javascript" src="../js/lite.javascript"></script>
+<script type="text/javascript" src="../js/app.javascript"></script>
+<script type="text/javascript" src="../js/base64.javascript"></script>
+<script type="text/javascript" src="../js/configAccess.javascript"></script>
+<script type="text/javascript" src="../js/resets.javascript"></script>
+
+<!--#isAuth level=admin -->
+	<script type="text/javascript">
+		$.event.ready(function() {
+			var util = $.util,
+			pageData = {
+				token: util.parseJson('<!--#echo jsonvar="token=factoryReset,reboot"-->')
+			};
+			Page.init(pageData);
+		});
+	</script>
+<!--#endAuth var=ok-->
+</head>
+<body>
+
+<div id="confirm-bg" class="none"></div>
+<div id="confirm-reboot" class="none">
+	<div class="confirm-window" >
+		<div class="confirm-close">close</div>
+		<table class="setupWifiTable" style="width:500px">
+			<tr><td class="text-left">Are you sure you want to reboot your Power Box?</td></tr>
+			<tr><td class="text-left"><span class="red">Your internet services, telephony and TV may be interrupted momentarily while the Power Box reestablishes the connection. The process can take up to 5 minutes and will automatically return.</span></td></tr>
+			<tr><td>
+				<a class="btn-default-orange-small left" id="reboot"><span>YES, REBOOT</span></a>
+				<a class="btn-default-orange-small left" id="cancelReboot"><span>NO, CANCEL</span></a>
+			</td></tr>
+		</table>
+	</div>
+</div>
+<div id="confirm-reset" class="none">
+	<div class="confirm-window" >
+		<div class="confirm-close">Close</div>
+		<table class="setupWifiTable" style="width:500px">
+			<tr><td class="text-left">Are you sure you want to factory reset your Power Box?</td></tr>
+			<tr><td class="text-left"><span class="red">All changes made will be lost.</span></td></tr>
+			<tr><td>
+				<a class="btn-default-orange-small left" id="reset"><span>YES, RECONFIGURE</span></a>
+				<a class="btn-default-orange-small left" id="cancelReset"><span>NO, CANCEL</span></a>
+			</td></tr>
+		</table>
+	</div>
+</div>
+
+<div id="header-gateway">
+
+	<div class="wrap text-right">
+		
+		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"/></a>
+		<img src="../../img/power-box.png" alt="Power Box GVT"/>
+		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+		
+	</div>
+	
+	<div class="clear"></div>
+	
+</div><!--header-gateway-->
+
+<div id="content">
+	<div class="wrap">
+
+		<div id="conteudo-gateway">
+			
+			<div class="col-192 left">
+				<script type="text/javascript">ImportMenu('menu_resets');</script>
+			</div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->
+			<div class="col-722 left">
+				<h3 class="text-up">Resets</h3>
+				
+				<table class="setupWifiTable" id="resetPanel">
+					<thead>
+						<th colspan="2">OPTIONS</th>
+					</thead>
+					<tbody>
+						<tr>
+							<td>
+								<div class="clear"></div>
+								<a id="confirmReboot" class="btn-default-orange-small left" data-fancybox-type="iframe" ><span>Reboot</span></a>
+							</td>
+							<td>This button will reboot the Power Box. When you click here, your Internet, telephone and TV may not be available until the inicialization has finished. All the Power Box configuration will be preserved.</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="clear"></div>
+								<a  id="confirmReset" class="btn-default-orange-small left" data-fancybox-type="iframe" ><span>RECONFIGURE</span></a>
+							</td>
+							<td>This button will reconfigure the Power Box. When you click here, your Internet, telephone and TV may not be available until the inicialization has finished. All the Power Box configuration will be lost, including the customized name of your Wi-Fi network and the password.</td>
+						</tr>
+					</tbody>
+				</table>
+				<div id="messagePanel" class="bloc none">
+					<h3 class="bloc_header"></h3>
+					<div class="bloc_body">
+						<p class="center">
+							<img alt="Loading" src="/../../img/busy.gif" />
+						</p>
+						<p class="center">
+							Pleae wait while your power box is rebooting. This may take several minutes...
+						</p>
+					</div>
+				</div>
+			</div><!--col-722-->
+<!--#endAuth var=ok-->
+			<div class="clear"></div>
+				
+		</div><!--conteudo-->
+		
+		<div class="clear"></div>
+		
+	</div><!--wrap-->
+	
+</div><!--content-->
+
+</body>	

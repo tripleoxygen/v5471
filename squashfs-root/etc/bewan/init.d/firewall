@@ -1,0 +1,118 @@
+#!/bin/sh
+# /etc/bewan/init.d/firewall $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $WANID = action for wanid
+# $IPPROTO = ipv4 or ipv6 or nothing for both
+
+# $NOPFW = 1, do not start restart port-forwarding
+# $NOIPT = 1, do not reload iptables
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANID=${WANID:-}
+if [ "$WANID" = '' ]; then
+  WANID=${2:-}
+fi
+
+IPPROTO=${IPPROTO:-}
+
+NOPFW=${NOPFW:-0}
+NOIPT=${NOIPT:-0}
+
+# Include function restart_iptables
+. /etc/bewan/lib/wan
+
+[ -d /proc/sys/net/ipv4 ] && [ -f /etc/bewan/lib/ipv4_firewall_functions ] && . /etc/bewan/lib/ipv4_firewall_functions
+[ -d /proc/sys/net/ipv6 ] && [ -f /etc/bewan/lib/ipv6_firewall_functions ] && . /etc/bewan/lib/ipv6_firewall_functions
+
+# Sanity check
+check_firewall() {
+  [ "$IPPROTO" = 'ipv4' ]  && check_firewall_ipv4
+  [ "$IPPROTO" = 'ipv6' ]  && check_firewall_ipv6
+}
+
+stop_firewall() {
+  [ "$IPPROTO" = 'ipv4' ] && stop_firewall_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && stop_firewall_ipv6
+}
+
+start_firewall() {
+  local wandev='WANConnectionDevice_'$WANID
+  local i
+
+  [ "$IPPROTO" = 'ipv4' ] && start_firewall_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && start_firewall_ipv6
+
+  local srvlist; eval srvlist=\${$wandev'_Service_List'}
+  for i in `strip $srvlist`; do
+    local srven; eval srven=\${$wandev'_Service_'$i'_Enable'}
+    [ "$srven" != 1 ] && continue
+
+    local ipproto; eval ipproto=\${$wandev'_Service_'$i'_IPProtocol'}
+
+    case "$ipproto" in
+    'IPv4'|'')
+      [ "$IPPROTO" = 'ipv4' ] && add_service_ipv4 $i
+    ;;
+    'IPv6')
+      [ "$IPPROTO" = 'ipv6' ] && add_service_ipv6 $i
+    ;;
+    'IPv4+IPv6')
+      [ "$IPPROTO" = 'ipv4' ] && add_service_ipv4 $i
+      [ "$IPPROTO" = 'ipv6' ] && add_service_ipv6 $i
+    ;;
+    esac
+  done
+
+  [ "$IPPROTO" = 'ipv4' ] && finalize_firewall_ipv4
+  [ "$IPPROTO" = 'ipv6' ] && finalize_firewall_ipv6
+}
+
+main_firewall() {
+  eval $PUSH_ARG
+  local IPPROTO=$1
+
+  check_firewall
+  base_log "$INITD/firewall $IPPROTO $ARG $WANID" debug
+
+  if [ "$WANID" = "" ]; then
+    [ "$top_arg" = restart ] && restart_iptables
+    return
+  fi
+
+  case $ARG in
+  stop)
+    stop_firewall
+    ;;
+  start)
+    start_firewall
+    ;;
+  restart)
+    stop_firewall
+    start_firewall
+    ;;
+  esac
+}
+
+main_firewall_all() {
+  eval $PUSH_ARG
+  case "$IPPROTO" in
+    ipv4)
+      [ ${IPV4_FIREWALL_LIB:-0} = 1 ] && main_firewall ipv4
+      [ "$top_arg" = restart ] && restart_iptables
+    ;;
+    ipv6)
+      [ ${IPV6_FIREWALL_LIB:-0} = 1 ] && main_firewall ipv6
+      [ "$top_arg" = restart ] && restart_iptables
+    ;;
+    '')
+      [ ${IPV4_FIREWALL_LIB:-0} = 1 ] && main_firewall ipv4
+      [ ${IPV6_FIREWALL_LIB:-0} = 1 ] && main_firewall ipv6
+      [ "$top_arg" = restart ] && restart_iptables
+    ;;
+  esac
+}
+
+main_firewall_all

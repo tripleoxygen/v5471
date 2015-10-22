@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Called on ip-up event on a LAN interface
+# $LANID= LAN connection index
+restart_igmp() {
+	local ok=0
+	local i
+	for i in `cat /var/bewan/igmpproxy.d/dnstreams 2>/dev/null`; do
+		if [ "$i" = "${LANID:-0}" ]; then
+			ok=1
+		break
+	fi
+	done
+	[ $ok = 0 ] && return 0
+
+	local ARG=restart
+	base_call_initd 'igmp'
+}
+
+restart_igmp

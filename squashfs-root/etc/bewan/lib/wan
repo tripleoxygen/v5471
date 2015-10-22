@@ -1,0 +1,346 @@
+#!/bin/sh
+# /etc/bewan/lib/wan
+
+# Common function used by wan scripts
+# setparam must be included
+# WANID must be set
+
+[ ${WAN_LIB:-0} = 1 ] && return
+
+WAN_LIB=1
+
+add_ipv6_linklocal() {
+  local ifname=${1:-}
+  local macaddr=${2:-}
+  local current; current=`ip -6 addr show dev $ifname scope link 2>/dev/null`
+  # No need to create a link local address, we already have one
+  [ -n "$current" ] && return
+
+  [ -z "$macaddr" ] && macaddr=`cat $INTFD/$ifname/macaddr 2>/dev/null`
+  [ -z "$macaddr" ] && macaddr=`ifconfig $ifname | grep HWaddr | sed "s/.*HWaddr //"`
+  local lladdr; lladdr=`compute_linklocal $macaddr`
+  [ -z "$lladdr" ] && return
+  ip -6 addr add $lladdr/64 dev $ifname 2>/dev/null
+}
+
+get_ipv6_linklocal() {
+  local ifname=${1:-}
+  local lladdr="$(ip -6 addr show dev $ifname scope link |grep inet6)"
+  [ "$lladdr" != '' ] && {
+    lladdr=${lladdr##*fe80:}
+    lladdr=${lladdr%% scope link*}
+    lladdr=fe80:$lladdr
+    echo "$lladdr"
+  }
+}
+
+remove_ipv6_linklocal() {
+  local ifname=${1:-}
+  ip -6 addr flush dev $ifname scope link
+}
+
+# start all WANS associated to a specific physical interface
+# $1 = Physical interface object
+# $2 = Physical interface index
+# $3 = Physical interface VLAN number
+
+start_wan_from_physical_interface() {
+  local ARG=restart
+  local IFTYPE=${1:-}
+  local IFINDEX=${2:-}
+  local IFVN=${3:-}
+
+  # Build name of calling physical interface
+  local interface; eval interface=\${$IFTYPE'_'$IFINDEX'_Ifname':-}
+  if [ "$interface" != '' ] && [ -d $INTFD/$interface ]; then
+    if [ "$IFVN" != '' ]; then
+      eval vid=\${$IFTYPE'_'$IFINDEX'_VLANInterface_'$IFVN'_VID':-}
+      [ "$vid" = '' ] && return
+      interface="$interface.$vid"
+    fi
+  fi
+
+  # Loop through all WANConnectionDevice objects
+  local count=${WANConnectionDevice_Count:-0}
+  local WANID=0; while [ $WANID -lt $count ]; do
+    WANID=$(($WANID + 1))
+
+    local wandev='WANConnectionDevice_'$WANID
+
+    local phylst; eval phylst=\${$wandev'_PhysicalInterface_List'}
+
+    # Loop through all PhysicalInterface objects
+    local i ifen iftype ifindex ifvn
+    for i in `strip $phylst`; do
+      eval ifen=\${$wandev'_PhysicalInterface_'$i'_Enable':-0}
+      [ "$ifen" != 1 ] && continue
+
+      eval iftype=\${$wandev'_PhysicalInterface_'$i'_Type'}
+      [ "$iftype" != "$IFTYPE" ] && continue
+
+      eval ifindex=\${$wandev'_PhysicalInterface_'$i'_Index'}
+      [ "$ifindex" != "$IFINDEX" ] && continue
+
+      eval ifvn=\${$wandev'_PhysicalInterface_'$i'_VlanNumber':-}
+      [ "$ifvn" != "$IFVN" ] && continue
+
+      # Special case when an already associated wan has multiple physical interfaces (bridge)
+      # Add physical interface to bridge without restarting the wan
+
+      if [ -f $WAND/$WANID/brctl ] && [ "$interface" != '' ]; then
+
+        # Retrieve name of wan interface
+        local wanif=`cat $WAND/$WANID/ifname`
+        [ "$wanif" = '' ] && continue
+
+        # interface already in bridge ?
+        [ -f $WAND/$WANID/intfs/$interface ] && continue
+
+        # Add interface to wanif bridge
+        brctl addif $wanif $interface
+        # Set cross-links
+        touch $WAND/$WANID/intfs/$interface
+        mkdir -p $INTFD/$interface/wan
+        touch $INTFD/$interface/wan/$WANID
+
+        continue
+      fi
+
+      # wan interface found
+      # Fully restart it
+      base_call_initd 'wan'
+    done
+  done
+}
+
+# Stop all WANS associated to a specific physical interface
+# $1 = Physical network interface name
+
+stop_wan_from_physical_interface() {
+  local ifname=${1:-}
+  local ARG=stop
+  local WANID
+  for WANID in $(ls $INTFD/$ifname/wan/ 2>/dev/null); do
+    # Special case when wan has multiple physical interfaces (bridge)
+    # remove physical interface from the bridge without stopping the wan
+    local count=$(ls $WAND/$WANID/intfs | wc -w)
+    if [ -f $WAND/$WANID/brctl ] && [ $count -gt 1 ]; then
+      local wanif=`cat $WAND/$WANID/ifname`
+      brctl delif $wanif $ifname
+
+      # Remove cross-links
+      rm -f $WAND/$WANID/intfs/$ifname
+      rm -f $INTFD/$ifname/wan/$WANID
+    else
+      base_call_initd 'wan'
+    fi
+  done
+}
+
+# Recompute global firewall rules
+restart_netfilter()
+{
+  if [ "$NOIPT" != 1 ]; then
+    local ARG=restart
+    base_call_initd 'fwrules'
+  fi
+}
+ 
+# Restart iptables
+restart_iptables() {
+  [ "$NOIPT" != 1 ] && {
+    local ARG=restart
+    if [ "$IPPROTO" = 'ipv4' ]; then
+      base_call_initd 'iptables'
+    elif [ "$IPPROTO" = 'ipv6' ]; then
+      base_call_initd 'ip6tables'
+    elif [ "$IPPROTO" = '' ]; then
+      base_call_initd 'iptables ip6tables'
+    fi
+  }
+}
+
+# Check WAN mode:
+# create files according to configuration mode
+
+# wan_bridged: wan is included in a lan bridge
+# wan_ip: wan is an IP network interface
+# wan_ip6: wan is an IP network interface
+# wan_ppp: wan is a PPP network interface
+# wan_ip_bridge: wan interface is a bridge (not exclusive, see wan_ip and wan_ppp)
+
+# vpnid: wan is a VPN network interface (store index)
+# mdmid: wan is a modem 3G interface (store index)
+
+# count: number of network interfaces
+
+# returns false if wrong configuration
+
+wan_check_mode() {
+
+  mkdir -p $WAND/$WANID/intfs
+
+  rm -f $WAND/$WANID/wan_bridged
+  rm -f $WAND/$WANID/wan_ip_bridge
+  rm -f $WAND/$WANID/wan_ip
+  rm -f $WAND/$WANID/wan_ip6
+  rm -f $WAND/$WANID/wan_ppp
+  rm -f $WAND/$WANID/pppoa
+  rm -f $WAND/$WANID/vpnid
+  rm -f $WAND/$WANID/mdmid
+  rm -f $WAND/$WANID/count
+
+  local wandev='WANConnectionDevice_'$WANID
+
+  # PPP or DHCP configuration
+  local ipen; eval ipen=\${$wandev'_WANIPConnection_Enable':-0}
+  local ip6en; eval ip6en=\${$wandev'_WANIP6Connection_Enable':-0}
+  local pppen; eval pppen=\${$wandev'_WANPPPConnection_Enable':-0}
+  local lanid=`cat $BRIDGED/wan$WANID 2>/dev/null`
+
+  # Multiple physical interfaces ?
+  local phylst; eval phylst=\${$wandev'_PhysicalInterface_List'}
+  local i ifen iftype ifindex ifvn vid intf
+  local count=0 vpnen=0 vpnid=0 mdmen=0 mdmid=0 pppoa=''
+
+  # For each physical interface...
+  for i in `strip $phylst`; do
+    eval ifen=\${$wandev'_PhysicalInterface_'$i'_Enable':-0}
+    # Physical interface disabled
+    [ "$ifen" != 1 ] && continue
+
+    eval iftype=\${$wandev'_PhysicalInterface_'$i'_Type'}
+    eval ifindex=\${$wandev'_PhysicalInterface_'$i'_Index'}
+
+    # Physical interface disabled
+    eval ifen=\${$iftype'_'$ifindex'_Enable':-0}
+    [ "$ifen" != 1 ] && continue
+
+    # VPN interface
+    if [ "$iftype" = "VPNInterface" ]; then
+      vpnen=1
+      vpnid=$ifindex
+      intf="vpn$vpnid"
+
+    # Modem interface
+    elif [ "$iftype" = 'ModemInterface' ]; then
+
+      # Dynamic WAN configuration from hotplug (dongles 3G...)
+      mdmen=1
+      mdmid=$ifindex
+      ipen=0
+      pppen=0
+      # IP mode if ipaddr file exists
+      [ -f $MODEMD/$mdmid/ip ] && ipen=1
+      # PPP mode if connecty file exists
+      [ -f $MODEMD/$mdmid/ppp ] && pppen=1
+      # Assign from hotplug
+      intf=`cat $MODEMD/$mdmid/ifname 2>/dev/null`
+
+      [ "$intf" = '' ] && continue
+
+    # Other physical interfaces
+    else
+      eval intf=\${$iftype'_'$ifindex'_Ifname':-}
+      # Physical interface not found
+      [ "$intf" = '' ] && continue
+      [ ! -d $INTFD/$intf ] && continue
+
+      # Physical interface with VLAN tag
+      eval ifvn=\${$wandev'_PhysicalInterface_'$i'_VlanNumber':-}
+      if [ "$ifvn" != '' ]; then
+        eval vid=\${$iftype'_'$ifindex'_VLANInterface_'$ifvn'_VID':-}
+        [ "$vid" = '' ] && continue
+        intf="$intf.$vid"
+        [ ! -d $INTFD/$intf ] && continue
+      fi
+
+      # Special case for PPP over ATM
+      if [ -f ${ATMD:-}/$intf/pppoa ]; then
+        pppoa="$(cat ${ATMD:-}/$intf/pppoa)"
+      fi
+    fi
+
+    # Physical interface ok
+    count=$(($count + 1))
+    touch $WAND/$WANID/intfs/$intf
+  done
+
+  # Check validity of found physical interfaces
+  [ $count -eq 0 ] && return 1
+  echo $count >$WAND/$WANID/count
+
+  if [ $mdmen = 0 ] && [ $vpnen = 0 ]; then
+    # Wan is bridged with a lan
+    if [ "$ipen" = 0 ] && [ "$ip6en" = 0 ] && [ "$pppen" = 0 ] && [ "$lanid" != '' ]; then
+      touch $WAND/$WANID/wan_bridged
+      return 0
+    fi
+
+    # Wan is an IPv4 interface (mutual exclusion with pppen)
+    if ( [ "$ipen" = 1 ] || [ "$ip6en" = 1 ] ) && [ "$pppen" = 0 ]; then
+      [ "$ipen" = 1 ] && touch $WAND/$WANID/wan_ip
+      [ "$ip6en" = 1 ] && touch $WAND/$WANID/wan_ip6
+      if [ $count -gt 1 ]; then
+        # Wan is also a bridge
+        touch $WAND/$WANID/wan_ip_bridge
+      fi
+      return 0
+    # Wan is a PPP interface (mutual exclusion with ipen)
+    elif [ "$ipen" = 0 ] && [ "$pppen" = 1 ]; then
+      [ "$ip6en" = 1 ] && touch $WAND/$WANID/wan_ip6
+      touch $WAND/$WANID/wan_ppp
+      if [ "$pppoa" != '' ]; then
+        # Wan is PPP over ATM
+        echo $pppoa > $WAND/$WANID/pppoa
+      elif [ $count -gt 1 ]; then
+        # Wan is also a bridge
+        touch $WAND/$WANID/wan_ip_bridge
+      fi     
+      return 0
+    fi
+
+    # Bad configuration
+    return 1
+  fi
+
+  # Wan is a modem interface
+  if  [ $mdmen = 1 ] && [ $vpnen = 0 ] && [ $count -eq 1 ]; then
+    # IPv6 has no specific exclusion, so deal with it now
+    [ "$ip6en" = 1 ] && touch $WAND/$WANID/wan_ip6
+
+    if [ "$ipen" = 1 ] && [ "$pppen" = 0 ]; then
+      touch $WAND/$WANID/wan_ip
+    elif [ "$ipen" = 0 ] && [ "$pppen" = 1 ]; then
+      touch $WAND/$WANID/wan_ppp
+    else
+      return 1
+    fi
+    echo $mdmid >$WAND/$WANID/mdmid
+    return 0
+  fi
+  # Wan is an VPN interface
+  if [ $vpnen = 1 ] && [ $count -eq 1 ]; then
+    # Wan is bridged with a lan
+    if [ "$ipen" = 0 ] && [ "$ip6en" = 0 ] && [ "$pppen" = 0 ] && [ "$lanid" != '' ]; then
+      touch $WAND/$WANID/wan_bridged
+    # Wan is an IPv4 interface (mutual exclusion with pppen)
+    elif [ "$ipen" = 1 ] && [ "$pppen" = 0 ]; then
+      touch $WAND/$WANID/wan_ip
+    # Wan is a PPP interface (mutual exclusion with ipen)
+    elif [ "$ipen" = 0 ] && [ "$pppen" = 1 ]; then
+      touch $WAND/$WANID/wan_ppp
+    else
+      return 1
+    fi
+
+    # IPv6 has no specific exclusion, so deal with it now
+    [ "$ip6en" = 1 ] && touch $WAND/$WANID/wan_ip6
+
+    echo $vpnid >$WAND/$WANID/vpnid
+    return 0
+  fi
+  # Check failed
+  return 1
+}
+

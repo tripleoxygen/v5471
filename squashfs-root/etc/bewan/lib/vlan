@@ -1,0 +1,52 @@
+#!/bin/sh
+# /etc/bewan/lib/vlan
+
+# Common default functions used by vlan scripts
+# setparam must be included
+
+[ ${VLAN_LIB:-0} = 1 ] && return
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+VLAN_LIB=1
+
+vlan_utility=vlanctl
+
+vlan_create() {
+  local ifname=${1:-}
+  local vid=${2:-}
+  local priomap=${3:-}
+  local vlan_ifname=$ifname.$vid
+
+  vlanctl --if-create-name $ifname $vlan_ifname
+  vlanctl --if $ifname --set-if-mode-rg
+
+  # VID 0 is reserved for untagged interface
+  if [ $vid -eq 0 ]; then
+      # Push tag and set VID for all others untagged frames from this vlan interface
+      vlanctl --if $ifname --tx --tags 0 --filter-txif $vlan_ifname --rule-append
+
+      # Pop tag and set receive interface for all others tagged frames matching the given VID
+      vlanctl --if $ifname --rx --tags 0 --set-rxif $vlan_ifname --rule-append
+  else
+      # Set its priomap
+      local vlan_qos skb_priority=0
+      for vlan_qos in `strip $priomap`; do
+        vlanctl --if $ifname --tx --tags 0 --filter-txif $vlan_ifname --filter-skb-prio $skb_priority --push-tag --set-vid $vid 0 --set-pbits $vlan_qos 0 --rule-append
+        skb_priority=$(($skb_priority + 1))
+      done
+    
+      # Push tag and set VID for all others untagged frames from this vlan interface
+      vlanctl --if $ifname --tx --tags 0 --filter-txif $vlan_ifname --push-tag --set-vid $vid 0 --rule-append
+    
+      # Pop tag and set receive interface for all others tagged frames matching the given VID
+      vlanctl --if $ifname --rx --tags 1 --filter-vid $vid 0 --pop-tag --set-rxif $vlan_ifname --rule-append
+  fi
+}
+
+vlan_remove() {
+  local vlan_ifname=${1:-}
+  vlanctl --if-delete $vlan_ifname
+}
+
+

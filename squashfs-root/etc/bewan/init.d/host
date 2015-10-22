@@ -1,0 +1,79 @@
+#!/bin/sh
+# /etc/bewan/init.d/host $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+HOSTFILE='/var/tmp/hosts'
+
+stop_hosts() {
+  echo "127.0.0.1 localhost.localdomain localhost" >$HOSTFILE
+}
+
+start_hosts() {
+  local hostip
+  local hostip6
+  local i name
+  for i in `ls $LAND`; do
+
+    local StaticHost; eval StaticHost=\${'LANDevice_'$i'_HostConfig_StaticHost_List':-}
+
+    local hostname address j
+    for j in `strip $StaticHost`; do
+      eval address=\${'LANDevice_'$i'_HostConfig_StaticHost_'$j'_IPAddress':-}
+      eval hostname=\${'LANDevice_'$i'_HostConfig_StaticHost_'$j'_Hostname':-}
+      [ "$hostname" != '' ] && [ "$address" != '' ] && echo "$address $hostname.$Device_Domain $hostname" >>$HOSTFILE
+    done
+
+    # Record LAN only if LANDevice_x_User=1
+    local useren; eval useren=\${'LANDevice_'$i'_User':-0}
+    [ "$useren" != 1 ] && continue;
+
+    hostip=
+    [ -f $LAND/$i/ip/ipaddr ] && hostip=`cat $LAND/$i/ip/ipaddr 2>/dev/null`
+    hostip6=
+    [ -f $LAND/$i/ip6/ipaddr ] && hostip6=`cat $LAND/$i/ip6/ipaddr 2>/dev/null`
+
+    # Nothing to do
+    [ -z "$hostip" -a -z "$hostip6" ] && continue
+
+    [ -n "$hostip" ] && echo "$hostip $Device_Hostname.$Device_Domain $Device_Hostname" >>$HOSTFILE
+    [ -n "$hostip6" ] && echo "$hostip6 $Device_Hostname.$Device_Domain $Device_Hostname" >>$HOSTFILE
+
+    # Put aliases in /etc/hosts
+    [ "$Device_Aliases" = '' ] && continue
+
+    for name in `strip $Device_Aliases`; do
+      [ -n "$hostip" ] && echo "$hostip $name.$Device_Domain $name" >>$HOSTFILE
+      [ -n "$hostip6" ] && echo "$hostip6 $name.$Device_Domain $name" >>$HOSTFILE
+    done
+
+  done
+}
+
+# Acquire the update lock
+base_enter_critical 'host'
+
+base_log "$INITD/host $ARG" debug
+
+case $ARG in
+stop)
+  stop_hosts
+
+  # Flush DNS cache and reload /etc/hosts
+  pid=`cat /var/run/dnsmasq.pid 2>/dev/null`
+  [ "$pid" != '' ] && kill -HUP $pid 2>/dev/null
+  ;;
+start|restart)
+  stop_hosts
+  start_hosts
+
+  # Flush DNS cache and reload /etc/hosts
+  pid=`cat /var/run/dnsmasq.pid 2>/dev/null`
+  [ "$pid" != '' ] && kill -HUP $pid 2>/dev/null
+  ;;
+esac
+
+base_exit_critical 'host'

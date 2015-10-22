@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# Called on ip-up event on a WAN interface
+# $WANID, WAN interface index
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+. /etc/bewan/lib/qos
+
+# run the command given as parameter
+execute() {
+  local res;
+  eval $1
+  res=$?
+  debug_log "$1" "$res"
+  return $res
+}
+
+debug_log() {
+  local dbg;eval dbg=\${'QueueManagement_Debug':-}
+  local message="Successful"
+  [ $2 -ne 0 ] &&  message="Fail ret=$2"
+  [ "x$dbg" = "x1" ] && base_log "[$1] [$message]" debug
+}
+
+setWan_and_setSpeed_intf() {
+
+	local switchid; switchid=0
+	local found; found=0
+	while [ $switchid -lt ${Switch_Count:-0} -a $found -lt 1 ]
+	do
+		switchid=$(($switchid + 1))
+		eval portlist=\${'Switch_'$switchid'_Port_List':-}
+		for portlistid in `strip $portlist`; do
+			local port_en; eval port_en=\${'Switch_'$switchid'_Port_'$portlistid'_Enable':-0}
+			[ $port_en != 1 ] && continue
+
+			local WANIdx; eval WANIdx=\${'Switch_'$switchid'_Port_'$portlistid'_WANEthernetInterfaceIdx':-'NotWan'}
+			local status='Switch_'$switchid'_Port_'$portlistid'_Status'
+			local LinkMode=$(echo "cd $status; get LinkMode" | cli -q)
+			if [ "$WANIdx" = "$wanid" ]; then # this is the one
+				local speed=$(echo $LinkMode |grep -o -E "[0-9]+")
+				speed=`expr $speed \* 99 \/ 100 `
+				#It is mandatory to disable the port if we want to change the FAP 
+				#schedulerIndex (schedulerIndex for lan is 1 / schedulerIndex for wan is 5)
+				# if at start up eth4 was seen as LAN by FAP then we need to changed it  to
+				# WAN (and get 8 queues, instead of 4).  
+				
+ 				execute "fapctl tm --apply --if $wan_ifname --disable"
+				execute "fapctl tm --type --if $wan_ifname --wan"
+				execute "fapctl tm --mode --if $wan_ifname --manual"
+				execute "fapctl tm --ifcfg --if $wan_ifname --manual --kbps $(echo $speed)000 --mbs 2000 --rate"
+				execute "fapctl tm --apply --if $wan_ifname --enable"
+				
+				#Map the TM Queues on switch queues for WAN port
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 0 --swqueue 0"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 1 --swqueue 0"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 2 --swqueue 1"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 3 --swqueue 1"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 4 --swqueue 2"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 5 --swqueue 2"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 6 --swqueue 3"
+				execute "fapctl tm --if $wan_ifname --tmq2swq --queue 7 --swqueue 3"
+
+				found=1;
+				break;
+			fi
+		done
+	done
+}
+
+wanid=${WANETHID:-}
+if [ "$wanid" = '' ]; then
+  wanid=${2:-}
+fi
+
+[ -z "$wanid" ] && return
+
+local wan_ifname; eval wan_ifname=\${'WANEthernetInterface_'$wanid'_Ifname':-}
+#make sure we are in WANEthernet Mode
+
+[ -z "$(ip link show dev $wan_ifname up)" ] && return 
+
+setWan_and_setSpeed_intf
+
+#Configure the WAN ETH queues
+vendor_qos_start_interface WANEthernetInterface $wanid

@@ -1,0 +1,67 @@
+#!/bin/sh
+# Called from /etc/bewan/reboot.d
+# Stop voip
+. /etc/bewan/scripts/globals 
+. /etc/bewan/lib/base
+
+voip_shutdown() {
+	local pid=`cat /var/run/voip.pid 2>/dev/null`
+	if [ "$pid" != "" ]; then
+		# check if pid really there
+		kill -0 $pid
+		if [ $? -eq 1 ]; then
+			#no process ongoing, do cleanup
+			rm -f /var/run/voip.pid 2>/dev/null
+			rm -f /var/run/voip.lock 2>/dev/null
+			return
+		fi
+		# check if voip lock pending
+		local try=0
+		while [[ $try -lt 5 ]] ; do
+			if [ ! -f /var/run/voip.lock ]; then
+				break
+			fi
+			try=`expr $try + 1`
+			base_log "voip lock, wait for 1s... (try=$try) " debug
+			sleep 1
+		done
+		if [ $try -ge 5 ]; then
+			# check if pid really there
+			kill -0 $pid
+			if [ $? -eq 1 ]; then
+				#no process ongoing, do cleanup
+				rm -f /var/run/voip.pid 2>/dev/null
+				rm -f /var/run/voip.lock 2>/dev/null
+				return
+			fi
+			base_log "voip lock, cancel stop request" debug
+			return
+		fi
+
+		# ask for voip stop
+		base_kill_daemon "voip" "$pid"
+		base_call_initd 'inittab'
+
+		# Wait for voip exit
+		try=0
+		while [[ $try -lt 10 ]] ; do
+			kill -0 $pid
+			if [ $? -eq 1 ]; then
+				base_log "voip is not running anymore, exit" debug
+				break
+			fi
+			try=`expr $try + 1`
+			base_log "voip is still running, wait for 1s... (try=$try) " debug
+			sleep 1
+		done
+		#kill -9 if still alive
+		kill -0 $pid
+		if [ $? -eq 0 ]; then
+			base_log "voip is still running => hard KILL" debug
+			base_kill9_daemon "voip" "$pid"
+		fi
+	fi
+}
+
+voip_shutdown
+

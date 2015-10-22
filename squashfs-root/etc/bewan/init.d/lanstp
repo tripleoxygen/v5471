@@ -1,0 +1,39 @@
+#!/bin/sh
+# /etc/bewan/init.d/lanstp $1 $2
+# $1 or $ARG = restart
+# $2 or $LANID = action for lanid
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+[ "$ARG" != restart ] && exit 0
+
+LANID=${LANID:-}
+if [ "$LANID" = '' ]; then
+  LANID=${2:-}
+fi
+
+IFNAME=`cat $LAND/$LANID/ifname 2>/dev/null`
+[ "$IFNAME" = '' ] && ARG=nothing
+
+base_log "$INITD/lanstp $ARG $LANID" debug
+
+[ "$ARG" != restart ] && exit 0
+
+eval STPEN=\${'LANDevice_'$LANID'_EnableSTP'}
+
+STP=off; [ "$STPEN" = 1 ] && STP=on
+brctl stp $IFNAME $STP
+
+if [ "$STPEN" = 1 ]; then
+  eval STP_INTERVAL=\${'LANDevice_'$LANID'_STPInterval'}
+  brctl sethello $IFNAME $STP_INTERVAL
+  brctl setageing $ifname 300
+  brctl setfd $ifname 5
+  brctl setmaxage $ifname 20
+else
+  brctl setageing $ifname 10800
+  brctl setfd $ifname 0
+  brctl setmaxage $ifname 0
+fi

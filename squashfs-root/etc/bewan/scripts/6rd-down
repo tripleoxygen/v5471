@@ -1,0 +1,9 @@
+#!/bin/sh
+
+stop_6rd() {
+	local ARG=stop
+	local WANID=${WANID:-0}
+	base_call_initd '6rd'
+}
+
+stop_6rd

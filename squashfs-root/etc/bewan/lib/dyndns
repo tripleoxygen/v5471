@@ -1,0 +1,370 @@
+#!/bin/sh
+# /etc/init.d/lib/dyndns
+
+DYNDNS_LIB=1
+
+create_dyndns() {
+  local logger='/usr/bin/logger -t dyndns -p daemon.debug'
+  local need_cron=0
+  case "$server" in
+
+    dyndns.it)
+      [ "$password" != '' ] && password=":$password"
+      local lmx=''; [ "$mx" != "" ] && lmx="&mx=$mx"
+      cat >$dyndnscmd <<EOF
+#!/bin/sh
+# \$1, WAN interface index
+# Exit if the script is already running
+set -u
+tnset $lockfile
+[ \$? != 0 ] && exit
+
+STATUS=failed
+ifname=\`cat $WAND/\$1/ip/ifname 2>/dev/null\`
+ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+resolv=\`cat $WAND/\$1/ip/dnssrvlst 2>/dev/null\`
+if [ "\$ipaddr" != "" ]; then
+  echo $host = \$ipaddr | $logger
+  # Get previous recorded IP address
+  previp=\`echo "cd _$cliroot; get Cache" | cli -q\`
+  if [ "\$previp" != '' ]; then
+    # Check for the validity of last recorded DN
+    lastip=\`nslookup -q -i \$ifname $host \$resolv 2>/dev/null\`
+    if [ "\$ipaddr" = "\$lastip" ]; then
+      echo $host is up-to-date | $logger
+      doreq=0
+      STATUS=ok
+    else
+      doreq=1
+    fi
+  else
+    doreq=1
+  fi
+  # Need to send a request
+  if [ "\$doreq" = 1 ]; then
+    RESOLV=''
+    for rsv in \$resolv; do
+      RESOLV="\$RESOLV --dns \$rsv"
+    done
+
+    result=\`curl --interface \$ifname \$RESOLV "http://${username}${password}@streamer.net/nic/update?system=dyndns&hostname=${host}&myip=\$ipaddr${lmx}"\`
+    echo "return code for dyndns.it : \$result" | $logger
+    result=\`echo \$result | cut -f1 -d' '\`
+    if [ "\$result" = "good" ] || [ "\$result" = "nochg" ]; then
+      echo "saving \$ipaddr in CLI" | $logger
+      echo "cd _$cliroot; set Cache \$ipaddr; fcommit" | cli -s
+      STATUS=ok
+    fi
+  fi
+fi
+# Write the status
+echo \$STATUS > $statusfile
+# Release the lock
+rm -f $lockfile
+EOF
+      ;;
+
+    no-ip)
+      local service='';
+      if [ "$server" = 'no-ip' ]; then
+        service='no-ip.com'
+      elif [ "$server" = 'dyndns' ]; then
+        service='dyndns.org -s dyndns'
+      fi
+      [ "$password" != '' ] && password="-p $password"
+      [ "$servername" != '' ] && servername="-H $servername"
+      local lmx=''; [ "$mx" != "" ] && lmx="-m $mx"
+      cat >$dyndnscmd <<EOF
+#!/bin/sh
+# \$1, WAN interface index
+# Exit if the script is already running
+set -u
+tnset $lockfile
+[ \$? != 0 ] && exit
+
+STATUS=failed
+ifname=\`cat $WAND/\$1/ip/ifname 2>/dev/null\`
+ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+resolv=\`cat $WAND/\$1/ip/dnssrvlst 2>/dev/null\`
+if [ "\$ipaddr" != "" ]; then
+  echo $host = \$ipaddr | $logger
+  # Get previous recorded IP address
+  previp=\`echo "cd _$cliroot; get Cache" | cli -q\`
+  if [ "\$previp" != '' ]; then
+    # Check for the validity of last recorded DN
+    lastip=\`nslookup -q -i \$ifname $host \$resolv 2>/dev/null\`
+    if [ "\$ipaddr" = "\$lastip" ]; then
+      echo $host is up-to-date | $logger
+      doreq=0
+      STATUS=ok
+    else
+      doreq=1
+    fi
+  else
+    doreq=1
+  fi
+  # Need to send a request
+  if [ "\$doreq" = 1 ]; then
+    RESOLV=''
+    for rsv in \$resolv; do
+      RESOLV="\$RESOLV -v \$rsv"
+    done
+    pipe "ddnsu -l -S $service $servername -d $host -u $username $password -a \$ipaddr -i \$ifname \$RESOLV -w on $lmx 2>&1" "$logger"
+    if [ \$? = 0 ]; then
+      STATUS=ok
+      # Permanently record the info
+      if [ "\$ipaddr" != "\$previp" ]; then
+        echo "cd _$cliroot; set Cache \$ipaddr; fcommit" | cli -s
+      fi
+    fi
+  fi
+fi
+# Write the status
+echo \$STATUS > $statusfile
+# Release the lock
+rm -f $lockfile
+EOF
+      ;;
+
+    easydns | ezip | dyndns)
+      [ "$cache" != '' ] && {
+        echo "$cache" >$cachefile
+      }
+      local disable_server_name=''
+      if [ "$servername" = '' ]; then
+        disable_server_name=#
+      fi
+
+      local enable_https=''
+      if [ "$https" -ne 1 ]; then
+        enable_https=#
+      fi
+
+      cat >$conffile <<EOF
+cache-file=$cachefile
+service-type=$server
+user=$username:$password
+host=$host
+mx=$mx
+${disable_server_name}server=$servername
+max-interval=2073600
+wildcard
+force-update
+${enable_https}https=$cacert_path
+EOF
+
+      cat >$dyndnscmd <<EOF
+#!/bin/sh
+# \$1, WAN interface index
+# Exit if the script is already running
+set -u
+tnset $lockfile
+[ \$? != 0 ] && exit
+
+dyndns_retry_check_cron() {
+  # Include crontab library
+  if [ "\${CRON_LIB:-0}" = 0 ] && [ -f /etc/bewan/lib/crontab ]; then
+    . /etc/bewan/lib/crontab
+  else
+	  echo "/etc/bewan/lib/crontab not found" | $logger
+	  return 1
+  fi
+
+  local action=\${1:-'REMOVE'}
+
+  case \$action in
+    'ADD')
+      local cmd="/etc/bewan/init.d/dyndns refresh $DYNDNS_ID"
+      crontab_remove dyndns-$DYNDNS_ID-retry
+      # run per every x minutes
+      [ $retry_interval != 0 ] && crontab_add '*/$retry_interval' '*' '*' '*' '*' "\$cmd" dyndns-$DYNDNS_ID-retry
+      ;;
+    'REMOVE')
+      crontab_remove dyndns-$DYNDNS_ID-retry
+      ;;
+  esac
+}
+
+STATUS=failed
+ifname=\`cat $WAND/\$1/ip/ifname 2>/dev/null\`
+ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+resolv=\`cat $WAND/\$1/ip/dnssrvlst 2>/dev/null\`
+hostname=\'$host\'
+if [ "\$ipaddr" != "" ]; then
+  echo $host = \$ipaddr | $logger
+  # set cache file
+  PREVIOUS=\`echo "cd _$cliroot; get Cache" | cli -q\`
+  [ "\$PREVIOUS" != '' ] && echo \$PREVIOUS > $cachefile
+  # check for the validity of recorded DN
+  lastip=\`nslookup -q -i \$ifname \$hostname \$resolv 2>/dev/null\`
+  [ "\$ipaddr" != "\$lastip" ] && rm -f $cachefile
+  RESOLV=''
+  for rsv in \$resolv; do
+    RESOLV="\$RESOLV --resolv \$rsv"
+  done
+  ez-ipupdate -c $conffile -a \$ipaddr -i \$ifname \$RESOLV > $logfile 2>&1
+  local ret=\$?
+  if [ \$ret = 0 ]; then
+    STATUS=ok
+    dyndns_retry_check_cron REMOVE
+  elif [ \$ret = 3 ]; then
+    dyndns_retry_check_cron ADD
+  else
+    dyndns_retry_check_cron REMOVE
+  fi	
+  pipe "cat $logfile" "$logger"
+  # permanently record the info
+  CURRENT=\`cat $cachefile 2>/dev/null\`
+  if [ "\$PREVIOUS" != "\$CURRENT" ]; then
+    echo "cd _$cliroot; set Cache \$CURRENT; fcommit" | cli -s
+  fi
+fi
+# Write the status
+echo \$STATUS > $statusfile
+# Release the lock
+rm -f $lockfile
+EOF
+      # The dyndns account will expire each month if no update is done
+      # We do a refresh every day, letting the ezipupdate timestamped cache
+      # filter the unneeded requests
+      if [ "$server" = dyndns ]; then
+        need_cron=1
+      fi
+      ;;
+
+    dtdns)
+      [ "$password" != '' ] && password="-p $password"
+      cat >$dyndnscmd <<EOF
+#!/bin/sh
+# \$1, WAN interface index
+# Exit if the script is already running
+set -u
+tnset $lockfile
+[ \$? != 0 ] && exit
+
+STATUS=failed
+ifname=\`cat $WAND/\$1/ip/ifname 2>/dev/null\`
+ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+resolv=\`cat $WAND/\$1/ip/dnssrvlst 2>/dev/null\`
+if [ "\$ipaddr" != "" ]; then
+  echo $host = \$ipaddr | $logger
+  # Get previous recorded IP address
+  previp=\`echo "cd _$cliroot; get Cache" | cli -q\`
+  if [ "\$previp" != '' ]; then
+    # Check for the validity of last recorded DN
+    lastip=\`nslookup -q -i \$ifname $host \$resolv 2>/dev/null\`
+    if [ "\$ipaddr" = "\$lastip" ]; then
+      echo $host is up-to-date | $logger
+      doreq=0
+      STATUS=ok
+    else
+      doreq=1
+    fi
+  else
+    doreq=1
+  fi
+  # Need to send a request
+  if [ "\$doreq" = 1 ]; then
+    RESOLV=''
+    for rsv in \$resolv; do
+      RESOLV="\$RESOLV -r \$rsv"
+    done
+    pipe "dtdnsupdate -u $host $password -i \$ipaddr -b \$ifname \$RESOLV 2>&1" "$logger"
+    if [ \$? = 0 ]; then
+      STATUS=ok
+      # Permanently record the info
+      if [ "\$ipaddr" != "\$previp" ]; then
+        echo "cd _$cliroot; set Cache \$ipaddr; fcommit" | cli -s
+      fi
+    fi
+  fi
+fi
+# Write the status
+echo \$STATUS > $statusfile
+# Release the lock
+rm -f $lockfile
+EOF
+    ;;
+
+    athos)
+      local serial=`pzinfo serial`
+      #URL="https://160.92.133.78/cgi-bin/dynname_recette.pl"
+      local url="$host"
+      #CMD="curl --silent --insecure --data \"serialnumber=$SERIAL\" $URL"
+      #FIXME: we must exit from the while loop if an ip-down occurs
+      cat >$dyndnscmd <<EOF
+#!/bin/sh
+# \$1, WAN interface index
+# exit if the script is already running
+set -u
+tnset $lockfile
+[ \$? != 0 ] && exit
+
+STATUS=failed
+echo \$STATUS > $statusfile
+
+ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+if [ "\$ipaddr" = "" ]; then
+  # Release the lock
+  rm -f $lockfile
+  exit
+fi
+
+echo "Current IP : \$ipaddr" | $logger
+previp=\`echo "cd _$cliroot; get Cache" | cli -q\`
+ifname=\`cat $WAND/\$1/ip/ifname 2>/dev/null\`
+resolv=\`cat $WAND/\$1/ip/dnssrvlst 2>/dev/null\`
+
+to_sleep=1
+RESOLV=''
+for rsv in \$resolv; do
+  RESOLV="\$RESOLV --dns \$rsv"
+done
+
+while [ \$to_sleep -gt 0 ]; do
+  RES="\`curl --silent --insecure --interface \$ifname \$RESOLV --data serialnumber=$serial $url | head -n1 \`"
+  RET=\$?
+  if [ \$RET -eq 0 ] && [ "\$RES" != '' ]; then
+    # Got answer
+    echo "RESULT FOR $url : \$RES" | $logger
+    to_sleep="\`echo \$RES | cut -d\; -f3\`"
+  else
+    # Probably lost our IP
+    ipaddr=\`cat $WAND/\$1/ip/ipaddr 2>/dev/null\`
+    [ "\$ipaddr" = '' ] && break
+    # Retry
+    echo "Failed to connect (\$RET), retry in 120s" | $logger
+    to_sleep=120
+  fi
+  # Need to retry
+  if [ \$to_sleep -gt 0 ]; then
+    sleep \$to_sleep
+    continue
+  fi
+  # Success
+  STATUS=ok
+  echo \$STATUS > $statusfile
+  if [ "\$previp" != "\$ipaddr" ]; then
+    echo "cd _$cliroot; set Cache \$ipaddr; fcommit" | cli -s
+  fi
+done
+# Release the lock
+rm -f $lockfile
+EOF
+      ;;
+
+    *);;
+    esac
+    chmod 700 $dyndnscmd 2>/dev/null
+    # If periodicupdate is disabled then we should not add cron entry
+    if [ $periodicupdate = 0 ]; then
+        need_cron=0
+    fi
+    # If dyndns refresh is periodically needed, use crontab
+    if [ $need_cron = 1 ] && [ ${CRON_LIB:-0} = 1 ]; then
+      local cmd="/etc/bewan/init.d/dyndns refresh $DYNDNS_ID"
+      local min=`random 0 59`
+      local hour=`random 0 23`
+      crontab_add $min $hour '*' '*' '*' "$cmd" $cron_name
+    fi
+}

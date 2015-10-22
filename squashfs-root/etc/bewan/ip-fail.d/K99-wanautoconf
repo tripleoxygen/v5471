@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Called by ip-fail
+# $WANID : interface that failed
+
+trigger_autoconf() {
+	# For GVT, don't switch from one mode to another on ip-fail
+	return
+}
+
+trigger_autoconf

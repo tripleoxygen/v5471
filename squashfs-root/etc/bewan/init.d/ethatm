@@ -1,0 +1,108 @@
+#!/bin/sh
+# /etc/bewan/init.d/ethatm $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $ETHID = ethernet interface index
+
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+ETHID=${ETHID:-}
+if [ "$ETHID" = '' ]; then
+  ETHID=${2:-0}
+fi
+
+# Sanity check
+check_ethatm() {
+  if [ "$ifname" = '' ]; then
+    ARG=nothing
+    return
+  fi
+  local dsl=${WANDSLInterfaceConfig_Enable:-0}
+  local enable="test x$en = x1 -a x$dsl = x1 -a -f $DSLD/xdslup"
+  local active="test -d $INTFD/$ifname"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ethatm() {
+  # Destroy VLAN interfaces
+  base_call_initd 'vlan_interface'
+
+  # Stop all associated WANs
+  if [ "$TOP_ARG" = restart ] && [ -f /etc/bewan/lib/wan ]; then
+    . /etc/bewan/lib/wan
+    stop_wan_from_physical_interface $ifname
+  fi
+
+  if [ -f $ATMD/$ifname/pppoa ]; then
+    # PPP over ATM, just remove the directory entry
+    rm -rf $INTFD/$ifname
+  else
+    # Other protocols, unconfigure network interface
+    base_call_initd 'interface'
+  fi
+
+  # Close ATM VC on ATM interface
+  base_call_initd 'atm'
+}
+
+start_ethatm() {
+
+  # Create ATM VC
+  base_call_initd 'atm'
+  # Check that everything is ok
+  [ ! -d $ATMD/$ifname ] && return
+
+  if [ -f $ATMD/$ifname/pppoa ]; then
+    # PPP over ATM, just create the directory entry
+    mkdir -p $INTFD/$ifname
+  else
+    # Other protocols, configure network interface
+    base_call_initd 'interface vlan_interface'
+  fi
+
+  # Start all associated WANs
+  if [ "$TOP_ARG" = restart ] && [ -f /etc/bewan/lib/wan ]; then
+    . /etc/bewan/lib/wan
+    start_wan_from_physical_interface $IFTYPE $ETHID
+  fi
+}
+
+if [ "$ETHID" = 'all' ]; then
+
+  # Start all interfaces
+  ETHID=0; while [ $ETHID -lt ${ATMEthernetInterface_Count:-0} ]; do
+    ETHID=$(($ETHID + 1))
+    base_call_initd 'ethatm'
+  done
+
+  ETHID='all'
+  return
+fi
+
+main_ethatm() {
+  eval $PUSH_ARG
+
+  local IFTYPE='ATMEthernetInterface'
+  local en; eval en=\${$IFTYPE'_'$ETHID'_Enable':-0}
+  local ifname; eval ifname=\${$IFTYPE'_'$ETHID'_Ifname':-}
+
+  check_ethatm
+  base_log "$INITD/ethatm $ARG $ETHID" debug
+
+  case $ARG in
+  stop)
+    stop_ethatm
+    ;;
+  start)
+    start_ethatm
+    ;;
+  restart)
+    stop_ethatm
+    start_ethatm
+    ;;
+  esac
+}
+
+main_ethatm

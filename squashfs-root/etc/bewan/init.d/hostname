@@ -1,0 +1,14 @@
+#!/bin/sh
+# /etc/bewan/init.d/hostname $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+base_log "$INITD/hostname $ARG" debug
+
+# Set hostname
+hostname $Device_Hostname
+
+# Update hostname contained in "mdns/services.conf" file used by mDNSResponder
+base_call_initd "mdns http miniupnpd host"

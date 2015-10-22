@@ -1,0 +1,3 @@
+#!/bin/sh
+# Acquire the time change lock
+tnset /var/bewan/lock/time

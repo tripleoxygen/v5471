@@ -1,0 +1,2 @@
+admin="index.htm auth.htm license.html config_internet.htm services_status.htm config_firewall.htm config_usb.htm admin_password.htm logread.htm config_apps.htm config_wan_mode.htm config_wireless.htm config_lan.htm bb_stats.htm net_utils.htm about.htm resets.htm languages.htm"
+no_auth="index.htm license.html services_status.htm about.htm"

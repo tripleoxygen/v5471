@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+
+ACTION=${1:-}
+WHEN=${2:-}
+
+# load setparam
+. /etc/bewan/init.d/setparam
+
+base_log "Entering storage samba." debug
+
+# We only need to do something after mount/umount operation have been done
+# So only deal with 'post' actions
+if [ "${Services_Samba_StorageEnable:-}" != 1 -o "$WHEN" != "post" ]; then
+   ACTION="drop-$ACTION"
+fi
+
+case "$ACTION" in
+  add)
+    if [ -f /etc/bewan/init.d/samba ]; then
+      /etc/bewan/init.d/samba refresh-shares
+    fi
+    # do nothing
+    ;;
+  remove)
+    if [ -f /etc/bewan/init.d/samba ]; then
+      /etc/bewan/init.d/samba refresh-shares
+    fi
+    # do nothing
+    ;;
+  umount)
+    if [ -f /etc/bewan/init.d/samba ]; then
+      /etc/bewan/init.d/samba refresh-shares
+    fi
+    # do nothing
+    ;;
+  finalize)
+    # reload samba
+    if [ -f /etc/bewan/init.d/samba ]; then
+      /etc/bewan/init.d/samba refresh-shares
+    fi
+    ;;
+  *)
+    base_log "Action $ACTION $WHEN dropped." debug
+    ;;
+esac
+

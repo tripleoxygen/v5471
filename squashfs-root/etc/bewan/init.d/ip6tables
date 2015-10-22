@@ -1,0 +1,320 @@
+#!/bin/sh
+# /etc/bewan/init.d/ip6tables $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+create_subchains6() {
+  local table=$1; local old new
+  for new in `cat $NFD6/$table.subchains 2>/dev/null`; do
+    old=''
+    for old in `cat $NFD6/created/$table.subchains 2>/dev/null`; do
+      [ "$old" = "$new" ] && break;
+    done
+    [ "$old" = "$new" ] && continue;
+    echo ":$new - [0:0]" >>$ip6tables
+  done
+}
+
+destroy_subchains6() {
+  local table=$1; local old new
+  for old in `cat $NFD6/created/$table.subchains 2>/dev/null`; do
+    new=''
+    for new in `cat $NFD6/$table.subchains 2>/dev/null`; do
+      [ "$old" = "$new" ] && break;
+    done
+    [ "$old" = "$new" ] && continue;
+    ip6tables -t $table -F $old 2>&1 | logger
+    ip6tables -t $table -X $old 2>&1 | logger
+  done
+  rm -f $NFD6/created/$table.subchains
+  cp -f $NFD6/$table.subchains $NFD6/created/$table.subchains 2>/dev/null
+}
+
+# Sanity check
+check_ip6tables() {
+  if ! which ip6tables-restore >/dev/null; then
+    ARG=nothing
+    return
+  fi
+  local enable='/bin/true'
+  local active="test -f $ip6tables"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ip6tables() {
+
+  # Return filter table to default
+  ip6tables-restore <<-EOF
+		*filter
+		:INPUT ACCEPT [0:0]
+		:FORWARD ACCEPT [0:0]
+		:OUTPUT ACCEPT [0:0]
+		COMMIT
+	EOF
+
+  # Return mangle table to default
+  ip6tables-restore 2>/dev/null <<-EOF
+		*mangle
+		:PREROUTING ACCEPT [0:0]
+		:INPUT ACCEPT [0:0]
+		:FORWARD ACCEPT [0:0]
+		:OUTPUT ACCEPT [0:0]
+		:POSTROUTING ACCEPT [0:0]
+		COMMIT
+	EOF
+
+  rm -f $NFD6/created/* $ip6tables
+}
+
+start_ip6tables() {
+
+  local i
+  local create
+  local logdrop
+
+  # Create tables
+  if [ -f $ip6tables ]; then
+    create='#'
+  else
+    create=''
+  fi
+
+  # Syslog Dropped Packets
+  logdrop=$Firewall_LogDropped
+  if [ "$logdrop" = 1 ]; then
+    logdrop=''
+  else
+    logdrop='#'
+  fi
+
+  # subchains directories
+  mkdir -p $NFD6/created
+
+  # Reset file
+  rm -f $ip6tables
+
+  local conntrackfilter 
+  eval conntrackfilter=${Conntrack_Filter_Enable:-0}
+
+  # mangle table
+  if [ -f $MANGLE6 -o -f $PREROUTING6 -o -f $POSTROUTING6 ]; then
+    cat >>$ip6tables <<-EOF
+			*mangle
+			:PREROUTING ACCEPT [0:0]
+			:INPUT ACCEPT [0:0]
+			:FORWARD ACCEPT [0:0]
+			:OUTPUT ACCEPT [0:0]
+			:POSTROUTING ACCEPT [0:0]
+			:CONNTRACK_FILTER - [0:0]
+			-F INPUT
+			-F OUTPUT
+			-F FORWARD
+			-F PREROUTING
+			-F POSTROUTING
+			-F CONNTRACK_FILTER
+		EOF
+
+    # Create subchains in mangle table
+    create_subchains6 mangle
+
+    # Add contrack filter jumps if enable
+    if [ $conntrackfilter -eq 1 ]; then
+      local conntrack_reserved max_conn
+      eval conntrack_reserved=${Conntrack_Filter_ReservedConnections:-0}
+      eval max_conn=${Conntrack_MaxEntries:-0}
+      if [ $conntrack_reserved -gt $max_conn ]; then
+        conntrack_reserved=$max_conn
+      fi
+      if [ -f /proc/sys/net/netfilter/nf_conntrack_reserved ]; then      
+        echo $conntrack_reserved > /proc/sys/net/netfilter/nf_conntrack_reserved
+        cat >> $ip6tables <<-EOF
+		-A PREROUTING -m conntrack --ctstate NEW -m connreserved -j CONNTRACK_FILTER
+		-A OUTPUT -m conntrack --ctstate NEW -m connreserved -j CONNTRACK_FILTER
+	EOF
+      fi
+    else
+      if [ -f /proc/sys/net/netfilter/nf_conntrack_reserved ]; then
+        echo 0 > /proc/sys/net/netfilter/nf_conntrack_reserved
+      fi
+    fi
+
+
+    [ -f $MANGLE6 ] && cat <$MANGLE6 >>$ip6tables
+    [ -f $PREROUTING6 ] && cat <$PREROUTING6 >>$ip6tables
+    [ -f $POSTROUTING6 ] && cat <$POSTROUTING6 >>$ip6tables
+    echo COMMIT >>$ip6tables
+  else
+    # No mangle table
+    # but if kernel is not compiled with mangle table
+    # We get an error in ip6tables-restore
+    # So do the cleanup separately
+    ip6tables-restore 2>/dev/null <<-EOF
+			*mangle
+			:PREROUTING ACCEPT [0:0]
+			:INPUT ACCEPT [0:0]
+			:FORWARD ACCEPT [0:0]
+			:OUTPUT ACCEPT [0:0]
+			:POSTROUTING ACCEPT [0:0]
+			COMMIT
+		EOF
+  fi
+
+  # filter table
+  cat >>$ip6tables <<-EOF
+		*filter
+		# Default Policies
+		:INPUT ACCEPT [0:0]
+		:FORWARD ACCEPT [0:0]
+		:OUTPUT ACCEPT [0:0]
+		-F INPUT
+		-F OUTPUT
+		-F FORWARD
+		# LOGDROP Table
+		$create:LOGDROP - [0:0]
+		-F LOGDROP
+		$logdrop-A LOGDROP ! -p udp -m limit --limit 1/s -j LOG --log-prefix "## DISCARD ## " --log-level warning
+		-A LOGDROP -j DROP
+		# DOS Attacks Filter Table
+		$create:FLOOD - [0:0]
+		-F FLOOD
+		-A FLOOD -m limit --limit 10/s --limit-burst 15 -j RETURN
+		-A FLOOD -j LOGDROP
+		$create:ATTACK-FILTER - [0:0]
+		-F ATTACK-FILTER
+		-A ATTACK-FILTER -m conntrack --ctstate INVALID -j LOGDROP
+		-A ATTACK-FILTER -p tcp ! --syn -m state --state NEW -j LOGDROP
+		-A ATTACK-FILTER -p tcp -m tcp --syn -j FLOOD
+		-A ATTACK-FILTER -p icmpv6 --icmpv6-type echo-request -j FLOOD
+		-A ATTACK-FILTER -p tcp --tcp-flags SYN,FIN SYN,FIN -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags SYN,RST SYN,RST -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags ALL FIN,URG,PSH -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags ALL FIN -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags ALL NONE -j LOGDROP
+		-A ATTACK-FILTER -p tcp --tcp-flags ALL ALL -j LOGDROP
+		-A ATTACK-FILTER -j RETURN
+		# Clamp MSS table
+		$create:CLAMP-MSS - [0:0]
+		-F CLAMP-MSS
+	EOF
+  i=0
+  while [ $i -lt $WANConnectionDevice_Count ]; do
+    i=$(($i + 1))
+    cat >>$ip6tables <<-EOF
+			$create:INPUT$i - [0:0]
+			-F INPUT$i
+		EOF
+  done
+
+  # Create conntrack filter table
+  cat >>$ip6tables <<-EOF
+		$create:CONNTRACK_FILTER - [0:0]
+		-F CONNTRACK_FILTER
+	EOF
+
+  if [ $conntrackfilter -eq 1 ]; then
+    local conntrack_reserved max_conn
+    eval conntrack_reserved=${Conntrack_Filter_ReservedConnections:-0}
+    eval max_conn=${Conntrack_MaxEntries:-0}
+    if [ $conntrack_reserved -gt $max_conn ]; then
+      conntrack_reserved=$max_conn
+    fi
+    cat >> $ip6tables <<-EOF
+		-A INPUT -m conntrack --ctstate NEW -m connreserved -j CONNTRACK_FILTER
+		-A FORWARD -m conntrack --ctstate NEW -m connreserved -j CONNTRACK_FILTER
+		-A OUTPUT -m conntrack --ctstate NEW -m connreserved -j CONNTRACK_FILTER
+	EOF
+
+    local rulelist rule
+    eval rulelist=${Conntrack_Filter_Rules_List:-}
+    for rule in `strip $rulelist`; do
+      local ruleen
+      local myrule='Conntrack_Filter_Rules_'$rule
+      eval ruleen=\${$myrule'_Enable':-0}
+      if [ $ruleen -eq 1 ]; then
+        local mark limit
+        eval mark=\${$myrule'_Mark':-}
+        eval limit=\${$myrule'_Limit':-}
+        if [ "$mark" != "" ] && [ "$limit" != "" ]; then
+          cat >> $ip6tables <<-EOF
+		-A CONNTRACK_FILTER -m connmarklimit ! --marklimit $mark/$limit -j RETURN
+		EOF
+        fi
+      fi
+    done
+    cat >> $ip6tables <<-EOF
+	-A CONNTRACK_FILTER -j LOGDROP
+	EOF
+  fi
+
+  # Create subchains in filter table
+  create_subchains6 filter
+  cat >>$ip6tables <<-EOF
+		-A INPUT -i lo -j ACCEPT
+		-A FORWARD -p tcp --tcp-flags SYN SYN -j CLAMP-MSS
+		-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+	EOF
+  for i in `ls $WAND`; do
+    local ifname=`cat $WAND/$i/ip6/ifname 2>/dev/null`
+    if [ "$ifname" != '' ]; then
+      # Filter rules
+      if [ -f "$WAND/$i/fw6/filter" ]; then
+        cat <$WAND/$i/fw6/filter >>$ip6tables
+        echo "-A INPUT -i $ifname -j INPUT$i" >>$ip6tables
+      else
+        echo "-A INPUT -i $ifname -j ACCEPT" >>$ip6tables
+      fi
+      # Clamp MSS rule
+      if [ -f $WAND/$i/ip6/mtu ]; then
+        local mtu=`cat $WAND/$i/ip6/mtu`
+        if [ "$mtu" -lt 1500 ]; then
+          # For IPv6 CLAMP-MSS target subtraction of 60 bytes is already done by reading type header
+          cat >>$ip6tables <<-EOF
+						-A CLAMP-MSS -o $ifname -p tcp -j TCPMSS --clamp-mss $mtu
+						-A CLAMP-MSS -i $ifname -p tcp -j TCPMSS --clamp-mss $mtu
+					EOF
+        fi
+      fi
+    fi
+  done
+  # Insert additional extra rules if any
+  if [ -f '/var/bewan/dynamic-rules' ]; then
+    cat </var/bewan/dynamic-rules >>$ip6tables
+  fi
+
+  # Global firewall Rules
+  if [ -f $FIREWALL6 ]; then
+    cat <$FIREWALL6 >>$ip6tables
+  fi
+  # Commit filter table
+  echo COMMIT >>$ip6tables
+
+  ip6tables-restore -n $ip6tables 2>&1 | base_log - debug
+
+  # Now destroy old subchains with no more links
+  destroy_subchains6 filter
+  destroy_subchains6 mangle
+}
+
+main_ip6tables() {
+  eval $PUSH_ARG
+
+  local ip6tables=/var/bewan/ip6tables
+
+  check_ip6tables
+  base_log "$INITD/ip6tables $ARG" debug
+
+  case $ARG in
+  stop)
+    stop_ip6tables
+    ;;
+  start|restart)
+    start_ip6tables
+    ;;
+  esac
+}
+
+main_ip6tables

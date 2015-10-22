@@ -1,0 +1,88 @@
+#!/bin/sh
+# vlantagctl $switchname $accesstype $action $ports $vid $fid $members $tagged $index 
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+local cpu_port=8
+
+disable_vlan() {
+  base_log "${switchname} : disabling VLAN 802.1Q mode" debug
+  # Disable the IEEE 802.1Q feature
+  switchctl $switchname $accesstype -S "EN_1QVLAN=0"
+  # Clear the VLAN table
+  switchctl $switchname $accesstype -S 1Q_RW_CMD=2
+  switchctl $switchname $accesstype -S 1Q_START=1
+}
+
+enable_vlan() {
+  base_log "${switchname} : enabling VLAN 802.1Q mode" debug
+  # Activate the IEEE 802.1Q feature
+  switchctl $switchname $accesstype -S "EN_1QVLAN=1"
+}
+
+new_vlan() {
+  # Add CPU port to members map
+  membersmap=$(( ${membersmap} | (1 << ${cpu_port}) ))
+
+  # Add CPU port (must be tagged)
+  taggedmap=$(( ${taggedmap} | (1 << ${cpu_port}) ))
+
+  # Compute untagged map
+  local untaggedmap=$(( ${membersmap} & ~${taggedmap} ))
+
+  base_log "${switchname} : creating vlan VID=${vid} with UNTAGGED=${untaggedmap} TAGGED=${taggedmap} MEMBERS=${membersmap}" debug
+
+  # Set PVID for untagged ports that are members of this VLAN
+  local untaggedpt
+  for untaggedpt in 0 1 2 3 4 5
+  do
+    local ut=$(( ${untaggedmap} & (1 << ${untaggedpt}) ))
+    if [ $ut -ne 0 ]; then
+      base_log "${switchname} : set PVID ${vid} for port ${untaggedpt}" debug
+      switchctl $switchname $accesstype -S P${untaggedpt}_DEFAULT_VID=${vid}
+    fi
+  done
+
+  # Define which ports are part of the VLAN group
+  switchctl $switchname $accesstype -S 1Q_FWDMAP=${membersmap}
+  switchctl $switchname $accesstype -S 1Q_UNTAGMAP=${untaggedmap}
+  # Set VLAN ID
+  switchctl $switchname $accesstype -S 1Q_VID_IDX_TABLE=${vid}
+  # Prepare a write operation
+  switchctl $switchname $accesstype -S 1Q_RW_CMD=0
+  # Start the write operation
+  switchctl $switchname $accesstype -S 1Q_START=1
+}
+
+local switchname=${1:-}
+local accesstype=${2:-}
+local action=${3:-}
+
+case "$action" in 
+  disable)
+    disable_vlan
+    ;;
+
+  enable)
+    enable_vlan
+    ;;
+
+  new)
+    local ports=${4:-}
+    local vid=${5:-}
+    local fid=${6:-}
+    local membersmap=${7:-}
+    local taggedmap=${8:-}
+    local index=${9:-}
+    new_vlan
+    ;;
+
+  post_new)
+    ;;
+
+  *)
+    ;;
+esac
+

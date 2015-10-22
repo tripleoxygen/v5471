@@ -1,0 +1,12 @@
+#!/bin/sh
+
+. /etc/bewan/lib/lan
+
+start_delegated_prefix() {
+  if [ -n "${DPREFIX:-}" ]; then
+    echo -n $DPREFIX > $WAND/$WANID/ip6/dprefix
+    restart_delegated_prefix
+  fi
+}
+
+start_delegated_prefix

@@ -1,0 +1,109 @@
+#!/bin/sh
+# /etc/bewan/init.d/ethlink $1
+# $1 or $ARG = start stop restart
+# $2 = WAN Ethernet interface index to monitor
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+WANETHID=${WANETHID:-}
+if [ "$WANETHID" = '' ]; then
+  WANETHID=${2:-all}
+fi
+
+# Sanity check
+check_ethlink() {
+  local en; eval en=\${'WANEthernetInterface_'${WANETHID}'_LinkMonitor_Enable':-0}
+  local enable="test x$en = x1"
+  local active="test -f /var/bewan/waneth_linkmon${WANETHID}"
+  base_check_arg "$enable" "$active"
+}
+
+stop_ethlink() {  
+  rmmod linkmon linkmon_hal
+  rm -f /var/bewan/waneth_linkmon${WANETHID}
+}
+
+start_ethlink() {
+  local sw_idx=0
+  local access_type=''
+  local wan_idx=''
+  local wan_phy=''
+  local manage_carrier; eval manage_carrier=\${'WANEthernetInterface_'${WANETHID}'_LinkMonitor_ManageCarrier':-0}
+
+  # First, let's find our WAN ethernet interface
+  while [ "$sw_idx" -lt ${Switch_Count:-0} ]; do
+    sw_idx=$(($sw_idx + 1))
+
+    local port_idx=0
+    local port_list; eval port_list=\${'Switch_'$sw_idx'_Port_List':-}
+
+    for port_idx in `strip $port_list`; do
+      local port_en; eval port_en=\${'Switch_'$sw_idx'_Port_'$port_idx'_Enable':-0}
+      [ $port_en != 1 ] && continue
+
+      eval wan_idx=\${'Switch_'$sw_idx'_Port_'$port_idx'_WANEthernetInterfaceIdx':-}
+      [ -z "$wan_idx" ] && continue
+
+      eval wan_phy=\${'Switch_'$sw_idx'_Port_'$port_idx'_PhyId':-}
+      [ -z "$wan_phy" ] && continue
+
+      if [ "$wan_idx" -eq "$WANETHID" ]; then
+        break
+      fi
+    done
+
+    # No need to continue if we have something
+    [ -n "$wan_idx" -a -n "$wan_phy" -a "$wan_idx" -eq "$WANETHID" ] && break
+  done
+
+  # No wan identified
+  [ -z "$wan_idx" -o -z "$wan_phy" ] && return
+
+  local wan_en; eval wan_en=\${'WANEthernetInterface_'$wan_idx'_Enable':-0}
+  [ "$wan_en" != 1 ] && return
+
+  local wan_name; eval wan_name=\${'WANEthernetInterface_'$wan_idx'_Ifname':-}
+  [ "$wan_name" = '' ] && return
+
+  eval access_type=\${'Switch_'$sw_idx'_AccessType':-}
+
+  modprobe linkmon_hal
+  modprobe linkmon access_type=$access_type wan_name=$wan_name manage_carrier=$manage_carrier phy_num=$wan_phy waneth_idx=$WANETHID
+  touch /var/bewan/waneth_linkmon${WANETHID}
+}
+
+main_ethlink() {
+  eval $PUSH_ARG
+
+  check_ethlink
+  base_log "$INITD/ethlink $ARG ${WANETHID}" debug
+
+  case $ARG in
+  stop)
+    stop_ethlink
+    ;;
+  start)
+    start_ethlink
+    ;;
+  restart)
+    stop_ethlink
+    start_ethlink
+    ;;
+  esac
+}
+
+if [ "$WANETHID" = 'all' ]; then
+  TMPWANETHID=$WANETHID
+  local count=${WANEthernetInterface_Count:-0}
+  WANETHID=0
+  while [ $WANETHID -lt $count ]; do
+    WANETHID=$(($WANETHID + 1))
+    base_call_initd 'waneth_linkmon'
+  done
+  WANETHID=$TMPWANETHID
+  return
+fi
+
+main_ethlink

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Release the time change lock
+rm -f /var/bewan/lock/time
+# Signal DHCP server to update leases
+killall -ALRM dnsmasq 2>/dev/null

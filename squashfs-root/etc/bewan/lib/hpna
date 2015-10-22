@@ -1,0 +1,117 @@
+#!/bin/sh
+# vim: set ts=2 sw=2 et:
+# /etc/bewan/lib/hpna
+
+# specific vendor functions used by hpna scripts
+# setparam must be included
+
+# Working variables
+
+if [ ${HPNA_LIB_LOADED:-0} -eq 1 ]; then
+  return
+fi
+
+check_vendor_hpna() {
+  which hpna_loadfw >/dev/null && which hpna_address >/dev/null
+  return $?
+}
+
+start_vendor_hpna() {
+  local maccmd; local ipaddr; local options=''
+
+  case "$HPNA_LogicalInterface_Type" in
+    LANDevice)
+      ipaddr=`cat $LAND/$HPNA_LogicalInterface_Index/ip/ipaddr`
+      maccmd='pzinfo lanmac'
+    ;;
+    *)
+    ;;
+  esac
+  ([ -z "$ipaddr" ] || ! isip $ipaddr) && return
+  echo $ipaddr >$HPNAD/ipaddr
+
+  # Reset hpna device
+  ledctl Shpna_rst && sleep 1 && ledctl shpna_rst && sleep 1
+
+  # Find hpna chips
+  local devmac; local macaddr
+  devmac=$(hpna_address -i $ipaddr)
+  devmac=$(echo ${devmac##*.})
+  [ -z "$devmac" ] && devmac='00:c5:d9:00:00:00'
+  macaddr=$devmac
+
+  local macoff=${HPNA_MacOffset:-0}
+  [ "$macoff" = '' ] && macoff=0
+  local override=${HPNA_MACAddressOverride:-0}
+  local omacaddr=${HPNA_MACAddress:-}
+
+  # Override MAC address with config parameter
+  if [ "$override" = 1 ] && [ "$omacaddr" != '' ]; then
+    macaddr="$omacaddr"
+  # Get MAC address from page zero and apply an offset
+  else
+    macaddr=`$maccmd`
+    macaddr=`macoffset $macoff $macaddr`
+  fi
+
+  macaddr=`echo $macaddr |tr [A-F] [a-f]`
+
+  cp /etc/bewan/coppergate/3210/fw.bin $HPNAD/fw.bin
+  cp /etc/bewan/coppergate/3210/diagsw.bin $HPNAD/diagsw.bin
+
+  if [ "$HPNA_Romless" = 1 ]; then
+    hpna_loadfw -i $ipaddr -m $devmac $options -f $HPNAD/fw.bin || return 1
+
+  elif [ "$devmac" != "$macaddr" ]; then
+    #TODO: we want to compare firmware version to know when to upgrade
+    # or if something is wrong with current running firmware
+    #hpna_getimage -i $ipaddr -m $devmac -f $HPNAD/fw.bin || return 1
+    hpna_prog -i $ipaddr -m $devmac -p $HPNAD/diagsw.bin -f $HPNAD/fw.bin -u $macaddr -s || return 1
+  fi
+
+  # Save macaddress for use by other coppergate tools
+  echo $macaddr >$HPNAD/macaddr
+
+  # Sanity check
+  hpna_address -i $ipaddr |grep -q ^$macaddr$ || {
+    base_log "Could not bring HPNA device up (mac address $macaddr)" debug
+    return 1
+  }
+  ARG=start
+  base_call_initd 'hpna_statusd'
+
+}
+
+# ~ # hpna_stats -i $(cat /var/bewan/hpna.d/ipaddr) -m $(cat /var/bewan/hpna.d/macaddr)
+# tx_pkt: 166
+# rx_pkt: 2
+# tx_byte: 15056
+# rx_byte: 234
+# tx_bcast: 53
+# rx_bcast: 0
+# tx_mcast: 110
+# rx_mcast: 0
+# rx_crc: 0
+# rx_short: 0
+# tx_short: 0
+# tx_dropped: 163
+# rx_dropped: 0
+# ctl_loc_req: 3
+# ctl_loc_rep: 3
+# ctl_rem_req: 0
+# ctl_rem_rep: 0
+# avg_period:     1019898
+# avg_idle:       (98.62%)
+# avg_tx: (1.18%)
+# cyc_period:     14998
+# cyc_idle:       (98.64%)
+# cyc_tx: (1.16%)
+
+stop_vendor_hpna() {
+  ledctl Shpna_rst
+  ARG=stop
+  base_call_initd 'hpna_statusd'
+
+}
+
+HPNA_LIB_LOADED=1

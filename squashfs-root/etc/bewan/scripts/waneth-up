@@ -1,0 +1,55 @@
+#!/bin/sh
+# /etc/bewan/scripts/waneth-up
+# called when cable is plugged in WAN Ethernet port
+# $1 : WANETHID
+
+WANETHID=${WANETHID:-}
+if [ "$WANETHID" = '' ]; then
+  WANETHID=${1:-}
+fi
+
+. /etc/bewan/scripts/globals
+. /etc/bewan/lib/base
+. /etc/bewan/lib/phy
+
+main_waneth_up() {
+  base_log "$SCRIPTD/waneth-up" debug
+  
+  # Take onchange mutex
+  base_enter_critical 'onchange'
+  
+  # Get config parameters after taking lock, else parameters could be outdated
+  base_call_initd 'setparam'
+
+  # Check the associated phy state
+  local phy_state=''
+  retrieve_phy_state WANEthernetInterface ${WANETHID}
+
+  if [ "$phy_state" -eq "1" ] && [ ! -f $WANETHD/wanethup_${WANETHID} ]; then  
+    base_log "$SCRIPTD/waneth-up entered" debug
+
+    # Create flag file
+    touch $WANETHD/wanethup_${WANETHID}
+    
+    NOIPT=1
+    for script in `find /etc/bewan/waneth-up.d -follow -type f 2>/dev/null | sort`; do
+      base_log "$script up $WANETHID" debug
+      . $script up $WANETHID
+    done
+    
+    # Restart netfilter
+    IPPROTO=
+    ARG=restart
+    base_call_initd 'fwrules iptables ip6tables'
+    
+    base_call_initd 'inittab'
+    
+    # Exit waneth-up-down critical section
+    base_log "$SCRIPTD/waneth-up exited" debug
+  fi
+    
+  # Release onchange mutex
+  base_exit_critical 'onchange'
+}
+
+main_waneth_up

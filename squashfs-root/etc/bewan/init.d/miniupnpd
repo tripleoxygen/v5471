@@ -1,0 +1,115 @@
+#!/bin/sh
+# /etc/bewan/init.d/miniupnpd $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+# Include miniupnpd shell library
+if [ "${MINIUPNPD_LIB:-0}" = 0 ]; then
+  . /etc/bewan/lib/miniupnpd
+fi
+
+##################################################
+# Update insertion of UPNP-DNAT table
+##################################################
+restart_firewall() {
+  local inet="`cat $WAND/internet 2>/dev/null`"
+  local NOPFW=1
+  local ARG=restart
+  local WANID
+  for WANID in `strip $inet`; do
+    if [ ! -f $RCRUNNING ]; then
+      base_call_initd 'firewall'
+    fi
+  done
+}
+
+##################################################
+# Sanity check
+##################################################
+check_miniupnpd() {
+  if [ ! -f /usr/bin/miniupnpd ]; then
+    ARG=nothing
+    return
+  fi
+  local enable="test x$en = x1 -o x$eniCam = x1"
+  local active='base_exist_daemon miniupnpd'
+  base_check_arg "$enable" "$active"
+}
+
+##################################################
+#------STOP------
+##################################################
+stop_miniupnpd() {
+  local pid="`pidof miniupnpd`"
+  base_kill_daemon miniupnpd "$pid"
+  # Flush port mapping entries
+  # They will be rebuild from lease file
+  iptables -t nat -F UPNP-DNAT
+
+  # Remove port file so that status stop showing this port
+  rm -f $home/http.port
+
+  # Remove lease file if miniupnp is restarted in iCam detection mode only
+  if [ "$en" != "1" ]; then
+    rm -f $home/upnp.leases
+  fi
+  
+  [ "$ARG" = stop ] && rm -rf $home
+}
+
+##################################################
+#------START------
+##################################################
+start_miniupnpd() {
+  mkdir -p $home
+  miniupnpd_build_configfile
+
+  # install daemon
+  if [ -f $conf ]; then
+    local debug=''
+    [ "$Services_MiniUPnPd_Debug" = 1 ] && debug='-d'
+    local cmd="/usr/bin/miniupnpd $debug -f $conf"
+    base_add_daemon miniupnpd "$cmd"
+  fi
+}
+
+##################################################
+#------MAIN-------
+##################################################
+main_miniupnpd() {
+  eval $PUSH_ARG
+
+  local en=$Services_MiniUPnPd_Enable
+  if [ "$Services_MiniUPnPd_EnableUPnP" != 1 ] && [ "$Services_MiniUPnPd_EnableNATPMP" != 1 ]; then
+    en=0
+  fi
+  local eniCam=$Services_MiniUPnPd_EnableiCamDetection
+
+  check_miniupnpd
+  base_log "$INITD/miniupnpd $ARG" debug
+
+  local home='/var/bewan/miniupnp.d'
+  local conf="$home/miniupnpd.conf"
+
+  case $ARG in
+  stop)
+    stop_miniupnpd
+    [ "$top_arg" = restart ] && restart_firewall
+    ;;
+  start)
+    start_miniupnpd
+    [ "$top_arg" = restart ] && restart_firewall
+    ;;
+  restart)
+    stop_miniupnpd
+    start_miniupnpd
+    ;;
+  esac
+}
+
+##################################################
+#------WORK-------
+##################################################
+main_miniupnpd

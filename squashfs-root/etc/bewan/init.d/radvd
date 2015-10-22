@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# /etc/bewan/init.d/radvd $1 $2
+# $1 or $ARG = start stop restart
+# $2 or $IFNAME = action for interface name
+
+if [ "${ARG:-}" = '' ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+IFNAME=${IFNAME:-}
+if [ "$IFNAME" = '' ]; then
+  IFNAME=${2:-}
+fi
+
+# Sanity check
+check_radvd() {
+  if ! which radvd >/dev/null; then
+    ARG=nothing
+    return;
+  fi
+  local enable="test -f $daemon_conf"
+  local active="base_exist_daemon $daemon"
+  base_check_arg "$enable" "$active"
+}
+
+stop_radvd() {
+  local pid=`cat $daemon_pid`
+  base_kill_daemon $daemon "$pid"
+  # Kill radvd now
+  if [ "$pid" != '' ]; then
+    base_call_initd 'inittab'
+    # Wait radvd exit
+    while kill -0 $pid; do
+      sleep 1
+    done
+  fi
+}
+
+start_radvd() {
+  local cmd="radvd -C $daemon_conf -p $daemon_pid $ifname"
+  base_add_daemon $daemon "$cmd"
+}
+
+
+main_radvd() {
+  eval $PUSH_ARG
+
+  local ifname="$IFNAME"
+  local daemon="radvd-$ifname"
+  local daemon_pid="/var/run/$daemon.pid"
+  local daemon_conf="$RADVDD/$ifname.conf"
+
+  check_radvd
+  base_log "$INITD/radvd $ARG $ifname" debug
+
+  case $ARG in
+  stop)
+    stop_radvd
+    ;;
+  start)
+    start_radvd
+    ;;
+  restart)
+    stop_radvd
+    start_radvd
+    ;;
+  esac
+}
+
+main_radvd

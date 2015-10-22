@@ -1,0 +1,22 @@
+#!/bin/sh
+# /etc/bewan/scripts/ip-fail
+# included in /etc/bewan/scripts/ip-fail-dhcp
+# included in /etc/bewan/scripts/ip-fail-ppp
+
+# environment variable
+# WANID   wan interface index
+
+WANID=${WANID:-0}
+
+base_log "$SCRIPTD/ip-fail $WANID started" debug
+
+# Include scripts found in /etc/bewan/ip-fail.d directory
+trap base_reboot_on_exit EXIT
+for script in `find /etc/bewan/ip-fail.d -follow -type f | sort`; do
+  base_log "$script $WANID" debug
+  . $script $WANID
+done
+trap '' EXIT
+[ ! -f $RCRUNNING ] && base_call_initd 'inittab'
+
+base_log "$SCRIPTD/ip-fail $WANID exited" debug

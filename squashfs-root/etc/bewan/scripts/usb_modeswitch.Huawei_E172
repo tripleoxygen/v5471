@@ -1,0 +1,11 @@
+########################################################
+# Huawei devices
+#
+# Contributor: Hans Kurent, Denis Sutter, Vincent Teoh
+
+DefaultVendor=0x12d1
+DefaultProduct=0x1003
+
+#TargetClass=0xff
+
+HuaweiMode=1

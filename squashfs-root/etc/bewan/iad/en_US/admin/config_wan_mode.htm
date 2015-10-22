@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- SEO [START] -->
+<meta name="description" content="Wan Mode" />
+<meta name="keywords" content="Wan Mode" />
+<title>GVT</title>
+
+<!-- SEO [END] -->
+
+<link rel="stylesheet" type="text/css" href="../../css/gateway.css" />
+
+<script type="text/javascript" src="../js/morpheus.min.js"></script>
+<script type="text/javascript" src="../js/menu.js"></script>
+<script type="text/javascript" src="../js/dns.js"></script>
+<script type="text/javascript" src="../js/lite.javascript"></script>
+<script type="text/javascript" src="../js/app.javascript"></script>
+<script type="text/javascript" src="../js/base64.javascript"></script>
+<script type="text/javascript" src="../js/configAccess.javascript"></script>
+<script type="text/javascript" src="../js/config_wan_mode.javascript"></script>
+<!--#isAuth level=admin -->
+<script type="text/javascript">
+	$.event.ready(function() {
+		var util = $.util,
+		pageData = {
+			token: util.parseJson('<!--#echo jsonvar="token=WANConnectionDevice,Services_WANAutoConfig_Enable,WANDSLInterfaceConfig_Enable,WANEthernetInterface_1_Enable,Services_GvtConfig_WANEthMode,LANDevice_1_HostConfig"-->'),
+			WANConnectionDevice: util.parseJson('<!--#echo jsonvar="cli=WANConnectionDevice"-->'),
+			WANAutoConfig: util.parseJson('<!--#echo jsonvar="cli=Services_WANAutoConfig_Enable"-->'),
+			WANDSLInterfaceConfig: util.parseJson('<!--#echo jsonvar="cli=WANDSLInterfaceConfig_Enable"-->'),
+			WANEthernetInterface: util.parseJson('<!--#echo jsonvar="cli=WANEthernetInterface_1_Enable"-->'),
+			WANEthMode: util.parseJson('<!--#echo jsonvar="cli=Services_GvtConfig_WANEthMode"-->'),
+			AssociatedConnection: util.parseJson('<!--#echo jsonvar="cli=LANDevice_1_HostConfig_AssociatedConnection"-->')
+		};
+		Page.init(pageData);
+		$("#tab-01").slideUp("normal");
+		$("#menu-mode li").find("a").addClass("active");
+		$("#menu-mode").find("a").bind("click", function(){ 
+			var cur_tab_idx = $("#menu-mode li a.active").attr("rel");
+			$("#menu-mode li a").removeClass("active");
+			$(this).addClass("active");
+			$("#tab-" + cur_tab_idx).slideDown("normal", function() {
+				var i = $("#menu-mode li a.active").attr("rel");
+				$("#tab-" + i).slideUp("normal");
+			});
+			return false;
+		});
+	});
+</script>
+<!--#endAuth var=ok-->
+</head>
+
+<body>
+
+<div id="header-gateway">
+
+	<div class="wrap text-right">
+		
+		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
+		<img src="../../img/power-box.png" alt="Power Box GVT">
+		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
+		
+	</div>
+	
+	<div class="clear"></div>
+	
+</div><!--header-gateway-->
+
+<div id="content">
+
+	<div class="wrap">
+
+		<div id="conteudo-gateway">
+			
+			<div class="col-192 left">
+				<script type="text/javascript">ImportMenu('menu_wan_mode');</script>
+			</div><!--col-192-->
+<!--#isNotAuth level=admin -->
+<div id="level_auth" style="display:none;">admin</div>
+<!--#include file="auth.htm" -->
+<!--#isAuth level=admin -->
+			<div class="col-722 left" id="col-722">
+			
+				<h3 class="text-up">Wan Mode</h3>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+				<div id="menu-mode">
+					<ul>
+						<li><a href="#" rel="01" >Connection Type</a></li>
+						<li><a href="#" rel="02" >Operation Mode</a></li>
+					</ul>
+				</div>
+<!--#endCheck var=none -->
+			<div class="clear"></div>
+			
+			<div id="tab-01" class="tab">
+				<table class="setupWifiTable" cellspacing="0" cellpadding="0">
+					<thead>
+						<tr>
+							<th colspan="2">Wan Mode</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="firstChild">Update Link:</td>
+							<td>
+								<select id="WANAccess_Type">
+									<option value="Auto">Auto</option>
+									<option value="DSL">DSL</option>
+									<option value="Ethernet">Ethernet</option>
+								</select>
+							</td>
+						</tr>
+						<tr id="WANEthModeLine">
+							<td class="firstChild">Mode:</td>
+							<td>
+								<select id="Services_GvtConfig_WANEthMode">
+									<option value="Default">Default</option>
+									<option value="Port1">Port1</option>
+									<option value="Port2">Port2</option>
+									<option value="Port3">Port3</option>
+									<option value="Port4">Port4</option>
+									<option value="Port5">Port5</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2" class="strong warning">
+							Warning: Modifying any settings in this page should only be done by a trained GVT Technician or it can result in a disruption of service.
+							</td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td colspan="2">
+								<a  id="cancel" class="btn-default-orange-small right"><span>Cancel</span></a>
+								<a id="save" class="btn-default-orange-small right"><span>Save</span></a>
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+<!--#check Services_GvtConfig_AccessClass=4&file= -->
+			<div id="tab-02" class="tab">
+								<table class="setupWifiTable" cellspacing="0" cellpadding="0">
+					<thead>
+						<tr>
+							<th colspan="2">Router - Bridge</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class="firstChild">Mode:</td>
+							<td>
+								<select id="Bridge_Mode">
+									<option value="Router">Router (Default)</option>
+									<option value="Bridge">Bridge</option>
+								</select>
+							</td>
+						</tr>
+						</tr>
+						<tr>
+							<td colspan="2" class="strong warning">
+							Warning: Changing the operation mode to bridge will disable telephony services, as well as deny any software update.
+							</td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td colspan="2">
+								<a id="save2" class="btn-default-orange-small right"><span>Proceed</span></a>
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+<!--#endCheck var=none -->
+		</div><!--col-722-->
+<!--#endAuth var=ok-->
+			<div class="clear"></div>
+				
+		</div><!--conteudo-->
+		
+		<div class="clear"></div>
+		
+	</div><!--wrap-->
+	
+</div><!--content-->
+
+</body>	

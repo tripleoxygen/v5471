@@ -1,0 +1,42 @@
+#!/bin/sh
+# /etc/bewan/init.d/time $1
+# $1 or $ARG = start stop restart
+
+if [ "${ARG:-}" = "" ]; then
+  . /etc/bewan/init.d/setparam
+fi
+
+stop_time() {
+  rm -f $tzfile
+}
+
+start_time() {
+  local tz="$Services_Time_LocalTimeZone"
+  if [ "$tz" != '' ]; then
+    echo $tz >$tzfile
+    [ -f /proc/TZ ] && echo $tz >/proc/TZ
+  fi
+}
+
+main_time() {
+  eval $PUSH_ARG
+
+  local tzfile='/var/bewan/TZ'
+
+  base_log "$INITD/time $ARG" debug
+
+  case $ARG in
+  stop)
+    [ -f $tzfile ] && stop_time
+    ;;
+  start)
+    [ ! -f $tzfile ] && start_time
+    ;;
+  restart)
+    [ -f $tzfile ] && stop_time
+    start_time
+    ;;
+  esac
+}
+
+main_time

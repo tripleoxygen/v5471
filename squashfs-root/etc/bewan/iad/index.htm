@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>GVT</title>
+        <script type="text/javascript">
+            var isSimul = ('<!--#echo -->' != '');
+            if (!isSimul) {
+                // var DefaultLevel=eval('<!--#echo jsonvar="cli=Services_IADConfigurator_DefaultLevel"-->');
+                var DefaultLanguage=eval('<!--#echo jsonvar="cli=Services_IADConfigurator_CurrentLanguage"-->');
+            }
+            else {
+                var DefaultLevel = 'basic';
+                var DefaultLanguage = 'pt_BR';
+            }
+            // document.location.href = DefaultLanguage + '/' + DefaultLevel + '/index.htm';
+            document.location.href = DefaultLanguage + '/admin/index.htm';
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
