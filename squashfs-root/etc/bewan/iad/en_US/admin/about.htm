@@ -27,7 +27,7 @@
 				deviceLanMac: util.parseJson('<!--#echo jsonvar="cli=Device_PageZero_LanMac"-->'),
 				deviceWanMac: util.parseJson('<!--#echo jsonvar="cli=Device_PageZero_WanMac"-->'),
 				agilepca: util.parseJson('<!--#echo jsonvar="cli=Device_PageZero_AgilePCA"-->'),
-				deviceVersion: util.parseJson('<!--#echo jsonvar="cli=Device_FirmwareVersion"-->')
+				deviceVersion: util.parseJson('<!--#echo jsonvar="cli=Device_Firmware_CurrentFirmware"-->').slice(0, -4)
 			};
 			// Page.init(pageData);
 			$("#deviceHostname").html(pageData.deviceHostname);

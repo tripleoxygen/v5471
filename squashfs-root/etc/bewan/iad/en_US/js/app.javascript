@@ -503,3 +503,7 @@ $.event.ready(function() {
    $("#content").addClass("reveal");
    
 });
+
+$.event.ready(function() {
+	$("#content").append("<div class='footer'><div class='footer-inner'><div class='wrap'><a href='http://www.tripleoxygen.net/wiki/modem/v5471' target='_blank'>Pace V5471 42k Series</a> &copy; 2015 <a href='http://www.tripleoxygen.net' target='_blank'>Triple Oxygen</a> | Este é um trabalho para a comunidade e gratuito. Se pagou por ele, exija seu dinheiro de volta.</div></div></div>");
+});

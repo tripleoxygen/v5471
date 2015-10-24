@@ -29,5 +29,6 @@ fi
 
 # reset button long presss (6s) => partial reset
 check_wps_button
+rm -f /nvram/gvt/accessclass
 echo 'factory' | cli -s
 

@@ -1163,3 +1163,33 @@ table.results_summarize tbody td.failed {
 #menu-mode ul li a.no-border{ border-right:0 !important;}
 
 /*------------------------------Menu-configLAN*--------------------------*/
+
+
+/* O3 Footer */
+
+.footer {
+	margin-top: 0;
+	left: 0px;
+	bottom: 0px;
+	position: fixed;
+	width: 100%;
+}
+
+.footer-inner {
+	padding: 6px 0;
+	text-align: center;
+	font-size: 12px;
+	font-family: Arial, Helvetica, sans-serif;
+	background: #e8e8e8;
+	color: rgb(80, 80, 80);
+}
+
+.footer-inner .wrap a {
+	color: rgb(80, 80, 80);
+	text-decoration: none;
+}
+
+.footer-inner .wrap a:hover {
+	color: black;
+	text-decoration: none;
+}
