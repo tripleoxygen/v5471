@@ -47,7 +47,9 @@ var Page = (function($, App) {
                 'HPNA_Enable': $("#hpna_enable").attr("state"),
                 'Services_GvtConfig_AccessClass': $("#accessclass").val(),
                 'PTMEthernetInterface_1_VLANInterface_1_VID': $("#vlanid").val(),
-                'ATMEthernetInterface_1_ATMLinkConfig_VC': $("#vpivci").val()
+                'ATMEthernetInterface_1_ATMLinkConfig_VC': $("#vpivci").val(),
+                'ATMEthernetInterface_1_ATMLinkConfig_LinkType': $("#atm_linktype").val(),
+                'ATMEthernetInterface_1_ATMLinkConfig_ATMEncapsulation': $("#atm_encapsulation").val()
             };
             cli.rollback().write(updates).commit(function(res) {
                 if(res.error) {

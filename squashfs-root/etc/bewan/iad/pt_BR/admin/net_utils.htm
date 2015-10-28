@@ -86,11 +86,10 @@
             }
 
             $("#accessclass option[value='" + util.parseJson('<!--#echo jsonvar="cli=Services_GvtConfig_AccessClass" -->') + "']").attr("selected", true);
+            $("#atm_linktype option[value='" + util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_LinkType" -->') + "']").attr("selected", true);
+            $("#atm_encapsulation option[value='" + util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_ATMEncapsulation" -->') + "']").attr("selected", true);
 
-            $("#atm_linktype").html(util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_LinkType" -->'));
-            $("#atm_encapsulation").html(util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_ATMEncapsulation" -->'));
-
-            });
+        });
         </script>
 <!--#endAuth var=ok-->
 </head>
@@ -256,13 +255,26 @@
                             </tr>
 
                             <tr>
-                              <td>Link</td>
-                              <td id="atm_linktype"></td>
+                              <td>Tipo de link</td>
+                              <td>
+                                <select id="atm_linktype" style="width: 80px">
+                                    <option value="Auto">Auto</option>
+                                    <option value="EoA">EoA</option>
+                                    <option value="IPoA">IPoA</option>
+                                    <option value="PPPoA">PPPoA</option>
+                                    <option value="PPPoE">PPPoE</option>
+                                </select>
+                              </td>
                             </tr>
 
                             <tr>
                               <td>Encapsulamento</td>
-                              <td id="atm_encapsulation"></td>
+                              <td>
+                                <select id="atm_encapsulation" style="width: 80px">
+                                    <option value="LLC">LLC</option>
+                                    <option value="VCMUX">VCMUX</option>
+                                </select>
+                              </td>
                             </tr>
 
                             <tr>
@@ -280,7 +292,7 @@
                               <td>1 (Internet)
                             </tr>
                             <tr>
-                                <td>802.1Q VLAN ID (0-4094)</td>
+                                <td>802.1Q VLAN ID</td>
                                 <td><input type="number" name="vlanid" id="vlanid" class="settings" style="width: 70px" min="1" max="4094" value=<!--#echo jsonvar="cli=PTMEthernetInterface_1_VLANInterface_1_VID" -->/></td>
                             <tr>
                             <tr>
