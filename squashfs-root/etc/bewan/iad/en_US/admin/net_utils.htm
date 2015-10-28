@@ -20,7 +20,7 @@
         <script type="text/javascript" src="../js/configAccess.javascript"></script>
 <!--#check Services_GvtConfig_AccessClass=2&file= -->
         <script type="text/javascript" src="../js/hpna_netinf.javascript"></script>
-<!--#endCheck var=ok-->    
+<!--#endCheck var=ok-->
         <script type="text/javascript" src="../js/net_utils.javascript"></script>
         <script type="text/javascript" src="../js/diag_tests.javascript"></script>
 
@@ -28,14 +28,14 @@
 <!--#isAuth level=admin -->
         <script type="text/javascript">
             $.event.ready(function() {
-                
+
                 var util = $.util;
 <!--#check Services_GvtConfig_AccessClass=4&file= -->
-                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,LANDevice"-->');
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface"-->');
 <!--#endCheck var=ok-->
 <!--#check Services_GvtConfig_AccessClass=2&file= -->
-                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice"-->');
-<!--#endCheck var=ok-->    
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface"-->');
+<!--#endCheck var=ok-->
                 pageData = {
                     token: token,
                     HPNA : {
@@ -48,25 +48,25 @@
                 Page.init(pageData);
                 $("#tab-01").slideUp("normal");
                 $("#menu-utilities li").find("a").addClass("active");
-                $("#menu-utilities").find("a").bind("click", function(){ 
+                $("#menu-utilities").find("a").bind("click", function(){
                     var cur_tab_idx = $("#menu-utilities li a.active").attr("rel");
-                    
+
                     $("#menu-utilities li a").removeClass("active");
                     $(this).addClass("active");
                     $("#tab-" + cur_tab_idx).slideDown("normal", function() {
                         var i = $("#menu-utilities li a.active").attr("rel");
                         $("#tab-" + i).slideUp("normal");
-<!--#check Services_GvtConfig_AccessClass=2&file= -->   
+<!--#check Services_GvtConfig_AccessClass=2&file= -->
                         PerfDiag.updateUI(i);
 <!--#endCheck var=ok-->
                     });
-                    if ($(this).attr("rel") != "01") {
+                    if ($(this).attr("rel") != "01" && $(this).attr("rel") != "04") {
                         $("#confirm-bg").removeClass("none");
                         $("#confirm-netutils").removeClass("none");
                     }
                     return false;
                 });
-            
+
             $("#continue, #confirm-bg").bind("click", function () {
                 $("#confirm-bg").addClass("none");
                 $("#confirm-netutils").addClass("none")
@@ -76,6 +76,19 @@
                 $("#confirm-netutils").addClass("none");
                 document.location = "/";
             });
+
+            $("#advanced_cancel").bind("click", function () {
+                location.reload();
+            });
+
+            if(util.parseJson('<!--#echo jsonvar="cli=HPNA_Enable" -->') == "0") {
+                $("#hpna_enable").setStyle({'background-position': '-34px 50%'});
+            }
+
+            $("#accessclass option[value='" + util.parseJson('<!--#echo jsonvar="cli=Services_GvtConfig_AccessClass" -->') + "']").attr("selected", true);
+
+            $("#atm_linktype").html(util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_LinkType" -->'));
+            $("#atm_encapsulation").html(util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_ATMEncapsulation" -->'));
 
             });
         </script>
@@ -100,7 +113,7 @@
                         <span>If you do not have TV service disregard this message.</span>
                     </td>
                 </tr>
-                
+
                 <tr><td>
                     <a class="btn-default-orange-small left" id="continue"><span>OK</span></a>
                     <a class="btn-default-orange-small left" id="cancel"><span>GO TO STATUS</span></a>
@@ -111,15 +124,15 @@
 <div id="header-gateway">
 
     <div class="wrap text-right">
-        
+
         <a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"></a>
         <img src="../../img/power-box.png" alt="Power Box GVT">
         <p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
-        
+
     </div>
-    
+
     <div class="clear"></div>
-    
+
 </div><!--header-gateway-->
 
 
@@ -138,12 +151,14 @@
                 <div id="menu-utilities">
                     <ul>
 <!--#check Services_GvtConfig_AccessClass=4&file= -->
-                        <li><a href="#" rel="01" style="width:675px;margin-top:1px;">Internet</a></li>
+                        <li><a href="#" rel="01" style="width:325px;margin-top:1px;">Internet</a></li>
+                        <li><a href="#" rel="04" style="width:330px;margin-top:1px;" class="no-border">Advanced</a></li>
 <!--#endCheck var=none -->
 <!--#check Services_GvtConfig_AccessClass=2&file= -->
                         <li><a href="#" rel="01">Internet</a></li>
                         <li><a href="#" rel="02">NetInf</a></li>
-                        <li><a href="#" rel="03" class="no-border">NetPer</a></li>
+                        <li><a href="#" rel="03">NetPer</a></li>
+                        <li><a href="#" rel="04" class="no-border">Advanced</a></li>
 <!--#endCheck var=none -->
                     </ul>
                 </div><!--menu-statistic-->
@@ -156,7 +171,7 @@
                         <tbody>
                             <tr>
                                 <td>Utility:</td>
-                                <td>    
+                                <td>
                                         <select id="testType">
                                             <option value="diag_ping">ping</option>
                                                 <option value="diag_traceroute">traceroute</option>
@@ -200,6 +215,85 @@
                         </tbody>
                     </table>
                 </div><!--tab-01-->
+
+                <!-- ************************* 42k Series ************************* -->
+                <div class="clear"></div>
+                <div id="tab-04" class="tab">
+                    <table class="setupWifiTable">
+                        <thead>
+                            <th colspan="2">CONFIGURATION</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="2" class="strong warning">
+                                Warning: Modifying any settings in this page can result in a disruption of service.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Access Class</td>
+                                <td>
+                                  <select id="accessclass" style="width: 70px">
+                                      <option value="2">2</option>
+                                      <option value="4">4</option>
+                                  </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>HPNA</td>
+     							<td>
+     							    <div class="switchButton"  type="switch" id="hpna_enable" state=<!--#echo jsonvar="cli=HPNA_Enable" -->></div>
+     							</td>
+                            </tr>
+                        </tbody>
+
+                        <thead>
+                            <th colspan="2">WAN ADSL (ATM)</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                              <td>ATM Ethernet Interface</td>
+                              <td>1 (Internet)</td>
+                            </tr>
+
+                            <tr>
+                              <td>Link type</td>
+                              <td id="atm_linktype"></td>
+                            </tr>
+
+                            <tr>
+                              <td>Encapsulation</td>
+                              <td id="atm_encapsulation"></td>
+                            </tr>
+
+                            <tr>
+                                <td>VPI / VCI</td>
+                                <td><input type="text" name="vpivci" id="vpivci" class="settings" style="width: 70px" value=<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_VC" -->/></td>
+                            </tr>
+                        </tbody>
+
+                        <thead>
+                            <th colspan="2">WAN VDSL (PTM)</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                              <td>PTM Ethernet Interface</td>
+                              <td>1 (Internet)
+                            </tr>
+                            <tr>
+                                <td>802.1Q VLAN ID (0-4094)</td>
+                                <td><input type="number" name="vlanid" id="vlanid" class="settings" style="width: 70px" min="1" max="4094" value=<!--#echo jsonvar="cli=PTMEthernetInterface_1_VLANInterface_1_VID" -->/></td>
+                            <tr>
+                            <tr>
+                                <td colspan="2">
+                                <a href="#" class="btn-default-orange-small right" id="advanced_cancel"><span>Cancel</span></a>
+                                <a href="#" class="btn-default-orange-small right" id="advanced_save"><span>Save</span></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div><!--tab-04-->
+                <!-- ************************* /42k Series ************************* -->
+
                 <div class="clear"></div>
 <!--#check Services_GvtConfig_AccessClass=2&file= -->
                 <div id="tab-02" class="tab">
@@ -233,7 +327,7 @@
                             </tr>
                         </tbody>
                     </table>
-        
+
                     <table class="setupWifiTable">
                         <thead>
                             <th colspan="3">NETWORK TEST(NETINF)</th>
@@ -280,15 +374,15 @@
                             </tr>
                         </table>
                         <table class="setupWifiTable" id="tbl_netinf"  style="visibility:hidden">
-                            <tr> 
-                                <td  colspan=2 > 
+                            <tr>
+                                <td  colspan=2 >
                                     <div id="netinf_results" />
                                 </td>
                             </tr>
                             <tr id="netinf_sum_dpy">
                                 <td><table id="netinf_sum_table" class="results_summarize"></table></td>
                             </tr>
-                                    
+
                         </table>
                         <table class="setupWifiTable" id="netinf_details">
                             <tbody></tbody>
@@ -393,16 +487,15 @@
             </div><!--col-722-->
 <!--#endAuth var=ok-->
             <div class="clear"></div>
-            
+
             <p>&nbsp;</p>
-            
+
         </div><!--conteudo-->
-        
+
         <div class="clear"></div>
-        
+
     </div><!--wrap-->
-    
+
 </div><!--content-->
 
 </body>
-    

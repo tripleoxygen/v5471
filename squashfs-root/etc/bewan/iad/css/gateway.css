@@ -1054,7 +1054,7 @@ li.log.selected {
 
 #menu-utilities ul {background:#f68b1f; padding:0 2px; width:698px; border-radius:5px 5px 5px 5px; margin-bottom:10px; height:36px;}
 #menu-utilities ul li { float:left;}
-#menu-utilities ul li a{color:#FFF; float:left; padding:10px; text-align:center; width:210px; font-weight:bold; border-right:2px solid #e57317;}
+#menu-utilities ul li a{color:#FFF; float:left; padding:10px; text-align:center; width:153px; font-weight:bold; border-right:2px solid #e57317;}
 #menu-utilities ul li a:hover{ background-color:#eb8218;}
 #menu-utilities ul li a.active{ background-color:#e57317;}
 #menu-utilities ul li a.no-border{ border-right:0 !important;}
