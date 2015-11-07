@@ -56,7 +56,7 @@ var Page = (function($, App) {
                     Messages.error(res.error);
                     return;
                 }
-                Messages.info('Advanced configuration successfully saved.');
+                Messages.info('Advanced configuration successfully saved. It's advisable to reboot your device.');
                 updates = {};
             });
         });

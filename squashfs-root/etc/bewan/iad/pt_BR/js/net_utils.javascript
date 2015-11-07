@@ -56,7 +56,7 @@ var Page = (function($, App) {
                     Messages.error(res.error);
                     return;
                 }
-                Messages.info('Configurações avançadas salvas com sucesso.');
+                Messages.info('Configurações avançadas salvas com sucesso. É aconselhável que reinicie o modem.');
                 updates = {};
             });
         });

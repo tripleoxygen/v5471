@@ -89,7 +89,21 @@
             $("#atm_linktype option[value='" + util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_LinkType" -->') + "']").attr("selected", true);
             $("#atm_encapsulation option[value='" + util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_ATMEncapsulation" -->') + "']").attr("selected", true);
 
+            $("#isp_profile").bind("click", function () {
+                var sel = $("#isp_profile").val();
+                if(sel == "-1") {
+                    $("#vlanid").removeAttr("disabled");
+                } else {
+                    $("#vlanid").attr("disabled", "");
+                    $("#vlanid").val(sel);
+                }
             });
+
+            $("#isp_profile option[value='" + util.parseJson('<!--#echo jsonvar="cli=PTMEthernetInterface_1_VLANInterface_1_VID" -->') + "']").attr("selected", true);
+            if($("#isp_profile").val() == "-1") {
+                $("#vlanid").removeAttr("disabled");
+            }
+        });
         </script>
 <!--#endAuth var=ok-->
 </head>
@@ -291,9 +305,26 @@
                               <td>PTM Ethernet Interface</td>
                               <td>1 (Internet)
                             </tr>
+
                             <tr>
-                                <td>802.1Q VLAN ID</td>
-                                <td><input type="number" name="vlanid" id="vlanid" class="settings" style="width: 70px" min="1" max="4094" value=<!--#echo jsonvar="cli=PTMEthernetInterface_1_VLANInterface_1_VID" -->/></td>
+                                <td>Broadband service / ISP</td>
+                                <td>
+                                    <select id="isp_profile" style="width: 150px">
+                                        <option value="600">GVT</option>
+                                        <option value="0">Oi Velox</option>
+                                        <option value="150">Live TIM Empresa</option>
+                                        <option value="100">Live TIM Residencial</option>
+                                        <option value="-1" selected>Other</option>
+                                    </select>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td>
+                                    802.1Q VLAN ID<br />
+                                    <span>Select "Other" above for manual input</span>
+                                </td>
+                                <td><input type="number" name="vlanid" id="vlanid" class="settings" style="width: 70px" min="0" max="4094" value=<!--#echo jsonvar="cli=PTMEthernetInterface_1_VLANInterface_1_VID" -->/></td>
                             <tr>
                             <tr>
                                 <td colspan="2">

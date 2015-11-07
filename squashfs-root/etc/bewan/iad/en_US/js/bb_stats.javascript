@@ -22,7 +22,7 @@ var Page = (function($, App) {
    }
    
    function asDb(val) {
-      return (Math.round(numVal(val))/10).toFixed(1) + " dB";
+      return (Math.round(numVal(val))/10).toFixed(1);
    }
    
    function asdb(val) {
@@ -34,7 +34,7 @@ var Page = (function($, App) {
    }
    
    function asDbm(val) {
-      return (Math.round(numVal(val))/10).toFixed(1) + " dBm";
+      return (Math.round(numVal(val))/10).toFixed(1);
    }
 
    function percError(err, tot) {
@@ -250,6 +250,8 @@ var Page = (function($, App) {
             formatters: {
                 WANDSLLinkStatus_DownLinePerfs_NoiseMargin: asDb,
                 WANDSLLinkStatus_UpLinePerfs_NoiseMargin :  asDb,
+                WANDSLLinkStatus_DownLinePerfs_OutputPower: asDbm,
+                WANDSLLinkStatus_UpLinePerfs_OutputPower: asDbm,
             }
             /*
                 WANDSLLinkStatus_DownBitrates_Actual: asKbps,
@@ -260,8 +262,6 @@ var Page = (function($, App) {
                 WANDSLLinkStatus_UpLinePerfs_NoiseMargin :  asDb,
                 WANDSLLinkStatus_DownLinePerfs_Attenuation: asDb,
                 WANDSLLinkStatus_UpLinePerfs_Attenuation: asDb,
-                WANDSLLinkStatus_DownLinePerfs_OutputPower: asDbm,
-                WANDSLLinkStatus_UpLinePerfs_OutputPower: asDbm,
                 WANDSLLinkStatus_CurrentShowtime_LocalLofs: asSec,
                 WANDSLLinkStatus_CurrentShowtime_LocalLoss: asSec,
                 WANDSLLinkStatus_CurrentShowtime_RemoteLoss: asSec,
