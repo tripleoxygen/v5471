@@ -5,6 +5,11 @@ BASE_KERNEL_VER=98509
 
 OUTPUT_DIR="build/$1"
 
+[ -d $OUTPUT_DIR ] && {
+    echo "Dir exists"
+    exit
+}
+
 rm -rf $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR
 
