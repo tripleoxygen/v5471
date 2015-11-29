@@ -1,0 +1,18 @@
+#!/bin/sh
+# /etc/bewan/scripts/backup-voice-profile
+# 42k Series (C) 2015 Triple Oxygen
+
+# retrieve user voice configuration (Voice_*, voiceProfile_*, VoiceCustomizations_*) and convert it to a cli script to store it to nvram to be applied at next reboot
+local VOICE_CLI=/nvram/gvt/voice-backup.cli
+save_voice_params() {
+		local path name val 
+		local OLD_IFS=$IFS
+		echo "diff" | cli -q | sed -e 's/+ \(Voice\|VoiceProfile\|VoiceCustomizations\)\([_a-zA-Z0-9]*\)_\([^=]\+\)=\([^#$]*\).*$/\1\2;\3;\4/p;d' | while IFS=\; read path name val 
+		do
+				val="$(echo "cd _$path; get $name" | cli -q)"
+				echo "cd _$path; sset $name '$val'"
+		done > ${VOICE_CLI}
+		IFS=$OLD_IFS
+}
+
+save_voice_params
