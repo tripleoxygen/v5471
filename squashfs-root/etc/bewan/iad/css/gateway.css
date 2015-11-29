@@ -8,7 +8,7 @@ http://www.redirectdigital.com.br/
 .....................................................................................*/
 
 body {
-	background:url(../img/background-master.jpg) repeat-x; 
+	background:url(../img/background-master.jpg) repeat-x;
 	color:#515151;
 	font-family:Arial, Helvetica, sans-serif;
 	font-size:12px;
@@ -63,7 +63,7 @@ body {
     border-radius:5px;
     overflow:hidden;
     background-image:url('../img/switchButton.png');
-    background-repeat:no-repeat; 
+    background-repeat:no-repeat;
     background-position:0;
     cursor:pointer;
 }
@@ -71,12 +71,12 @@ body {
 /*
 table.status { background-color:#CCC; width:720px;}
 table.status td{height:43px; padding:5px;}
-table.status td.icone{ 
-	background-color:#f68b1f; 
+table.status td.icone{
+	background-color:#f68b1f;
 	border-right:1px solid #e37b04;
-	color:#FFF; font-size:16px; 
+	color:#FFF; font-size:16px;
 	font-weight:bold;
-	text-transform:uppercase; 
+	text-transform:uppercase;
 	width:42px;
 }
 table.status td.text-title{ background-color:#f68b1f; color:#FFF; font-size:16px; text-transform:uppercase; font-weight:bold; width:128px;}
@@ -98,7 +98,7 @@ p.lang-menu a:hover {
 }
 p.lang-menu a.current {
    background-color: #003D73;
-   color: #fff;   
+   color: #fff;
 }
 
 
@@ -134,16 +134,16 @@ p.lang-menu a.current {
     display: block;
     height: 20px;
     padding: 10px 0 10px 20px;
-    
+
     background-color: #bcbcbc;
     background-image: url('../img/menu.png');
     background-repeat: no-repeat;
     background-position: 5px center;
-    
+
     color: #fff;
     font-weight: bold;
     font-size: 1.2em;
-    
+
 }
 .accordion li.menu a.menu-header:hover {
    background-color: #F68B1F;
@@ -171,11 +171,11 @@ p.lang-menu a.current {
 .accordion ul.ulmenu li a {
     display: block;
     color: #565656;
-    
+
     background-image: url('../img/bullet.png');
     background-repeat: no-repeat;
     background-position: left center;
-    
+
     padding: 8px 10px;
     padding-left: 20px;
 }
@@ -226,7 +226,7 @@ table.gatewayTable tbody td {
 }
 
 table.gatewayTable tbody tr.even td {background: #f8f8f8;}
-table.gatewayTable tbody tr.odd td {background: #ebeef0;}	
+table.gatewayTable tbody tr.odd td {background: #ebeef0;}
 table.gatewayTable tbody td:first-child, table.gatewayTable tbody td.firstChild	{ text-align: center;}
 ul, li { padding: 0; margin: 0; list-style: none; }
 ul li a{ text-decoration:none;}
@@ -372,7 +372,7 @@ table.setupWifiTable tbody tr.header td { background: #f3f3f4; border-bottom: 1p
 table.setupWifiTable tbody tr td.cinza{ background-color:#f3f3f4; }
 table.setupWifiTable tbody tr td.cinza.success { background-color:#008000; color:#FFFFFF; font-weight: bold; text-align:center !important;}
 table.setupWifiTable tbody tr td.cinza.failed { background-color:#800000; color:#FFFFFF; font-weight: bold; text-align:center !important;}
-table.setupWifiTable tbody tr td.cinza2{ background-color:#e9eaeb;} 
+table.setupWifiTable tbody tr td.cinza2{ background-color:#e9eaeb;}
 table.setupWifiTable td span{ font-size:9px; display:block;}
 table.setupWifiTable thead th.subTitle { color: #797979; background: #E9EAEB;}
 table.setupWifiTable td.center { text-align: center;}
@@ -381,8 +381,8 @@ table.setupWifiTable td.center { text-align: center;}
 }
 /*---------------------------------------botoes-------------------------------------------*/
 .btn-default-orange-small,
-.btn-default-orange-small span { 
-	background-image:url(../img/btn-default-orange-small.png); 
+.btn-default-orange-small span {
+	background-image:url(../img/btn-default-orange-small.png);
 	background-repeat:no-repeat;
 	color:#fff !important;
 	cursor:pointer;
@@ -496,7 +496,7 @@ span.description {font-family: Arial,sans-serif;vertical-align: middle;}
    overflow: auto;
 }
 .form h4 {
-   border-bottom: 1px dotted #ccc; 
+   border-bottom: 1px dotted #ccc;
    padding-bottom: 5px;
 }
 .form .field, .form .label {
@@ -516,7 +516,7 @@ span.description {font-family: Arial,sans-serif;vertical-align: middle;}
     padding-top: 3px;
 } */
 .form .label {
-    text-align: right;    
+    text-align: right;
     background-color: #E9EAEB;
 }
 .form label {
@@ -591,8 +591,8 @@ p.hint {
 }
 
 a.action, .button, button, input[type=submit], input[type=button] {
-   cursor : pointer; 
-   padding: 4px 7px; 
+   cursor : pointer;
+   padding: 4px 7px;
    border-radius: 3px;
    border: 1px solid #9F5813;
    font-size: 12px;
@@ -770,7 +770,7 @@ li.log {
    cursor: pointer;
    cursor: hand;
    /*margin-top: 1px;*/
-   
+
    border-bottom: 1px solid #eee;
 }
 li.log.selected {
@@ -866,7 +866,7 @@ li.log.selected {
    color: #fff;
 }
 .logs .date {
-   width: 75px;  
+   width: 75px;
 }
 .logs .module {
     width: 50px;
@@ -879,7 +879,7 @@ li.log.selected {
 .h-list {
     list-style-type: none;
     padding: 0;
-    margin: 0; 
+    margin: 0;
     overflow: auto;
     padding: 10px;
 }
@@ -950,7 +950,7 @@ li.log.selected {
 }
 
 .data-table td.ellipsis {
-    -o-text-overflow: ellipsis; 
+    -o-text-overflow: ellipsis;
     text-overflow: ellipsis;
     max-width: 80px;
     white-space:nowrap;
@@ -1019,12 +1019,12 @@ li.log.selected {
     background-color: rgba(0, 0, 0, 0.7);
     position: absolute;
     z-index:1;
-    
+
 }
 
 .confirm-window{
     width: 500px;
-    left: 50%; 
+    left: 50%;
     margin-left: -290px;
     top:300px;
     padding-bottom: 50px;
@@ -1040,7 +1040,7 @@ li.log.selected {
 .confirm-close {
     position:absolute;
     text-transform: uppercase;
-    right: 0%; 
+    right: 0%;
     top: 0%;
     margin-right : 15px;
     margin-top:15px;
@@ -1062,7 +1062,7 @@ li.log.selected {
 /*----------------------------Menu-monitor*-------------------------------*/
 
 ul#menu-monitor { background:#f68b1f; border-radius:6px; padding:5px; width:166px; }
-ul#menu-monitor li{ border-bottom:2px solid #e57317; color:#FFF; display:block; padding:8px; width:150px; text-transform:uppercase;} 
+ul#menu-monitor li{ border-bottom:2px solid #e57317; color:#FFF; display:block; padding:8px; width:150px; text-transform:uppercase;}
 ul#menu-monitor li.no-border{ border-bottom:0 !important;}
 table.setupWifiTable tbody td.hpna_status_on {
     color:#10AB10;
@@ -1084,9 +1084,9 @@ table.results_summarize tbody td.title {
     color:#000000;
     font-size:14px;
     padding: 14px;
-    text-align: center; 
+    text-align: center;
     font-weight:bold;
-    
+
 }
 
 table.results_summarize tbody td.success {
@@ -1094,9 +1094,9 @@ table.results_summarize tbody td.success {
     color:#FFFFFF;
     font-size:14px;
     padding: 14px;
-    text-align: center; 
+    text-align: center;
     font-weight:bold;
-    
+
 }
 table.results_summarize tbody td.failed {
     background:#800000;
@@ -1104,7 +1104,7 @@ table.results_summarize tbody td.failed {
     padding: 0px;
     font-size:20px;
     font-weight:bold;
-    text-align: center; 
+    text-align: center;
     border-spacing: 0px;
 }
 
@@ -1187,9 +1187,11 @@ table.results_summarize tbody td.failed {
 .footer-inner .wrap a {
 	color: rgb(80, 80, 80);
 	text-decoration: none;
+	font-weight: bold;
 }
 
 .footer-inner .wrap a:hover {
 	color: black;
 	text-decoration: none;
+	font-weight: bold;
 }

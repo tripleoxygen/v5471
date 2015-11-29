@@ -3,7 +3,7 @@
     debug: true,
     indent: 3,
     plusplus: false,
-    evil: true, 
+    evil: true,
     onevar: true,
     browser: true,
     white: false
@@ -25,21 +25,21 @@ var App = {};
  */
 App.DataBinder = (function($) {
     var replaceReg = /^\-([^\-]+)\-$/,
-    
+
     // these don't work with querySelectorAll :(
-    // /^#([^#]+)#$/, 
-    // /^\{([^\{\}]+)\}$/, 
+    // /^#([^#]+)#$/,
+    // /^\{([^\{\}]+)\}$/,
     util = $.util;
-        
+
     function defaultFormatter(val) {
         return (typeof val === "undefined" || val === null) ? "" : val;
     }
-    
+
     function isIndexedKey(key) {
         // return key.indexOf("{") === 0 && key.lastIndexOf("}") === key.length - 1;
         return key.indexOf("-") === 0 && key.lastIndexOf("-") === key.length - 1;
     }
-    
+
     /**
      * Gets the current value of the bound field
      */
@@ -48,10 +48,10 @@ App.DataBinder = (function($) {
          formatter = ctx.formatter,
          fld = ctx.field,
          fldRaw = fld.get(0),
-         val, 
-         indices = ctx.indices = ctx.indices || {}, 
+         val,
+         indices = ctx.indices = ctx.indices || {},
          key = bindId;
-       
+
        if(fldRaw) {
           if(typeof(fldRaw.value) !== "undefined") {
              val = fld.val();
@@ -59,16 +59,16 @@ App.DataBinder = (function($) {
              val = fld.html();
           }
        }
-       
+
        util.forEach(indices, function(index, indexKey) {
            key = key.replace("-" + indexKey + "-", index);
        });
-       
+
        val = formatter(val, ctx);
        if(val === null || typeof val === "undefined") {
           val = "";
        }
-       
+
        return {
           key: key,
           value: val
@@ -79,28 +79,28 @@ App.DataBinder = (function($) {
      * Writes the value in data to the bound field
      */
     function setValue(ctx) {
-        var bindId = ctx.bindId, 
-            data = ctx.data, 
-            formatter = ctx.formatter, 
-            keys = bindId.split("_"), 
+        var bindId = ctx.bindId,
+            data = ctx.data,
+            formatter = ctx.formatter,
+            keys = bindId.split("_"),
             tmp = data,
             indices = ctx.indices = ctx.indices || {},
             fld = ctx.field,
             target = ctx.target || {},
             entireKey = [],
             fldRaw = fld.get(0);
-        
+
         if(!fldRaw) {
            console.log("Field not found: " + bindId);
            return;
         }
-        
+
         util.forEach(keys, function(k) {
             var actKey;
             if(!tmp) {
                 return util.Break;
             }
-            
+
             if(isIndexedKey(k)) {
                 actKey = replaceReg.exec(k)[1];
                 actKey = indices[actKey];
@@ -111,7 +111,7 @@ App.DataBinder = (function($) {
             tmp = tmp[actKey];
             return null;
         });
-        
+
         entireKey = entireKey.join("_");
         // console.log(entireKey);
         if(typeof target[entireKey] !== "undefined") {
@@ -123,25 +123,25 @@ App.DataBinder = (function($) {
             fld.html(formatter(tmp, ctx));
         }
     }
-    
+
     function cliSerializer(ctx) {
        var data = ctx.target = ctx.target || {},
        objValue = getValue(ctx),
        value = objValue.value,
        key = objValue.key;
-       
+
        data[key] = value;
     }
-    
+
     function jsonSerializer(ctx) {
        var bindId = ctx.bindId,
        data = ctx.target = ctx.target || {},
        keys = bindId.split('_'),
        tmp = data,
        tmpParent,
-       value = getValue(ctx).value, 
+       value = getValue(ctx).value,
        actKey, i, len;
-       
+
        for(i = 0, len = keys.length; i < len; i++) {
           actKey = keys[i];
           if(isIndexedKey(actKey)) {
@@ -154,10 +154,10 @@ App.DataBinder = (function($) {
        }
        tmpParent[actKey] = value;
     }
-    
+
     /**
      * Creates a data binder with specified options
-     * @example 
+     * @example
      * var binder = App.Binder({
      *    fields: [
      *       "LANDevice_-lanId-_HostConfig_DomainName",
@@ -173,9 +173,9 @@ App.DataBinder = (function($) {
      * });
      */
     return function(options) {
-        var fields = options.fields || [], formatters = options.formatters || {}, binder, 
+        var fields = options.fields || [], formatters = options.formatters || {}, binder,
             onfieldchange = options.onfieldchange;
-        
+
         function createContext(opts, eId) {
            opts = opts || {};
            return {
@@ -187,11 +187,11 @@ App.DataBinder = (function($) {
                indices: opts.indices
            };
         }
-        
+
         binder = {
             /**
              * Writes the data to the fields or labels in the HTML dom
-             * @example 
+             * @example
              * var binder = Binder(data);
              * binder.write({
              *    data: someData,
@@ -210,49 +210,49 @@ App.DataBinder = (function($) {
                    setValue(ctx);
                });
             },
-            
+
             read: function(options) {
                var ret = {};
                util.forEach(fields, function(fId) {
                   var ctx = createContext(options, fId), val;
-                  
+
                   // indicate that this is a reading operaion
                   // this is useful for formatters that format data while reading or writing
                   ctx.operation = "read";
-                  
+
                   val = getValue(ctx);
                   ret[val.key] = val.value;
                });
                return ret;
             },
-            
+
             serialize: function(options, path) {
                var ctx = createContext(options, path);
                ctx.operation = "read";
                cliSerializer(ctx);
             },
-            
+
             getFields: function() {
                return fields.slice(0);
             }
         };
-        
+
         function fieldChangeHandler(evt) {
            return onfieldchange(evt.target, binder);
         }
-        
+
         // some initialization code (If onchange field handler is specified, call it every time a binder field changes
         if(typeof onfieldchange === "function") {
            util.forEach(fields, function(fId) {
-              var f = $("#" + fId), 
-                 fType = f.attr("type"), 
-                 // checkboxes and radio buttons behave differently on IE, 
+              var f = $("#" + fId),
+                 fType = f.attr("type"),
+                 // checkboxes and radio buttons behave differently on IE,
                  // in some corner cases they don't fire change events properly
                  evt = (fType === "checkbox" || fType == "radio" || fType == "switch") ? "click" : "change";
               f.bind(evt, fieldChangeHandler);
            });
         }
-        
+
         return binder;
     };
 })(lite);
@@ -264,7 +264,7 @@ App.DataBinder = (function($) {
  * @author anaik
  */
 App.MessageUtil = (function($)   {
-   var Util = $.util, 
+   var Util = $.util,
    msgTemplate = $.template('<p title=\'Click to dismiss\' id="{msgId}" class="message {msgType}">{msg}</p>');
 
    function delayedClear(id)   {
@@ -276,16 +276,16 @@ App.MessageUtil = (function($)   {
          }
       }, 5000);
    }
-   
+
    var mUtil =  {
       error: function(strMessage)   {
          return mUtil.show("error", strMessage);
       },
-      
+
       warn: function(strMessage) {
          return mUtil.show("warn", strMessage);
       },
-      
+
       info: function(strMessage, bAutoClear) {
          var id = mUtil.show("info", strMessage);
          if(bAutoClear !== false)   {
@@ -293,22 +293,22 @@ App.MessageUtil = (function($)   {
          }
          return id;
       },
-      
+
       show: function(strType, strMessage, bOverwrite) {
          var messages = $("#messages"), id = Util.nextUniqueId(), htmlMsg;
-         
+
          htmlMsg = msgTemplate.process({
             msgId: id,
             msgType: strType,
             msg: strMessage
          });
-         
+
          if(! bOverwrite)   {
             messages.prepend(htmlMsg);
          }else {
             messages.html(htmlMsg);
          }
-         
+
          messages.removeClass("none");
          messages.addClass(strType);
 
@@ -317,7 +317,7 @@ App.MessageUtil = (function($)   {
          $('html').get(0).scrollTop = 0;
          return id;
       },
-      
+
       clear: function(id)  {
          var messages = $("#messages");
          messages.remove("#" + id);
@@ -332,7 +332,7 @@ App.MessageUtil = (function($)   {
          messages.addClass("none");
       }
    };
-   
+
    return mUtil;
 })(lite);
 
@@ -346,7 +346,7 @@ App.MessageUtil = (function($)   {
 App.ValidationRenderer = (function($) {
    var msgUtil = App.MessageUtil, util = $.util;
 
-   return {      
+   return {
       render: function(arrMsg)   {
          var msgs = [];
          this.ids = [];
@@ -375,7 +375,7 @@ App.ValidationMessageRenderer = (function($) {
     var util = $.util;
 
     return function() {
-        return {      
+        return {
             render: function(arrMsg)   {
                 this.ids = [];
                 util.forEach(arrMsg, function(msg) {
@@ -414,16 +414,16 @@ App.ValidationMessageRenderer = (function($) {
 
 
 // our application specific global ready for generic onready handlers
-$.event.ready(function() {   
+$.event.ready(function() {
    var util = lite.util, msgUtil = App.MessageUtil, bodyStyle, defaultAction, messages = $("#messages");
-   
+
    // Initialize the global accordion menu.
    if(typeof initmenu === "function") {
       initmenu();
    }
-   
-   
-   
+
+
+
    // this is for IE browsers including IE8 that don't support nth-child and nth-of-type pseudo classes
    /*
    var tbls = $("table.data-table > tbody");
@@ -436,9 +436,9 @@ $.event.ready(function() {
       });
    });
    */
-   
-   
-   
+
+
+
    // Messages rendering for application messages.
    if(!messages.count()) {
         messages = $("#col-722").prepend('<div class="none" id="messages"></div>').find("#messages");
@@ -446,9 +446,9 @@ $.event.ready(function() {
             msgUtil.clearAll();
         });
     }
-   
-   
-   
+
+
+
    // ConfigAccess ajax notification: Check if there's any ajax operations via config access
    if(typeof ConfigAccess === "function") {
       bodyStyle = document.body.style || {};
@@ -462,9 +462,9 @@ $.event.ready(function() {
          $("#toast").removeClass("show");
       }
    }
-   
-   
-   
+
+
+
    // Enter key action for forms
    /*
    function shouldIgnore(target) {
@@ -478,7 +478,7 @@ $.event.ready(function() {
           var target, butt;
           if(e.keyCode === 13) {
              target = e.target;
-             
+
              if(shouldIgnore(target)) {
                 return true;
              }
@@ -498,12 +498,23 @@ $.event.ready(function() {
        });
    }
    */
-   
+
    // Content fade in on page load EXPERIMENTAL!!!
    $("#content").addClass("reveal");
-   
+
 });
 
 $.event.ready(function() {
-	$("#content").append("<div class='footer'><div class='footer-inner'><div class='wrap'><a href='http://www.tripleoxygen.net/wiki/modem/v5471' target='_blank'>Pace V5471 42k Series</a> &copy; 2015 <a href='http://www.tripleoxygen.net' target='_blank'>Triple Oxygen</a> | Este é um trabalho para a comunidade e gratuito. Se pagou por ele, exija seu dinheiro de volta.</div></div></div>");
+    $("#content").append("\
+        <div class='footer'>\
+            <div class='footer-inner'>\
+                <div class='wrap'>\
+                    <a href='http://www.tripleoxygen.net/wiki/modem/v5471#custom_firmware' target='_blank'>\
+                    Pace V5471 42k Series</a> &copy; 2015\
+                    <a href='http://www.tripleoxygen.net' target='_blank'>Triple Oxygen</a> |\
+                    Este trabalho é para a comunidade e gratuito. Se pagou por ele, você foi enganado e <br /><strong>deve exigir seu dinheiro de volta</strong>.\
+                    Utilize esta imagem apenas se for proprietário do modem. A venda destes aparelhos é <strong>proibida</strong>. \
+                </div>\
+            </div>\
+        </div>");
 });
