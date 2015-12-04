@@ -1,9 +1,0 @@
-#!/bin/sh
-#
-# Pace V5471 42k Custom Series
-# (c) Triple Oxygen - http://www.tripleoxygen.net
-#
-
-VOICE_BACKUP="/nvram/gvt/voice-backup.cli"
-
-[[ ! -f "$VOICE_BACKUP" ]] && /etc/bewan/scripts/backup-voice-profile             
