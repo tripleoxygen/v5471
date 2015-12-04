@@ -3,7 +3,10 @@
 # 42k Series (C) 2015 Triple Oxygen
 
 # retrieve user voice configuration (Voice_*, voiceProfile_*, VoiceCustomizations_*) and convert it to a cli script to store it to nvram to be applied at next reboot
-local VOICE_CLI=/nvram/gvt/voice-backup.cli
+
+local VOICE_CLI=${1:-}
+[ "$VOICE_CLI" = '' ] && exit 1
+
 save_voice_params() {
 		local path name val 
 		local OLD_IFS=$IFS
