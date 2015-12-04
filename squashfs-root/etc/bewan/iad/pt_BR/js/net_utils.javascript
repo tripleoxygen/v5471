@@ -44,6 +44,8 @@ var Page = (function($, App) {
             }
 
             updates = {
+                'Device_IPv6Enable': $("#ipv6_enable").attr("state"),
+                'Services_TR069_Enable': $("#tr069_enable").attr("state"),
                 'HPNA_Enable': $("#hpna_enable").attr("state"),
                 'Services_GvtConfig_AccessClass': $("#accessclass").val(),
                 'PTMEthernetInterface_1_VLANInterface_1_VID': $("#vlanid").val(),

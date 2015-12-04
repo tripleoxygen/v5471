@@ -31,10 +31,10 @@
 
                 var util = $.util;
 <!--#check Services_GvtConfig_AccessClass=4&file= -->
-                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface"-->');
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface,Services_TR069_Enable,Device_IPv6Enable"-->');
 <!--#endCheck var=ok-->
 <!--#check Services_GvtConfig_AccessClass=2&file= -->
-                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface"-->');
+                var token = util.parseJson('<!--#echo jsonvar="token=diag_ping,diag_traceroute,diag_nslookup,date,HPNA,LANDevice,Services_GvtConfig,ATMEthernetInterface,PTMEthernetInterface,Services_TR069_Enable,Device_IPv6Enable"-->');
 <!--#endCheck var=ok-->
                 pageData = {
                     token: token,
@@ -81,9 +81,18 @@
                 location.reload();
             });
 
+            /* switches */
             if(util.parseJson('<!--#echo jsonvar="cli=HPNA_Enable" -->') == "0") {
                 $("#hpna_enable").setStyle({'background-position': '-34px 50%'});
             }
+            if(util.parseJson('<!--#echo jsonvar="cli=Services_TR069_Enable" -->') == "0") {
+                $("#tr069_enable").setStyle({'background-position': '-34px 50%'});
+            }
+            if(util.parseJson('<!--#echo jsonvar="cli=Device_IPv6Enable" -->') == "0") {
+                $("#ipv6_enable").setStyle({'background-position': '-34px 50%'});
+            }
+            /* switches */
+
 
             $("#accessclass option[value='" + util.parseJson('<!--#echo jsonvar="cli=Services_GvtConfig_AccessClass" -->') + "']").attr("selected", true);
             $("#atm_linktype option[value='" + util.parseJson('<!--#echo jsonvar="cli=ATMEthernetInterface_1_ATMLinkConfig_LinkType" -->') + "']").attr("selected", true);
@@ -257,17 +266,31 @@
      							    <div class="switchButton"  type="switch" id="hpna_enable" state=<!--#echo jsonvar="cli=HPNA_Enable" -->></div>
      							</td>
                             </tr>
+                            <tr>
+                                <td>IPv6<br />
+                                <span>Experimental!</span></td>
+     							<td>
+     							    <div class="switchButton"  type="switch" id="ipv6_enable" state=<!--#echo jsonvar="cli=Device_IPv6Enable" -->></div>
+     							</td>
+                            </tr>
+                            <tr>
+                                <td>TR-069</td>
+                                <td>
+                                    <div class="switchButton"  type="switch" id="tr069_enable" state=<!--#echo jsonvar="cli=Services_TR069_Enable" -->></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    Ativar o TR-069 permite ao ISP atualizar o firmware do aparelho remotamente, removendo esta imagem.
+                                    No entanto, é necessário sua ativação para que seja possível a reconfiguração remota (para TV ou telefone, por exemplo).
+                                </td>
+                            <tr>
                         </tbody>
 
                         <thead>
                             <th colspan="2">WAN ADSL (ATM)</th>
                         </thead>
                         <tbody>
-                            <tr>
-                              <td>ATM Ethernet Interface</td>
-                              <td>1 (Internet)</td>
-                            </tr>
-
                             <tr>
                               <td>Tipo de link</td>
                               <td>
@@ -301,11 +324,6 @@
                             <th colspan="2">WAN VDSL (PTM)</th>
                         </thead>
                         <tbody>
-                            <tr>
-                              <td>PTM Ethernet Interface</td>
-                              <td>1 (Internet)
-                            </tr>
-
                             <tr>
                                 <td>Serviço / Operadora</td>
                                 <td>
