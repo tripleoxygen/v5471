@@ -510,7 +510,7 @@ $.event.ready(function() {
             <div class='footer-inner'>\
                 <div class='wrap'>\
                     <a href='http://www.tripleoxygen.net/wiki/modem/v5471#custom_firmware' target='_blank'>\
-                    Pace V5471 42k Series</a> &copy; 2015\
+                    Pace V5471 42k Series</a> &copy; 2016\
                     <a href='http://www.tripleoxygen.net' target='_blank'>Triple Oxygen</a> |\
                     Este trabalho é para a comunidade e gratuito. Se pagou por ele, você foi enganado e <br /><strong>deve exigir seu dinheiro de volta</strong>.\
                     Utilize esta imagem apenas se for proprietário do modem. A venda destes aparelhos é <strong>proibida</strong>. \
