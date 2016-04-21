@@ -21,7 +21,7 @@
 <!--#isAuth level=no_realm -->
 	<script type="text/javascript">
 		$.event.ready(function() {
-			var util = $.util, net = $.net,
+			var util = $.util,
 			pageData = {
 				deviceHostname: util.parseJson('<!--#echo jsonvar="cli=Device_Hostname"-->'),
 				deviceLanMac: util.parseJson('<!--#echo jsonvar="cli=Device_PageZero_LanMac"-->'),
@@ -35,27 +35,6 @@
 			$("#deviceWanMac").html(pageData.deviceWanMac);
 			$("#deviceVersion").html(pageData.deviceVersion);
 			$("#agilepca").html(pageData.agilepca);
-
-			/* 42k */
-			net.ajax({
-				url: '/latestver',
-				dataType: 'text',
-				onSuccess: function(res, code, xhr) {
-					if(code == 200) {
-						var latestver = parseInt(res);
-						var currentver = parseInt(pageData.deviceVersion.substring(15));
-						console.log("currentver: %d | latestver: %d", currentver, latestver);
-						if(latestver > currentver) {
-							$("#table_model thead").append("<th colspan='4' style='background-color: #ebeef0; color: #000;'> \
-								Uma nova versão da 42k Series está disponível (" + latestver + "). \
-								<a href='http://www.tripleoxygen.net/wiki/modem/v5471#custom_firmware' target='_blank'>Visite</a></th>");
-						}
-					}
-				},
-				onError: function() {
-					console.log('Erro ao obter versão.');
-				}
-			});
 		});
 	</script>
 <!--#endAuth var=ok-->
@@ -66,15 +45,15 @@
 <div id="header-gateway">
 
 	<div class="wrap text-right">
-
+		
 		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"/></a>
 		<img src="../../img/power-box.png" alt="Power Box GVT"/>
 		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
-
+		
 	</div>
-
+	
 	<div class="clear"></div>
-
+	
 </div><!--header-gateway-->
 
 <div id="content">
@@ -82,7 +61,7 @@
 	<div class="wrap">
 
 		<div id="conteudo-gateway">
-
+			
 			<div class="col-192 left">
 				<script type="text/javascript">ImportMenu('menu_about');</script>
 			</div><!--col-192-->
@@ -91,7 +70,7 @@
 <!--#include file="auth.htm" -->
 <!--#isAuth level=no_realm -->
 			<div class="col-722 left">
-
+			
 				<h3 class="azul-2 text-up">Sobre o Power Box</h3>
 
 				<table class="gatewayTable" id="table_model" cellpadding="0" cellspacing="0" style="width:685px">
@@ -102,7 +81,7 @@
 						<tr class="even">
 							<td class="firstChild"><strong>Fabricante: </strong></td><td><strong>PACE</strong></td>
 							<td class="firstChild"><strong>Modelo:</strong></td><td><strong>V5471</strong></td>
-						</tr>
+						</tr>    
 						<tr class="even">
 							<td class="firstChild"><strong>Versão de Software:</strong></td><td><span id="deviceVersion"></span></td>
 							<td class="firstChild"><strong>Versão de Hardware:</strong></td><td><span id="agilepca"></span></td>
@@ -115,7 +94,7 @@
 				</table>
 				<div class="clear"></div>
 				<img src="../../img/sobre-power-box.jpg" alt="Power Box GVT" class="left" width="134">
-
+				
 				<table class="gatewayTable" cellpadding="0" cellspacing="0">
 					<thead>
 						<tr>
@@ -132,9 +111,9 @@
 							<li><strong>Fixo Verde:</strong> Power Box pronto para uso.</li>
 							<li><strong>Piscando Vermelho:</strong> Processo de Atualização. Não desligue ou reinicie!</li>
 							<li class="lastChild"><strong>Apagado:</strong> Power Box desligado.</li>
-						</ul>
+						</ul>	
 					</td>
-					</tr>
+					</tr>    
 					<tr class="odd">
 						<td>Sincronismo</td>
 						<td>
@@ -144,7 +123,7 @@
 							<li class="lastChild"><strong>Apagado:</strong> Interface DSL desabilitada ou sem conectividade.</li>
 							</ul>
 						</td>
-					</tr>
+					</tr>  
 					<tr class="even">
 						<td>Internet</td>
 						<td>
@@ -153,7 +132,7 @@
 							<li class="lastChild"><strong>Apagado:</strong> Não há conexão com a Internet.</li>
 							</ul>
 						</td>
-					</tr>
+					</tr>  
 					<tr class="odd">
 						<td>HPNA</td>
 						<td>
@@ -196,7 +175,7 @@
 							<li class="lastChild"><strong>Apagado:</strong> Interface Wi-Fi desabilitada.</li>
 							</ul>
 						</td>
-					</tr>
+					</tr>  
 					<tr class="odd">
 						</td>
 						<td>Telefone 1/2</td>
@@ -208,7 +187,7 @@
 							<li class="lastChild"><strong>Apagado:</strong> Linha desabilitada ou não consegue se registrar.</li>
 							</ul>
 						</td>
-					</tr>
+					</tr>  
 				  </tbody>
 				</table>
 				<table class="gatewayTable right" cellpadding="0" cellspacing="0">
@@ -223,29 +202,29 @@
 						<td>WPS</td>
 						<td class="lastChild">
 						 Ao pressionar este botão, você irá habilitar por um breve instante a função WPS.
-						  Isto permite que seus dispositivos Wi-Fi entrem na sua rede sem precisar digitar a senha.
+						  Isto permite que seus dispositivos Wi-Fi entrem na sua rede sem precisar digitar a senha. 
 						</td>
-					  </tr>
+					  </tr> 
 					   <tr class="odd">
 						<td>Reconfigurar</td>
 						<td class="lastChild">
 						 Ao manter este botão apertado, você irá restaurar a configuração de original de fábrica.
-						  Isto apaga toda personalização efetuada, incluindo nomes e senhas da rede Wi-Fi.
+						  Isto apaga toda personalização efetuada, incluindo nomes e senhas da rede Wi-Fi. 
 						</td>
-					  </tr>
+					  </tr> 
 					</tbody>
 				</table>
 
 			</div><!--col-722-->
 <!--#endAuth var=ok-->
 			<div class="clear"></div>
-
+			
 		</div><!--conteudo-->
-
+		
 		<div class="clear"></div>
-
+		
 	</div><!--wrap-->
-
+	
 </div><!--content-->
 
 </body>
