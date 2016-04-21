@@ -1195,3 +1195,11 @@ table.results_summarize tbody td.failed {
 	text-decoration: none;
 	font-weight: bold;
 }
+
+.nodata {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    font-weight: bold;
+}

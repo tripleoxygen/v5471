@@ -1,0 +1,18 @@
+#!/bin/ash
+# 42k Series (C) 2016 Triple Oxygen
+
+local STATS_PATH=${1:-}
+[ "$STATS_PATH" = '' ] && exit 1
+
+MODE=$(xdslctl info --show | grep "^Mode" | awk -F ":" '{ gsub(/^[ \t]+/,"",$2); print $2 }')
+PROFILE=$(xdslctl info --show | grep "^VDSL2 Profile" | awk -F ":" '{ gsub(/^[ \t]+/,"",$2); print $2 }')
+BP_US=$(xdslctl info --pbParams | grep -A 2 Medley | awk '/US/{ print $0 }')
+BP_DS=$(xdslctl info --pbParams | grep -A 2 Medley | awk '/DS/{ print $0 }')
+BINNUM=$(xdslctl info --SNR | tail -n +9 | wc -l)
+
+echo "var stats_inited=1;" > "$STATS_PATH/stats_data.js"
+echo "var stats_mode=\"$MODE\";" >> "$STATS_PATH/stats_data.js"
+echo "var stats_vdslprofile=\"$PROFILE\";" >> "$STATS_PATH/stats_data.js"
+echo "var stats_bp_us=\"$BP_US\";" >> "$STATS_PATH/stats_data.js"
+echo "var stats_bp_ds=\"$BP_DS\";" >> "$STATS_PATH/stats_data.js"
+echo "var binnum=$BINNUM;" >> "$STATS_PATH/stats_data.js"

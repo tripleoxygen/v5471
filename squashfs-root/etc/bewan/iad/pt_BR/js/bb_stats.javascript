@@ -1,14 +1,14 @@
 var Page = (function($, App) {
    var util = $.util, pageData, config,
       lanEthernetBinder;
-   
+
    /* --------------------------------- Utility functions --------------------------------------- */
    function numVal(val/*, defaultVal */) {
       var defaultValue = arguments[2] || 0;
       val = Number(val);
       return isNaN(val) ? defaultValue : val;
    }
-   
+
    function defaultIp(value) {
       return value || "0.0.0.0";
    }
@@ -16,37 +16,47 @@ var Page = (function($, App) {
    function asSec(val) {
       return val + " s";
    }
-   
+
    function asKbps(val) {
       return val + " Kbps";
    }
-   
+
    function asDb(val) {
       return (Math.round(numVal(val))/10).toFixed(1);
    }
-   
+
    function asdb(val) {
       return (Math.round(numVal(val))/10).toFixed(1) + " db";
    }
-   
+
    function asMs(val) {
       return (Math.round(numVal(val))/10).toFixed(1) + " ms";
    }
-   
+
    function asDbm(val) {
       return (Math.round(numVal(val))/10).toFixed(1);
    }
 
    function percError(err, tot) {
         var res = 0.0;
-        if (tot != 0) { 
-            res = (parseInt(err)/parseInt(tot)) * 100 ;
+        if (tot != 0) {
+            res = ((parseInt(err)/parseInt(tot)) * 100).toPrecision(1) ;
         }
         return res;
     }
-   
+
+   function arrayAsDb(val) {
+        var index;
+        var arr = val.split(",");
+        var ret = "";
+
+        for (index = 0; index < arr.length; ++index) {
+            ret += asDb(arr[index]) + "<br/>";
+        }
+        return ret;
+   }
    /* ------------------------------------- LANEthernet Details ----------------------------------------- */
-   
+
    function showLANEthernetInterface(lanData) {
       lanEthernetBinder.write({
          data: lanData
@@ -97,11 +107,11 @@ var Page = (function($, App) {
          formatters: {
         }
       });
-      
+
    }
 
    /* ------------------------------------- HPNA Details ----------------------------------------- */
-   
+
     function showHPNA(lanData) {
         HPNABinder.write({
             data: lanData
@@ -124,10 +134,10 @@ var Page = (function($, App) {
             formatters: {
             }
         });
-    }   
+    }
 
    /* ------------------------------------- Wireless Details ----------------------------------------- */
-   
+
     function showWifi(lanData) {
         WifiBinder.write({
             data: lanData
@@ -166,13 +176,13 @@ var Page = (function($, App) {
 
     function StdState(val){
         switch (val) {
-            case 'Auto' : return 'Automático'; 
+            case 'Auto' : return 'Automático';
             break;
-            case '11b' : return '802.11b'; 
+            case '11b' : return '802.11b';
             break;
-            case '11g' : return '802.11g'; 
+            case '11g' : return '802.11g';
             break;
-            case '11g' : return '802.11b/g'; 
+            case '11g' : return '802.11b/g';
             break;
         }
     }
@@ -215,7 +225,7 @@ var Page = (function($, App) {
     }
 
    /* ------------------------------------- DSL Details ----------------------------------------- */
-   
+
     function showDSL(lanData) {
         DSLBinder.write({
             data: lanData
@@ -239,19 +249,25 @@ var Page = (function($, App) {
                "WANDSLLinkStatus_CurrentShowtime_LocalLofs",
                "WANDSLLinkStatus_CurrentShowtime_LocalLoss",
                "WANDSLLinkStatus_CurrentShowtime_RemoteLoss",
-                "WANDSLLinkStatus_CurrentShowtime_RemoteLprs",
+               "WANDSLLinkStatus_CurrentShowtime_RemoteLprs",
                "WANDSLLinkStatus_CurrentShowtime_LocalFEC",
                "WANDSLLinkStatus_CurrentShowtime_RemoteFEC",
                "ATMEthernetInterface_1_Counters_TxMulticastPackets",
                "ATMEthernetInterface_1_Counters_RxMulticastPackets",
                "ATMEthernetInterface_1_Counters_RxPackets",
-               "ATMEthernetInterface_1_Counters_TxPackets"
+               "ATMEthernetInterface_1_Counters_TxPackets",
+               "WANDSLLinkStatus_Info_VDSL2CurrentProfile",
+               "WANDSLLinkStatus_Info_Modulation",
+               "WANDSLLinkStatus_TestParams_LATNds",
+               "WANDSLLinkStatus_TestParams_LATNus"
             ],
             formatters: {
                 WANDSLLinkStatus_DownLinePerfs_NoiseMargin: asDb,
                 WANDSLLinkStatus_UpLinePerfs_NoiseMargin :  asDb,
                 WANDSLLinkStatus_DownLinePerfs_OutputPower: asDbm,
                 WANDSLLinkStatus_UpLinePerfs_OutputPower: asDbm,
+                WANDSLLinkStatus_TestParams_LATNds: arrayAsDb,
+                WANDSLLinkStatus_TestParams_LATNus: arrayAsDb,
             }
             /*
                 WANDSLLinkStatus_DownBitrates_Actual: asKbps,
@@ -269,9 +285,9 @@ var Page = (function($, App) {
             }
             */
         });
-    }   
+    }
    /* ------------------------------------- WAN Eth Details ----------------------------------------- */
-   
+
     function showWANEth(wanData) {
         WANEthBinder.write({
             data: wanData
@@ -306,7 +322,7 @@ var Page = (function($, App) {
             if (/Switch_X_Port_Y_Counters_/.test(param.id))
                 param.id = param.id.replace("_X_", "_" + switch_id + "_");
                 param.id = param.id.replace("_Y_", "_" + port_id + "_");
-                
+
         });
 
         WANEthBinder= App.DataBinder({
@@ -343,19 +359,19 @@ var Page = (function($, App) {
         var ret = obj;
         for (elm in strTab) {
             ret = ret[strTab[elm]];
-        } 
+        }
     return ret;
     }
-        /* 
+        /*
         apply tpl template to display obj
-        obj_def : contains a dictionary that allows you to set another 
+        obj_def : contains a dictionary that allows you to set another
     */
     function applyTemplate(tpl, obj_def, obj) {
         var elm_data = $(tpl).html().trim();
         var elm_reg = /{{([^}]+)}}/g;
         var tab_elm = elm_data.match(elm_reg);
         var elm_val;
-        
+
         for (elm_val in tab_elm) {
             var token = tab_elm[elm_val].replace(elm_reg, "\$1");
             var value = getValue(obj, token);
@@ -363,7 +379,7 @@ var Page = (function($, App) {
                 var def_name;
                 for (def_name in obj_def) {
                     // use another field if not null
-                    if (token == def_name) value = (obj[obj_def[def_name]] != "") ? obj[obj_def[def_name]]: obj[def_name]; 
+                    if (token == def_name) value = (obj[obj_def[def_name]] != "") ? obj[obj_def[def_name]]: obj[def_name];
                 }
             } else {
                 // custom value to insert
@@ -373,7 +389,7 @@ var Page = (function($, App) {
         }
         return elm_data;
     }
-    
+
     function fillWifiStations() {
         var dhcp_stations = pageData.DCHPHosts;
         var wifi_stations = pageData.WIFIHosts;
@@ -384,7 +400,7 @@ var Page = (function($, App) {
             var elm_dhcp = null;
             var station_html = "00:00:00:00:00:00";
             if (elm_wifi == "Count") continue;
-            for (elm_dhcp in dhcp_stations) 
+            for (elm_dhcp in dhcp_stations)
                 if (dhcp_stations[elm_dhcp].MACAddress.toLowerCase() == wifi_stations[elm_wifi].MACAddress.toLowerCase())
                     break;
             var tt = parseInt(wifi_stations[elm_wifi].TimeInAssoc);
@@ -397,11 +413,11 @@ var Page = (function($, App) {
             var html_data = applyTemplate("#table_wifi_users .tpl", {}, station);
             $("#table_wifi_users tbody").append(html_data);
         }
-        
-    }   
+
+    }
    return {
     init: function(data) {
-         
+
         pageData = data;
         initEthBinders();
         showLANEthernetInterface(pageData);
@@ -409,7 +425,7 @@ var Page = (function($, App) {
         showHPNA(pageData);
         initWifiBinders();
         showWifi(pageData);
-        
+
         if (data.WANDeviceType.List != "") {
             if (data.wan_conn_type == "ATMEthernetInterface" || data.wan_conn_type == "PTMEthernetInterface") {
                 initDSLBinders();
@@ -417,7 +433,7 @@ var Page = (function($, App) {
             } else {
                 initWANEthBinders(data);
             }
-            
+
         }
     }
    };

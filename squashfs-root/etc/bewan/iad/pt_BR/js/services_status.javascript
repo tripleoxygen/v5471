@@ -215,7 +215,12 @@ var Page = (function($, App) {
         upStream.html(data.WANDSLLinkStatus.UpBitrates.Actual);
         synchro.html(convertTime(data.WANDSLLinkStatus.Info.TimeConnected));
         session.html(convertTime(activeWanDevice.Status.UpTime));
-        modulation.html(data.WANDSLLinkStatus.Info.Modulation+' ('+data.WANDSLLinkStatus.Info.ModulationType+')');
+
+        if (data.WANDSLLinkStatus.Info.Modulation == "G.993.2")
+            modulation.html(data.WANDSLLinkStatus.Info.Modulation+' (Perfil '+data.WANDSLLinkStatus.Info.VDSL2CurrentProfile+')');
+        else
+            modulation.html(data.WANDSLLinkStatus.Info.Modulation);
+
         localIP.html(data.localIP);
         publicIP.html(activeWanIp);
         remoteIP.html(activeWanDevice.Status.Remote);

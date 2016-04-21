@@ -19,6 +19,9 @@
 <script type="text/javascript" src="../js/base64.javascript"></script>
 <script type="text/javascript" src="../js/configAccess.javascript"></script>
 <script type="text/javascript" src="../js/bb_stats.javascript"></script>
+<script type="text/javascript" src="/stats/stats_data.js"></script>
+<script type="text/javascript" src="/stats/graph_data.js"></script>
+<script type="text/javascript" src="../js/stats.js"></script>
 
 <style type="text/css">
 
@@ -26,8 +29,8 @@
 <!--#isAuth level=admin -->
 <script type="text/javascript">
 	$.event.ready(function() {
-		var util = $.util, 
-	
+		var util = $.util,
+
 		data = {
 			token: util.parseJson('<!--#echo jsonvar="token=Switch"-->'),
 			LANEthernetInterface: util.parseJson('<!--#echo jsonvar="cli=LANEthernetInterface"-->'),
@@ -64,11 +67,11 @@
 				}
 			}
 		};
-		
+
 		function getWanDeviceType() {
 			var ret = 1;
 			if (data.WANAutoConfig.Enable == 1) {
-				// Determine which interface  is used for wan 
+				// Determine which interface  is used for wan
 				// In this case we look at WANConnection_1_PhysicalInterface
 				if (data.WANDeviceType.List != "") {
 					var wancon_idx = data.WANDeviceType.List.split(",")[0];
@@ -88,7 +91,7 @@
 		// "Page" is defined in this page's specific js file
 		// determine if we display DSL or WANEth
 		if (getWanDeviceType()) {
-			
+
 <!--#check Services_GvtConfig_AccessClass=4&file= -->
 			$("#menu-statistic li").elements[2].style.display = (data.wan_conn_type == "ATMEthernetInterface" || data.wan_conn_type == "PTMEthernetInterface" ) ? "block" : "none";
 			$("#menu-statistic li").elements[3].style.display = (data.wan_conn_type == "WANEthernetInterface") ? "block" : "none";
@@ -98,11 +101,11 @@
 			$("#menu-statistic li").elements[4].style.display = (data.wan_conn_type == "WANEthernetInterface") ? "block" : "none";
 <!--#endCheck var=none -->
 		}
-		
+
 		Page.init(data);
 		$("#tab-01").slideUp("normal");
 		$("#menu-statistic li").find("a").addClass("active");
-		$("#menu-statistic").find("a").bind("click", function(){ 
+		$("#menu-statistic").find("a").bind("click", function(){
 			var cur_tab_idx = $("#menu-statistic li a.active").attr("rel");
 			$("#menu-statistic li a").removeClass("active");
 			$(this).addClass("active");
@@ -122,15 +125,15 @@
 <div id="header-gateway">
 
 	<div class="wrap text-right">
-		
+
 		<a href="http://www.gvt.com.br"><img src="../../img/logo-gvt.png" alt="GVT" class="left" border="0"/></a>
 		<img src="../../img/power-box.png" alt="Power Box GVT"/>
 		<p class="lang-menu"><script type="text/javascript">ImportLanguage();</script></p>
-		
+
 	</div>
-	
+
 	<div class="clear"></div>
-	
+
 </div><!--header-gateway-->
 
 <div id="content">
@@ -169,7 +172,7 @@
 							<th class="no-up">LAN 2</th>
 							<th class="no-up">LAN 3</th>
 							<th class="no-up">LAN 4</th>
-							
+
 						</thead>
 						<tbody>
 							<tr><td colspan="5">Recebidos</td></tr>
@@ -418,7 +421,7 @@
 						</table>
 					</div>
 				</div><!--tab-03-->
-				
+
 				<div id="tab-04" class="tab">
 					<div id="tabela_esquerdaDSL">
 						<table class="setupWifiTable width-hpna">
@@ -430,26 +433,26 @@
 								<th class="no-up">Valor</th>
 							</thead>
 							<tr>
-									
+
 								<td class="cinza center">Taxa Atual [Kbps]:</td>
 								<td class="cinza center" id="WANDSLLinkStatus_DownBitrates_Actual"></td>
 							</tr>
-							
+
 							<tr>
 								<td class="cinza2 center">Taxa Máxima [Kbps]:</td>
 								<td class="cinza2 center" id="WANDSLLinkStatus_DownBitrates_Max"></td>
 							</tr>
-							
+
 							<tr>
 								<td class="cinza center">Margem de ruído [dB]:</td>
 								<td class="cinza center" id="WANDSLLinkStatus_DownLinePerfs_NoiseMargin"></td>
 							</tr>
-							
+
 							<tr>
 								<td class="cinza2 center">Atenuação [dB]:</td>
 								<td class="cinza2 center" id="WANDSLLinkStatus_DownLinePerfs_Attenuation"></td>
 							</tr>
-							
+
 							<tr>
 								<td class="cinza center">Potência [dBm]:</td>
 								<td class="cinza center" id="WANDSLLinkStatus_DownLinePerfs_OutputPower"></td>
@@ -462,10 +465,17 @@
 								<td class="cinza center">Perda de Enquadramento [s]:</td>
 								<td class="cinza center" id="WANDSLLinkStatus_CurrentShowtime_LocalLofs"></td>
 							</tr>
-							
 							<tr>
 								<td class="cinza2 center">FEC [blocos]:</td>
 								<td class="cinza2 center" id="WANDSLLinkStatus_CurrentShowtime_LocalFEC"></td>
+							</tr>
+							<tr>
+								<td class="cinza center">Pacotes Multicast :</td>
+								<td class="cinza center" id="ATMEthernetInterface_1_Counters_RxMulticastPackets"></td>
+							</tr>
+							<tr>
+								<td class="cinza2 center">Pacotes :</td>
+								<td class="cinza2 center" id="ATMEthernetInterface_1_Counters_RxPackets"></td>
 							</tr>
 						</table>
 					</div>
@@ -510,25 +520,9 @@
 								<td class="cinza2 center">FEC [blocos]</td>
 								<td class="cinza2 center" id="WANDSLLinkStatus_CurrentShowtime_RemoteFEC"></td>
 							</tr>
-						</table>
-					</div>
-					<div id="tabela_esquerdaDSL">
-						<table class="setupWifiTable width-hpna">
 							<tr>
-								<td class="cinza2 center">Pacotes Multicast :</td>
-								<td class="cinza2 center" id="ATMEthernetInterface_1_Counters_RxMulticastPackets"></td>
-							</tr>
-							<tr>
-								<td class="cinza2 center">Pacotes :</td>
-								<td class="cinza2 center" id="ATMEthernetInterface_1_Counters_RxPackets"></td>
-							</tr>
-						</table>
-					</div>
-					<div id="tabela_direitaDSL">
-						<table class="setupWifiTable width-hpna">
-							<tr>
-								<td class="cinza2 center">Pacotes Multicast :</td>
-								<td class="cinza2 center" id="ATMEthernetInterface_1_Counters_TxMulticastPackets"></td>
+								<td class="cinza center">Pacotes Multicast :</td>
+								<td class="cinza center" id="ATMEthernetInterface_1_Counters_TxMulticastPackets"></td>
 							</tr>
 							<tr>
 								<td class="cinza2 center">Pacotes :</td>
@@ -536,10 +530,63 @@
 							</tr>
 						</table>
 					</div>
+
+					<!-- 42k -->
+					<div id="table_wifi_users" class="tabela_foco">
+						<table class="setupWifiTable">
+							<thead>
+								<th>Avançado</th>
+							</thead>
+						</table>
+					</div>
+
+					<div id="tabela_esquerdaDSL">
+						<table class="setupWifiTable width-hpna">
+							<thead>
+								<th class="no-up" width="240">Estatísticas</th>
+								<th class="no-up">Valor</th>
+							</thead>
+							<tr>
+								<td class="cinza center">Bandas :</td>
+								<td class="cinza center" id="stats_bp_ds">-</td>
+							</tr>
+							<tr>
+								<td class="cinza center">Atenuação de linha [dB]:<br /><span>Por banda</span></td>
+								<td class="cinza center" id="WANDSLLinkStatus_TestParams_LATNds">-</td>
+							</tr>
+						</table>
+					</div>
+					<div id="tabela_direitaDSL">
+						<table class="setupWifiTable width-hpna">
+							<thead>
+								<th class="no-up" width="240">Estatísticas</th>
+								<th class="no-up">Valor</th>
+							</thead>
+							<tr>
+								<td class="cinza center">Bandas :</td>
+								<td class="cinza center" id="stats_bp_us">-</td>
+							</tr>
+							<tr>
+								<td class="cinza center">Atenuação de linha [dB]:<br /><span>Por banda</span></td>
+								<td class="cinza center" id="WANDSLLinkStatus_TestParams_LATNus">-</td>
+							</tr>
+						</table>
+					</div>
+
+					<div id="table_wifi_users" class="tabela_foco">
+						<table class="setupWifiTable">
+							<tbody>
+								<tr><td id="graph_snr_1h"><div class="nodata">Sem dados</div></td></tr>
+								<tr><td id="graph_snr_24h"><div class="nodata">Sem dados</div></td></tr>
+								<tr><td id="graph_bins"><div class="nodata">Sem dados</div></td></tr>
+							</tbody>
+						</table>
+					</div>
+
 				</div><!--tab-04-->
-						
+
 				<div id="tab-05" class="tab">
-				
+
 				<div id="tabela_esquerdaDSL">
 					<table class="setupWifiTable width-WANEth">
 						<tbody>
@@ -549,8 +596,8 @@
 							</tr>
 						</tbody>
 					</table>
-				</div>	
-					
+				</div>
+
 					<div id="tabela_direitaDSL">
 					<table class="setupWifiTable width-WANEth">
 						<tbody>
@@ -562,7 +609,7 @@
 					</table>
 					</div>
 
-				
+
 				<div id="tabela_esquerdaDSL">
 					<table class="setupWifiTable width-WANEth waneth_counters">
 						<thead>
@@ -595,8 +642,8 @@
 							</tr>
 						</tbody>
 					</table>
-					</div>	
-					
+					</div>
+
 					<div id="tabela_direitaDSL">
 					<table class="setupWifiTable width-WANEth waneth_counters">
 						<thead>
@@ -630,7 +677,7 @@
 						</tbody>
 					</table>
 					</div>
-					
+
 					<div id="tabela_esquerdaDSL">
 					<table class="setupWifiTable width-WANEth waneth_counters">
 							<tr>
@@ -641,10 +688,10 @@
 								<td class="cinza2 center">Pacotes</td>
 								<td class="cinza2 center"></td>
 							</tr>-->
-							
+
 					</table>
 					</div>
-					
+
 					<div id="tabela_direitaDSL">
 					<table class="setupWifiTable width-WANEth waneth_counters">
 							<tr>
@@ -657,17 +704,16 @@
 							</tr> -->
 					</table>
 					</div>
-					
+
 				</div><!--tab-05-->
 				</div>
 			</div><!--col-722-->
 <!--#endAuth var=ok-->
 			<div class="clear"></div>
-			
+
 			<p>&nbsp;</p>
 		</div><!--conteudo-->
 		<div class="clear"></div>
 	</div><!--wrap-->
 
 </body>
-	
