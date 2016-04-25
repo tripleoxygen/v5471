@@ -268,6 +268,8 @@ var Page = (function($, App) {
                 WANDSLLinkStatus_UpLinePerfs_OutputPower: asDbm,
                 WANDSLLinkStatus_TestParams_LATNds: arrayAsDb,
                 WANDSLLinkStatus_TestParams_LATNus: arrayAsDb,
+                WANDSLLinkStatus_DownLinePerfs_Attenuation: asDb,
+                WANDSLLinkStatus_UpLinePerfs_Attenuation: asDb
             }
             /*
                 WANDSLLinkStatus_DownBitrates_Actual: asKbps,
