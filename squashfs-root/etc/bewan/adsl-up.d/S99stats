@@ -25,11 +25,11 @@ if [ ! -f "/nvram/disable_stats" ]; then
     if [ ! -d "$DATA_PATH" ]; then
         mkdir "$DATA_PATH"
         /etc/bewan/scripts/stats/init.sh "$DATA_PATH"
-
-        if [ ${CRON_LIB:-0} = 1 ]; then
-            crontab_add "*/${UPDATE_PERIOD}" '*' '*' '*' '*' "/etc/bewan/scripts/stats/update.sh '$DATA_PATH'" stats_update
-            crontab_add "*/${GRAPH_PERIOD}" '*' '*' '*' '*' "/etc/bewan/scripts/stats/graph.sh '$DATA_PATH' '$STATS_PATH' '$BINNUM'" stats_graph
-        fi
     fi
 
+    if [ ${CRON_LIB:-0} = 1 ]; then
+        crontab_add "*/${UPDATE_PERIOD}" '*' '*' '*' '*' "/etc/bewan/scripts/stats/update.sh '$DATA_PATH'" stats_update
+        crontab_add "*/${GRAPH_PERIOD}" '*' '*' '*' '*' "/etc/bewan/scripts/stats/graph.sh '$DATA_PATH' '$STATS_PATH' '$BINNUM'" stats_graph
+    fi
 fi
+

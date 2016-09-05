@@ -1,0 +1,22 @@
+#!/bin/ash
+# 42k Series (C) 2016 Triple Oxygen
+
+export LD_LIBRARY_PATH=/lib/public:/lib/private:/lib/gpl:/lib
+
+# Include crontab library
+if [ "${CRON_LIB:-0}" = 0 ] && [ -f /etc/bewan/lib/crontab ]; then
+    . /etc/bewan/lib/crontab
+fi
+
+DATA_PATH=/tmp/stats_data
+STATS_PATH=/tmp/stats
+
+rm "$STATS_PATH/graph_data.js"
+rm "$STATS_PATH/stats_data.js"
+
+if [ ! -f "/nvram/disable_stats" ]; then
+    if [ ${CRON_LIB:-0} = 1 ]; then
+        crontab_remove 'stats_update'
+        crontab_remove 'stats_graph'
+    fi
+fi
