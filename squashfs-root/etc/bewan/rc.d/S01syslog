@@ -1,5 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start syslog
-
-base_call_initd 'syslog inittab'

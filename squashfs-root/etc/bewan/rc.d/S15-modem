@@ -1,8 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start USB Modem Interfaces
-
-mkdir -p $MODEMD
-
-MDMID='all'
-base_call_initd 'modem'

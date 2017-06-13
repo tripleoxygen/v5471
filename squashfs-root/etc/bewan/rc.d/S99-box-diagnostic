@@ -1,7 +1,0 @@
-#!/bin/sh
-# /etc/bewan/rc.d/S99-box-diagnostic
-#
-
-if [ -d /home/diag ]; then
-  /bin/mount /proc /home/diag/proc -o bind  2>/dev/null
-fi

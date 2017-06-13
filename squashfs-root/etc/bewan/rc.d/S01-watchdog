@@ -1,8 +1,0 @@
-#!/bin/sh
-
-if [ $BOOTSTATUS = 1 ]; then
-  which ledctl >/dev/null
-  if [ $? = 0 ]; then
-    ledctl bflag_watchdog
-  fi
-fi

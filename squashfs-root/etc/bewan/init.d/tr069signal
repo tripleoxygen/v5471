@@ -1,6 +1,0 @@
-#!/bin/sh
-# /etc/bewan/init.d/tr069signal
-
-if [ -p /tmp/tr069_signal ]; then
-  echo 1 > /tmp/tr069_signal
-fi

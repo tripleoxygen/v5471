@@ -1,6 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start netfilter rules
-
-IPPROTO=
-base_call_initd 'fwrules iptables ip6tables conntrack'

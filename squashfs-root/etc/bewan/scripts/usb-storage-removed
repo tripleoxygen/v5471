@@ -1,3 +1,0 @@
-#!/bin/sh
-
-usleep 100000 && /etc/bewan/init.d/led-usb&

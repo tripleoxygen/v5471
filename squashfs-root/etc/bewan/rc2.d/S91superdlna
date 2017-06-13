@@ -1,6 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc2
-# Start superdlna
-
-base_call_initd 'superdlna.init'
-

@@ -1,9 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-
-# Load reset_poll module
-modprobe reset_poll \
-  fdp_button=$Device_LedButtons_FDPButton \
-  fdp_duration=$Device_LedButtons_FDPDuration \
-  restart_button=$Device_LedButtons_RestartButton \
-  restart_duration=$Device_LedButtons_RestartDuration

@@ -1,3 +1,0 @@
-#!/bin/sh
-
-base_enter_critical 'onchange'

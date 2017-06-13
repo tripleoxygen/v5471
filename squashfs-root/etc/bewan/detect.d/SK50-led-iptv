@@ -1,5 +1,0 @@
-#!/bin/sh
-
-. /etc/bewan/lib/gvt-led-iptv
-
-restart_lediptv

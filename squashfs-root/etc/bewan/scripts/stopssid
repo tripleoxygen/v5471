@@ -1,8 +1,0 @@
-#!/bin/sh
-. /etc/bewan/init.d/setparam
-
-if [ ! -f /var/bewan/wan.d/1/ifname ]; then
-  if [ "$WLANInterface_2_Enable" = 1 ]; then
-        wl -i $WLANInterface_2_Ifname ssid ""
-  fi
-fi

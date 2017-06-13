@@ -1,7 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start bridge netfilter rules
-
-modprobe multicast_acceleration_hal
-
-base_call_initd 'ebtables'

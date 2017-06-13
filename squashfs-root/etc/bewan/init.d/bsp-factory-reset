@@ -1,5 +1,0 @@
-#!/bin/sh
-# /etc/bewan/init.d/bsp-factory-reset
-
-. /etc/bewan/lib/bsp-factory-reset
-bsp_factory_reset

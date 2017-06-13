@@ -1,5 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc2
-# Start samba
-
-base_call_initd 'samba'

@@ -1,6 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-
-# Flip dsl second line relay to be sure of its state
-ledctl sflag_dsl2
-ledctl Sflag_dsl2

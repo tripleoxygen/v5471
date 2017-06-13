@@ -1,9 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start WiFi
-
-mkdir -p $WIFID
-
-ETHID='all'
-base_call_initd 'wifi'
-base_call_initd 'easyp'

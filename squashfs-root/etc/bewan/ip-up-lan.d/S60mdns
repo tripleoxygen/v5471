@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# Called on ip-up event on a LAN interface
-# $1= LAN connection index
-
-killall mDNSResponder >/dev/null 2>/dev/null

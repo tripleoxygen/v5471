@@ -1,3 +1,0 @@
-#!/bin/sh
-
-base_call_initd 'gvt-usb'

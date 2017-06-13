@@ -1,6 +1,0 @@
-#!/bin/sh
-
-. /etc/bewan/lib/lan
-
-stop_delegated_prefix
-rm -f $WAND/$WANID/ip6/dprefix

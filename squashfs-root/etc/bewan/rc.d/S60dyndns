@@ -1,6 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start dyndns accounts
-
-DYNDNS_ID='all'
-base_call_initd 'dyndns'

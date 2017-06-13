@@ -1,9 +1,0 @@
-#!/bin/sh
-
-stop_dslite() {
-	local ARG=stop
-	local WANID=${WANID:-0}
-	base_call_initd 'dslite'
-}
-
-stop_dslite

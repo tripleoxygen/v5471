@@ -1,4 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-# Start ADSL physical interface
-base_call_initd 'dsl'

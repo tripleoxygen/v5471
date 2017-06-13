@@ -1,3 +1,0 @@
-#!/bin/sh
-
-echo root:x:0: > /var/group

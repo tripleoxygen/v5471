@@ -1,8 +1,0 @@
-#!/bin/sh
-# /etc/bewan/scripts/backup-config-nvram
-# $1 = generated archive
-
-ARCHIVE=${1:-}
-[ "$ARCHIVE" = '' ] && exit 1
-
-cd /nvram/bewan; tar cf $ARCHIVE *

@@ -1,5 +1,0 @@
-#!/bin/sh
-# Called from /etc/bewan/rc
-
-mkdir -p $WAND $BRIDGED $DHCPCLIENTD $PPPDD $MODEMD
-

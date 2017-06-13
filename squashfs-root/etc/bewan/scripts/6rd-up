@@ -1,9 +1,0 @@
-#!/bin/sh
-
-restart_6rd() {
-	local ARG=restart
-	local WANID=${WANID:-0}
-	base_call_initd '6rd'
-}
-
-restart_6rd
