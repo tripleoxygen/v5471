@@ -17,8 +17,9 @@ O uso dessas informações e ferramentas é **por sua conta e risco**.
 * Coloque o rootfs baixado na raiz do projeto
 * Execute (substitua a versão pelo número do rootfs (e.g.: 42006, 42007, ...). Aqui vamos usar a 42007 como exemplo):
   ```
-  ./unpack_rootfs.sh 42007
+  sudo ./unpack_rootfs.sh 42007
   ```
+  * **Atenção**: é importante descompactar o rootfs como root para que os devs (/dev/) possam ser criados com sucesso!
 * O conteúdo do rootfs estará em `squashfs-root`, faça suas modificações nesta pasta
 * Execute
   ```
